@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+chezmoi-client = { path = "../client" }
+
 anyhow = { version = "1.0" }
 axum = { version = "0.7", features = ["macros"] }
 tokio = { version = "1.41.1", features = ["macros", "rt-multi-thread"] }

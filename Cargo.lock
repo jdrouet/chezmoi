@@ -27,6 +27,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "another-html-builder"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c0a7426eb0329ae3125905e01184e624ec3a75e91693ab3705541eef75805a7"
+
+[[package]]
 name = "anyhow"
 version = "1.0.93"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -144,11 +150,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "chezmoi-client"
+version = "0.1.0"
+dependencies = [
+ "another-html-builder",
+]
+
+[[package]]
 name = "chezmoi-server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
+ "chezmoi-client",
  "tokio",
  "tower-http",
  "tracing",
