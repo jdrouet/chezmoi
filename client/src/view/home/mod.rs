@@ -11,18 +11,26 @@ impl View {
         crate::component::head::Head::new("Home").render(buf)
     }
 
-    fn render_section<'v, W: std::fmt::Write>(
+    fn render_content<'v, W: std::fmt::Write>(
         &self,
         buf: Buffer<W, Body<'v>>,
     ) -> Buffer<W, Body<'v>> {
-        buf.node("section")
-            .content(|buf| buf.node("div").content(|buf| buf))
+        buf.node("main").content(|buf| {
+            buf.node("section").content(|buf| {
+                buf.node("h3")
+                    .attr(("class", "mt-xl"))
+                    .content(|buf| buf.text("Living room"))
+                    .node("div")
+                    .attr(("class", "card shadow max-w-400px my-lg"))
+                    .content(|buf| buf.text("Hello World!"))
+            })
+        })
     }
 
     fn render_body<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {
         buf.node("body").content(|buf| {
             let buf = crate::component::header::Header::new("Home").render(buf);
-            self.render_section(buf)
+            self.render_content(buf)
         })
     }
 }

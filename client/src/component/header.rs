@@ -16,7 +16,7 @@ impl Header {
 
 impl super::prelude::Component for Header {
     fn render<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {
-        buf.node("header").content(|buf| {
+        buf.node("header").attr(("class", "shadow")).content(|buf| {
             buf.node("section")
                 .content(|buf| buf.text(self.title.as_ref()))
         })
