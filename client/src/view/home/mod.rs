@@ -11,8 +11,19 @@ impl View {
         crate::component::head::Head::new("Home").render(buf)
     }
 
+    fn render_section<'v, W: std::fmt::Write>(
+        &self,
+        buf: Buffer<W, Body<'v>>,
+    ) -> Buffer<W, Body<'v>> {
+        buf.node("section")
+            .content(|buf| buf.node("div").content(|buf| buf))
+    }
+
     fn render_body<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {
-        buf.node("body").content(|buf| buf)
+        buf.node("body").content(|buf| {
+            let buf = crate::component::header::Header::new("Home").render(buf);
+            self.render_section(buf)
+        })
     }
 }
 

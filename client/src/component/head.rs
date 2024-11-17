@@ -26,6 +26,10 @@ impl super::prelude::Component for Head {
                 .close()
                 .node("title")
                 .content(|buf| buf.text("🏠 Chez Moi - ").text(self.title.as_ref()))
+                .node("link")
+                .attr(("rel", "stylesheet"))
+                .attr(("href", crate::asset::STYLE_CSS_PATH))
+                .close()
         })
     }
 }
