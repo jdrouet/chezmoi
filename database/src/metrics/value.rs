@@ -31,6 +31,10 @@ impl std::fmt::Display for MetricValue {
 }
 
 impl MetricValue {
+    pub const fn count(value: u64) -> Self {
+        Self::Count { value }
+    }
+
     pub const fn kind(&self) -> MetricValueKind {
         match self {
             Self::Count { .. } => MetricValueKind::Count,

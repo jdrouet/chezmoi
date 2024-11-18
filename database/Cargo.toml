@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+chezmoi-helper = { path = "../helper" }
+
 anyhow = { workspace = true }
 indexmap = { version = "2.6.0", features = ["serde"] }
 serde = { workspace = true, features = ["derive"] }

@@ -11,16 +11,31 @@ pub enum MetricTagValue {
 
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
-pub struct MetricTags(pub indexmap::IndexMap<String, MetricTagValue>);
+pub struct MetricTags(pub indexmap::IndexMap<Cow<'static, str>, MetricTagValue>);
 
 impl MetricTags {
     #[inline]
-    pub fn set(&mut self, name: String, value: MetricTagValue) -> Option<MetricTagValue> {
-        self.0.insert(name, value)
+    pub fn set(
+        &mut self,
+        name: impl Into<Cow<'static, str>>,
+        value: MetricTagValue,
+    ) -> Option<MetricTagValue> {
+        self.0.insert(name.into(), value)
     }
 
-    pub fn with(mut self, name: String, value: MetricTagValue) -> Self {
-        self.0.insert(name, value);
+    pub fn with(mut self, name: impl Into<Cow<'static, str>>, value: MetricTagValue) -> Self {
+        self.0.insert(name.into(), value);
+        self
+    }
+
+    pub fn maybe_with(
+        mut self,
+        name: impl Into<Cow<'static, str>>,
+        value: Option<MetricTagValue>,
+    ) -> Self {
+        if let Some(value) = value {
+            self.0.insert(name.into(), value);
+        }
         self
     }
 

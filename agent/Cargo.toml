@@ -1,0 +1,15 @@
+[package]
+name = "chezmoi-agent"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chezmoi-database = { path = "../database" }
+chezmoi-helper = { path = "../helper" }
+
+anyhow = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+sysinfo = { version = "0.32.0", default-features = false, features = [
+    "system",
+] }

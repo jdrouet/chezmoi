@@ -1,5 +1,4 @@
 pub(crate) mod app;
-mod helper;
 mod router;
 
 fn enable_tracing() {
@@ -10,7 +9,7 @@ fn enable_tracing() {
         .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| {
             // axum logs rejections from built-in extractors with the `axum::rejection`
             // target, at `TRACE` level. `axum::rejection=trace` enables showing those events
-            "chezmoi_server=debug,tower_http=debug,axum::rejection=trace".into()
+            "chezmoi_agent=debug,chezmoi_server=debug,tower_http=debug,axum::rejection=trace".into()
         }))
         .with(tracing_subscriber::fmt::layer())
         .try_init()
@@ -24,9 +23,15 @@ fn enable_tracing() {
 async fn main() -> anyhow::Result<()> {
     enable_tracing();
 
-    let config = app::Config::from_env()?;
-    let app = config.build().await?;
-    app.run().await?;
+    let database = chezmoi_database::config::Config::from_env()?;
+    let database = database.build().await?;
+    database.upgrade().await?;
 
-    Ok(())
+    let agent = chezmoi_agent::Config::from_env()?;
+    let agent = agent.build().await?;
+
+    let app = app::Config::from_env()?;
+    let app = app.build().await?;
+
+    tokio::try_join!(agent.run(database.clone()), app.run(database)).map(|_| ())
 }

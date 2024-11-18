@@ -27,7 +27,7 @@ impl<'a> Create<'a> {
         let mut query_builder: sqlx::QueryBuilder<sqlx::Sqlite> = sqlx::QueryBuilder::new(
             "insert into metrics (timestamp, name, tags, value_kind, value_count)",
         );
-        query_builder.push_values(self.0.into_iter(), |mut b, entry| {
+        query_builder.push_values(self.0.iter(), |mut b, entry| {
             b.push_bind(entry.timestamp as i64)
                 .push_bind(entry.name.as_ref())
                 .push_bind(entry.tags.urlencode())

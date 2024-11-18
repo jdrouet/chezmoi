@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 use anyhow::Context;
+use chezmoi_helper::env::from_env_or;
 
 #[derive(Clone, Debug)]
 pub struct Config {
@@ -14,7 +15,7 @@ impl Config {
 
     pub fn from_env() -> anyhow::Result<Self> {
         Ok(Self {
-            url: Cow::Borrowed(":memory:"),
+            url: from_env_or("DATABASE_URL", ":memory:"),
         })
     }
 

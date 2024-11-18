@@ -4,12 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+chezmoi-agent = { path = "../agent" }
 chezmoi-client = { path = "../client" }
 chezmoi-database = { path = "../database" }
+chezmoi-helper = { path = "../helper" }
 
 anyhow = { workspace = true }
 axum = { version = "0.7", features = ["macros"] }
-tokio = { version = "1.41.1", features = ["macros", "rt-multi-thread"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tower-http = { version = "0.6", default-features = false, features = ["trace"] }
 tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
