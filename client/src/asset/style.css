@@ -1,6 +1,7 @@
 :root {
     --border-color: #cacaca;
     --background-deep: #fafafa;
+    --background-success: #bbf7d0;
     --background-default: white;
     --background-error: #fecaca;
     --background-hover: #efefef;
@@ -39,14 +40,45 @@ main {
     padding: 0 24px;
 }
 /* classes */
+.bg-error {
+    background-color: var(--background-error);
+}
+.bg-success {
+    background-color: var(--background-success);
+}
 .card {
     background-color: var(--background-default);
     border: 1px solid var(--border-color);
     border-radius: 4px;
     min-height: 48px;
 }
+.card-footer {
+    border-top: 1px solid var(--border-color);
+    padding: 4px 8px;
+}
+.flex-col {
+    display: flex;
+    flex-direction: column;
+}
+.flex-row {
+    display: flex;
+    flex-direction: row;
+}
+.flex-wrap {
+    flex-wrap: wrap;
+}
+.flex-1 {
+    flex-grow: 1;
+}
 .mt-xl {
     margin-top: 24px;
+}
+.m-md {
+    margin: 8px;
+}
+.my-md {
+    margin-bottom: 8px;
+    margin-top: 8px;
 }
 .my-lg {
     margin-bottom: 16px;
@@ -59,4 +91,18 @@ main {
 }
 .max-w-400px {
     max-width: 400px;
+}
+.min-w-250px {
+    min-width: 250px;
+}
+.min-h-150px {
+    min-height: 150px;
+}
+.text-center {
+    text-align: center;
+}
+/* single-value-card */
+.single-value-card-content {
+    align-content: center;
+    font-size: 42px;
 }

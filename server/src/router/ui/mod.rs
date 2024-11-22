@@ -1,5 +1,6 @@
 use axum::routing::get;
 
+mod error;
 mod home;
 
 pub(super) fn create() -> axum::Router {

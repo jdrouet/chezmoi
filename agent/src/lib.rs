@@ -1,3 +1,4 @@
+use chezmoi_database::metrics::entity::Metric;
 use tokio::sync::mpsc;
 
 mod sensor;
@@ -28,7 +29,7 @@ pub struct Agent {
 impl Agent {
     pub async fn run(self, database: chezmoi_database::Client) -> anyhow::Result<()> {
         let Self { system } = self;
-        let (sender, mut receiver) = mpsc::channel::<Vec<chezmoi_database::metrics::Metric>>(100);
+        let (sender, mut receiver) = mpsc::channel::<Vec<Metric>>(100);
 
         let context = sensor::Context::new(true, sender);
 

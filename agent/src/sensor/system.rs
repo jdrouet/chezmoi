@@ -1,9 +1,7 @@
 use std::time::Duration;
 
-use chezmoi_database::metrics::name::MetricName;
-use chezmoi_database::metrics::tags::{MetricTagValue, MetricTags};
-use chezmoi_database::metrics::value::MetricValue;
-use chezmoi_database::metrics::Metric;
+use chezmoi_database::metrics::entity::{Metric, MetricValue};
+use chezmoi_database::metrics::{MetricHeader, MetricName, MetricTagValue, MetricTags};
 use chezmoi_helper::env::parse_env_or;
 use sysinfo::{MemoryRefreshKind, RefreshKind};
 
@@ -50,27 +48,35 @@ impl Sensor {
         );
         buffer.push(Metric {
             timestamp: now,
-            name: MetricName::new("host.system.memory.total"),
-            tags: base_tags.clone(),
-            value: MetricValue::count(self.inner.total_memory()),
+            header: MetricHeader {
+                name: MetricName::new("host.system.memory.total"),
+                tags: base_tags.clone(),
+            },
+            value: MetricValue::gauge(self.inner.total_memory() as f64),
         });
         buffer.push(Metric {
             timestamp: now,
-            name: MetricName::new("host.system.memory.used"),
-            tags: base_tags.clone(),
-            value: MetricValue::count(self.inner.used_memory()),
+            header: MetricHeader {
+                name: MetricName::new("host.system.memory.used"),
+                tags: base_tags.clone(),
+            },
+            value: MetricValue::gauge(self.inner.used_memory() as f64),
         });
         buffer.push(Metric {
             timestamp: now,
-            name: MetricName::new("host.system.swap.total"),
-            tags: base_tags.clone(),
-            value: MetricValue::count(self.inner.total_swap()),
+            header: MetricHeader {
+                name: MetricName::new("host.system.swap.total"),
+                tags: base_tags.clone(),
+            },
+            value: MetricValue::gauge(self.inner.total_swap() as f64),
         });
         buffer.push(Metric {
             timestamp: now,
-            name: MetricName::new("host.system.swap.used"),
-            tags: base_tags,
-            value: MetricValue::count(self.inner.used_swap()),
+            header: MetricHeader {
+                name: MetricName::new("host.system.swap.used"),
+                tags: base_tags,
+            },
+            value: MetricValue::gauge(self.inner.used_swap() as f64),
         });
         Ok(())
     }

@@ -1,7 +1,7 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use chezmoi_database::metrics::Metric;
+use chezmoi_database::metrics::entity::Metric;
 use tokio::sync::mpsc::Sender;
 
 pub(crate) mod system;
