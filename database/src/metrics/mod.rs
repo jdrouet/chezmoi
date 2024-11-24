@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 pub mod aggr;
 pub mod entity;
@@ -62,6 +63,7 @@ impl std::fmt::Display for MetricName {
 #[serde(untagged)]
 pub enum MetricTagValue {
     Text(Cow<'static, str>),
+    ArcText(Arc<String>),
     Float(f64),
     Int(i64),
     Boolean(bool),

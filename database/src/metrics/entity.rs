@@ -35,6 +35,7 @@ impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for Metric {
 pub enum MetricValue {
     Count { value: u64 },
     Gauge { value: f64 },
+    Bool { value: bool },
 }
 
 impl std::fmt::Display for MetricValue {
@@ -42,6 +43,7 @@ impl std::fmt::Display for MetricValue {
         match self {
             Self::Count { value } => write!(f, "{value} # count"),
             Self::Gauge { value } => write!(f, "{value} # gauge"),
+            Self::Bool { value } => write!(f, "{value} # bool"),
         }
     }
 }
@@ -53,6 +55,10 @@ impl MetricValue {
 
     pub const fn gauge(value: f64) -> Self {
         Self::Gauge { value }
+    }
+
+    pub const fn bool(value: bool) -> Self {
+        Self::Bool { value }
     }
 }
 

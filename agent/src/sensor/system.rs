@@ -4,6 +4,7 @@ use chezmoi_database::metrics::entity::{Metric, MetricValue};
 use chezmoi_database::metrics::{MetricHeader, MetricName, MetricTagValue, MetricTags};
 use chezmoi_helper::env::parse_env_or;
 use sysinfo::{MemoryRefreshKind, RefreshKind};
+use tokio::time::Interval;
 
 pub(crate) struct Config {
     enabled: bool,
@@ -24,7 +25,7 @@ impl Config {
                 inner: sysinfo::System::new_with_specifics(
                     RefreshKind::new().with_memory(MemoryRefreshKind::everything()),
                 ),
-                interval: Duration::from_secs(self.interval),
+                interval: tokio::time::interval(Duration::from_secs(self.interval)),
             }))
         } else {
             Ok(None)
@@ -35,17 +36,16 @@ impl Config {
 #[derive(Debug)]
 pub struct Sensor {
     inner: sysinfo::System,
-    interval: Duration,
+    interval: Interval,
 }
 
 impl Sensor {
     async fn iterate(&mut self, buffer: &mut Vec<Metric>) -> anyhow::Result<()> {
         self.inner.refresh_all();
         let now = chezmoi_database::helper::now();
-        let base_tags = MetricTags::default().maybe_with(
-            "hostname",
-            sysinfo::System::host_name().map(|hostname| MetricTagValue::Text(hostname.into())),
-        );
+        let hostname = super::Hostname::default();
+        let base_tags = MetricTags::default()
+            .maybe_with("hostname", hostname.inner().map(MetricTagValue::ArcText));
         buffer.push(Metric {
             timestamp: now,
             header: MetricHeader {
@@ -84,6 +84,7 @@ impl Sensor {
     pub async fn run(mut self, context: super::Context) -> anyhow::Result<()> {
         let mut buffer_size: usize = 0;
         while context.state.is_running() {
+            self.interval.tick().await;
             let mut buffer: Vec<Metric> = Vec::with_capacity(buffer_size);
             if let Err(error) = self.iterate(&mut buffer).await {
                 tracing::error!(message = "unable to collect metrics", cause = %error);
@@ -92,7 +93,6 @@ impl Sensor {
             if let Err(error) = context.sender.send(buffer).await {
                 tracing::error!(message = "unable to send collected metrics", cause = %error);
             }
-            tokio::time::sleep(self.interval).await;
         }
         Ok(())
     }

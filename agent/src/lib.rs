@@ -4,18 +4,24 @@ use tokio::sync::mpsc;
 mod sensor;
 
 pub struct Config {
+    #[cfg(feature = "bluetooth")]
+    bluetooth: sensor::bluetooth::Config,
     system: sensor::system::Config,
 }
 
 impl Config {
     pub fn from_env() -> anyhow::Result<Self> {
         Ok(Self {
+            #[cfg(feature = "bluetooth")]
+            bluetooth: sensor::bluetooth::Config::from_env()?,
             system: sensor::system::Config::from_env()?,
         })
     }
 
     pub async fn build(self) -> anyhow::Result<Agent> {
         Ok(Agent {
+            #[cfg(feature = "bluetooth")]
+            bluetooth: self.bluetooth.build().await?,
             system: self.system.build()?,
         })
     }
@@ -23,19 +29,26 @@ impl Config {
 
 #[derive(Debug)]
 pub struct Agent {
+    #[cfg(feature = "bluetooth")]
+    bluetooth: Option<sensor::bluetooth::Sensor>,
     system: Option<sensor::system::Sensor>,
 }
 
 impl Agent {
     pub async fn run(self, database: chezmoi_database::Client) -> anyhow::Result<()> {
-        let Self { system } = self;
         let (sender, mut receiver) = mpsc::channel::<Vec<Metric>>(100);
 
         let context = sensor::Context::new(true, sender);
 
         let mut sensors = Vec::new();
-        if let Some(system) = system {
-            sensors.push(tokio::spawn(async move { system.run(context).await }));
+        #[cfg(feature = "bluetooth")]
+        if let Some(bluetooth) = self.bluetooth {
+            let ctx = context.clone();
+            sensors.push(tokio::spawn(async move { bluetooth.run(ctx).await }));
+        }
+        if let Some(system) = self.system {
+            let ctx = context.clone();
+            sensors.push(tokio::spawn(async move { system.run(ctx).await }));
         }
 
         while let Some(batch) = receiver.recv().await {

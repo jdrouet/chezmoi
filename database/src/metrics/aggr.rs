@@ -57,6 +57,7 @@ macro_rules! tag_value_bind {
     ($qb:ident, $value:ident) => {
         match $value {
             MetricTagValue::Text(inner) => $qb.push_bind(inner.as_ref()),
+            MetricTagValue::ArcText(inner) => $qb.push_bind(inner.as_ref()),
             MetricTagValue::Float(inner) => $qb.push_bind(inner),
             MetricTagValue::Int(inner) => $qb.push_bind(inner),
             MetricTagValue::Boolean(inner) => $qb.push_bind(inner),
