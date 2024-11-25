@@ -1,14 +1,23 @@
 use std::borrow::Cow;
+use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
 pub mod aggr;
 pub mod entity;
 
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct MetricHeader {
     pub name: MetricName,
     #[serde(skip_serializing_if = "MetricTags::is_empty")]
     pub tags: MetricTags,
+}
+
+impl MetricHeader {
+    pub fn into_hash(&self) -> u64 {
+        let mut s = std::hash::DefaultHasher::new();
+        self.hash(&mut s);
+        s.finish()
+    }
 }
 
 pub struct Create<'a>(&'a [entity::Metric]);
@@ -37,7 +46,7 @@ impl<'a> Create<'a> {
     }
 }
 
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct MetricName(pub Cow<'static, str>);
 
@@ -59,7 +68,7 @@ impl std::fmt::Display for MetricName {
     }
 }
 
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]
 pub enum MetricTagValue {
     Text(Cow<'static, str>),
@@ -69,9 +78,30 @@ pub enum MetricTagValue {
     Boolean(bool),
 }
 
-#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+impl std::hash::Hash for MetricTagValue {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            Self::Text(inner) => inner.hash(state),
+            Self::ArcText(inner) => inner.hash(state),
+            Self::Float(inner) => inner.to_bits().hash(state),
+            Self::Int(inner) => inner.hash(state),
+            Self::Boolean(inner) => inner.hash(state),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct MetricTags(pub indexmap::IndexMap<Cow<'static, str>, MetricTagValue>);
+
+impl std::hash::Hash for MetricTags {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.iter().for_each(|(key, value)| {
+            key.hash(state);
+            value.hash(state);
+        });
+    }
+}
 
 impl MetricTags {
     #[inline]

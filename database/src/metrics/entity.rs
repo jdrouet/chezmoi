@@ -30,7 +30,7 @@ impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for Metric {
     }
 }
 
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum MetricValue {
     Count { value: u64 },

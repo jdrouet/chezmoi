@@ -6,6 +6,8 @@ use chezmoi_helper::env::parse_env_or;
 use sysinfo::{MemoryRefreshKind, RefreshKind};
 use tokio::time::Interval;
 
+use super::Collector;
+
 pub(crate) struct Config {
     enabled: bool,
     interval: u64,
@@ -40,13 +42,13 @@ pub struct Sensor {
 }
 
 impl Sensor {
-    async fn iterate(&mut self, buffer: &mut Vec<Metric>) -> anyhow::Result<()> {
+    async fn iterate(&mut self, buffer: &mut Collector) -> anyhow::Result<()> {
         self.inner.refresh_all();
         let now = chezmoi_database::helper::now();
         let hostname = super::Hostname::default();
         let base_tags = MetricTags::default()
             .maybe_with("hostname", hostname.inner().map(MetricTagValue::ArcText));
-        buffer.push(Metric {
+        buffer.collect(Metric {
             timestamp: now,
             header: MetricHeader {
                 name: MetricName::new("host.system.memory.total"),
@@ -54,7 +56,7 @@ impl Sensor {
             },
             value: MetricValue::gauge(self.inner.total_memory() as f64),
         });
-        buffer.push(Metric {
+        buffer.collect(Metric {
             timestamp: now,
             header: MetricHeader {
                 name: MetricName::new("host.system.memory.used"),
@@ -62,7 +64,7 @@ impl Sensor {
             },
             value: MetricValue::gauge(self.inner.used_memory() as f64),
         });
-        buffer.push(Metric {
+        buffer.collect(Metric {
             timestamp: now,
             header: MetricHeader {
                 name: MetricName::new("host.system.swap.total"),
@@ -70,7 +72,7 @@ impl Sensor {
             },
             value: MetricValue::gauge(self.inner.total_swap() as f64),
         });
-        buffer.push(Metric {
+        buffer.collect(Metric {
             timestamp: now,
             header: MetricHeader {
                 name: MetricName::new("host.system.swap.used"),
@@ -82,14 +84,13 @@ impl Sensor {
     }
 
     pub async fn run(mut self, context: super::Context) -> anyhow::Result<()> {
-        let mut buffer_size: usize = 0;
+        let mut collector = super::Collector::new(super::Cache::default(), 4);
         while context.state.is_running() {
             self.interval.tick().await;
-            let mut buffer: Vec<Metric> = Vec::with_capacity(buffer_size);
-            if let Err(error) = self.iterate(&mut buffer).await {
+            if let Err(error) = self.iterate(&mut collector).await {
                 tracing::error!(message = "unable to collect metrics", cause = %error);
             }
-            buffer_size = buffer_size.max(buffer.len());
+            let buffer = collector.flush();
             if let Err(error) = context.sender.send(buffer).await {
                 tracing::error!(message = "unable to send collected metrics", cause = %error);
             }

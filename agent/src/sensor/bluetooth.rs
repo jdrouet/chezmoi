@@ -36,9 +36,9 @@ pub struct Sensor {
 impl Sensor {
     async fn handle_device_added(
         &self,
-        context: &super::Context,
         hostname: &super::Hostname,
         addr: Address,
+        collector: &mut super::Collector,
     ) -> anyhow::Result<()> {
         let now = chezmoi_database::helper::now();
         let device = self.adapter.device(addr)?;
@@ -47,9 +47,8 @@ impl Sensor {
             .maybe_with("hostname", hostname.inner().map(MetricTagValue::ArcText))
             .with("address", MetricTagValue::Text(addr.to_string().into()))
             .maybe_with("name", device_name);
-        let mut buffer = Vec::new();
         if let Ok(Some(power)) = device.tx_power().await {
-            buffer.push(Metric {
+            collector.collect(Metric {
                 timestamp: now,
                 header: MetricHeader {
                     name: MetricName::new("bluetooth.device.power"),
@@ -58,7 +57,7 @@ impl Sensor {
                 value: MetricValue::gauge(power as f64),
             });
         }
-        buffer.push(Metric {
+        collector.collect(Metric {
             timestamp: now,
             header: MetricHeader {
                 name: MetricName::new("bluetooth.device.visible"),
@@ -66,22 +65,20 @@ impl Sensor {
             },
             value: MetricValue::bool(true),
         });
-        context.sender.send(buffer).await?;
         Ok(())
     }
 
     async fn handle_device_removed(
         &self,
-        context: &super::Context,
         hostname: &super::Hostname,
         addr: Address,
+        collector: &mut super::Collector,
     ) -> anyhow::Result<()> {
         let now = chezmoi_database::helper::now();
         let tags = MetricTags::default()
             .with("address", MetricTagValue::Text(addr.to_string().into()))
             .maybe_with("hostname", hostname.inner().map(MetricTagValue::ArcText));
-        let mut buffer = Vec::new();
-        buffer.push(Metric {
+        collector.collect(Metric {
             timestamp: now,
             header: MetricHeader {
                 name: MetricName::new("bluetooth.device.visible"),
@@ -89,18 +86,17 @@ impl Sensor {
             },
             value: MetricValue::bool(false),
         });
-        context.sender.send(buffer).await?;
         Ok(())
     }
 
     async fn handle_property_changed(
         &self,
-        context: &super::Context,
         hostname: &super::Hostname,
         addr: Address,
         _changed: DeviceProperty,
+        collector: &mut super::Collector,
     ) -> anyhow::Result<()> {
-        self.handle_device_added(context, hostname, addr).await
+        self.handle_device_added(hostname, addr, collector).await
     }
 
     async fn collect(&self, context: &super::Context) -> anyhow::Result<()> {
@@ -112,13 +108,14 @@ impl Sensor {
         let device_events = self.adapter.discover_devices().await?;
         pin_mut!(device_events);
 
+        let mut collector = super::Collector::new(super::Cache::default(), 2);
         let mut all_change_events = SelectAll::new();
         while context.state.is_running() {
             tokio::select! {
                 Some(event) = device_events.next() => {
                     match event {
                         bluer::AdapterEvent::DeviceAdded(addr) => {
-                            if let Err(error) = self.handle_device_added(context, &hostname, addr).await {
+                            if let Err(error) = self.handle_device_added(&hostname, addr, &mut collector).await {
                                 tracing::warn!(message = "unable to handle added device", address = %addr, cause = %error);
                             }
                             if let Ok(device) = self.adapter.device(addr) {
@@ -127,7 +124,7 @@ impl Sensor {
                             }
                         }
                         bluer::AdapterEvent::DeviceRemoved(addr) => {
-                            if let Err(error) = self.handle_device_removed(context, &hostname, addr).await {
+                            if let Err(error) = self.handle_device_removed(&hostname, addr, &mut collector).await {
                                 tracing::warn!(message = "unable to handle removed device", address = %addr, cause = %error);
                             }
                         }
@@ -135,12 +132,13 @@ impl Sensor {
                     }
                 }
                 Some((addr, DeviceEvent::PropertyChanged(changed))) = all_change_events.next() => {
-                    if let Err(error) = self.handle_property_changed(context, &hostname, addr, changed).await {
+                    if let Err(error) = self.handle_property_changed(&hostname, addr, changed, &mut collector).await {
                         tracing::warn!(message = "unable to handle changed property", address = %addr, cause = %error);
                     }
                 }
                 else => break
-            }
+            };
+            context.sender.send(collector.flush()).await?;
         }
         Ok(())
     }
