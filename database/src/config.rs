@@ -9,6 +9,12 @@ pub struct Config {
 }
 
 impl Config {
+    pub fn memory() -> Self {
+        Self {
+            url: ":memory:".into(),
+        }
+    }
+
     pub fn new(url: impl Into<Cow<'static, str>>) -> Self {
         Self { url: url.into() }
     }

@@ -13,36 +13,26 @@ pub struct MetricHeader {
 }
 
 impl MetricHeader {
+    pub fn new(name: impl Into<Cow<'static, str>>) -> Self {
+        Self {
+            name: MetricName::new(name),
+            tags: Default::default(),
+        }
+    }
+
+    pub fn with_tag<N: Into<Cow<'static, str>>, V: Into<MetricTagValue>>(
+        mut self,
+        name: N,
+        value: V,
+    ) -> Self {
+        self.tags.set(name, value);
+        self
+    }
+
     pub fn into_hash(&self) -> u64 {
         let mut s = std::hash::DefaultHasher::new();
         self.hash(&mut s);
         s.finish()
-    }
-}
-
-pub struct Create<'a>(&'a [entity::Metric]);
-
-impl<'a> Create<'a> {
-    #[inline]
-    pub fn new(list: &'a [entity::Metric]) -> Self {
-        Self(list)
-    }
-
-    pub async fn execute<'c, E: sqlx::Executor<'c, Database = sqlx::Sqlite>>(
-        self,
-        executor: E,
-    ) -> sqlx::Result<u64> {
-        let mut query_builder: sqlx::QueryBuilder<sqlx::Sqlite> =
-            sqlx::QueryBuilder::new("insert into metrics (timestamp, name, tags, value)");
-        query_builder.push_values(self.0.iter(), |mut b, entry| {
-            b.push_bind(entry.timestamp as i64)
-                .push_bind(entry.header.name.as_ref())
-                .push_bind(sqlx::types::Json(&entry.header.tags))
-                .push_bind(sqlx::types::Json(&entry.value));
-        });
-        let query = query_builder.build();
-        let res = query.execute(executor).await?;
-        Ok(res.rows_affected())
     }
 }
 
@@ -78,6 +68,36 @@ pub enum MetricTagValue {
     Boolean(bool),
 }
 
+impl From<&'static str> for MetricTagValue {
+    fn from(value: &'static str) -> Self {
+        Self::Text(Cow::Borrowed(value))
+    }
+}
+
+impl From<String> for MetricTagValue {
+    fn from(value: String) -> Self {
+        Self::Text(Cow::Owned(value))
+    }
+}
+
+impl From<f64> for MetricTagValue {
+    fn from(value: f64) -> Self {
+        Self::Float(value)
+    }
+}
+
+impl From<i64> for MetricTagValue {
+    fn from(value: i64) -> Self {
+        Self::Int(value)
+    }
+}
+
+impl From<bool> for MetricTagValue {
+    fn from(value: bool) -> Self {
+        Self::Boolean(value)
+    }
+}
+
 impl std::hash::Hash for MetricTagValue {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self {
@@ -105,26 +125,30 @@ impl std::hash::Hash for MetricTags {
 
 impl MetricTags {
     #[inline]
-    pub fn set(
+    pub fn set<N: Into<Cow<'static, str>>, V: Into<MetricTagValue>>(
         &mut self,
-        name: impl Into<Cow<'static, str>>,
-        value: MetricTagValue,
+        name: N,
+        value: V,
     ) -> Option<MetricTagValue> {
-        self.0.insert(name.into(), value)
+        self.0.insert(name.into(), value.into())
     }
 
-    pub fn with(mut self, name: impl Into<Cow<'static, str>>, value: MetricTagValue) -> Self {
-        self.0.insert(name.into(), value);
+    pub fn with<N: Into<Cow<'static, str>>, V: Into<MetricTagValue>>(
+        mut self,
+        name: N,
+        value: V,
+    ) -> Self {
+        self.0.insert(name.into(), value.into());
         self
     }
 
-    pub fn maybe_with(
+    pub fn maybe_with<N: Into<Cow<'static, str>>, V: Into<MetricTagValue>>(
         mut self,
-        name: impl Into<Cow<'static, str>>,
-        value: Option<MetricTagValue>,
+        name: N,
+        value: Option<V>,
     ) -> Self {
         if let Some(value) = value {
-            self.0.insert(name.into(), value);
+            self.0.insert(name.into(), value.into());
         }
         self
     }

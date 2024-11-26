@@ -1,5 +1,8 @@
 use sqlx::types::Json;
 
+pub mod create;
+pub mod find_latest;
+
 use crate::metrics::{MetricHeader, MetricName, MetricTags};
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -53,56 +56,32 @@ impl MetricValue {
         Self::Count { value }
     }
 
+    pub const fn as_count(&self) -> Option<u64> {
+        match self {
+            Self::Count { value } => Some(*value),
+            _ => None,
+        }
+    }
+
     pub const fn gauge(value: f64) -> Self {
         Self::Gauge { value }
+    }
+
+    pub const fn as_gauge(&self) -> Option<f64> {
+        match self {
+            Self::Gauge { value } => Some(*value),
+            _ => None,
+        }
     }
 
     pub const fn bool(value: bool) -> Self {
         Self::Bool { value }
     }
-}
 
-pub struct FindLatest<'a> {
-    headers: &'a [MetricHeader],
-}
-
-impl<'a> FindLatest<'a> {
-    pub fn new(headers: &'a [MetricHeader]) -> Self {
-        Self { headers }
-    }
-
-    pub async fn execute<'c, E: sqlx::Executor<'c, Database = sqlx::Sqlite>>(
-        self,
-        executor: E,
-    ) -> sqlx::Result<Vec<Metric>> {
-        // metrics_subset
-        let mut qb = sqlx::QueryBuilder::new("with metrics_subset as (");
-        qb.push("select timestamp, name, tags, value,");
-        qb.push(" row_number() over (partition by name, tags order by timestamp desc) as idx");
-        qb.push(" from metrics");
-        qb.push(")");
-        qb.push(" select timestamp, name, tags, value");
-        qb.push(" from metrics_subset");
-        qb.push(" where idx = 1");
-        if !self.headers.is_empty() {
-            qb.push(" and (");
-            for (index, header) in self.headers.iter().enumerate() {
-                if index > 0 {
-                    qb.push(" or");
-                }
-                qb.push(" (")
-                    .push("name = ")
-                    .push_bind(header.name.as_ref())
-                    .push(" and ")
-                    .push(" tags = ")
-                    .push_bind(Json(&header.tags))
-                    .push(")");
-            }
-            qb.push(")");
+    pub const fn as_bool(&self) -> Option<bool> {
+        match self {
+            Self::Bool { value } => Some(*value),
+            _ => None,
         }
-        //
-        let query = qb.build_query_as::<'_, Metric>();
-        let rows = query.fetch_all(executor).await?;
-        Ok(rows)
     }
 }

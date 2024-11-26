@@ -53,7 +53,7 @@ impl Agent {
 
         while let Some(batch) = receiver.recv().await {
             tracing::debug!(message = "received events", count = batch.len());
-            match chezmoi_database::metrics::Create::new(&batch)
+            match chezmoi_database::metrics::entity::create::Command::new(&batch)
                 .execute(database.as_ref())
                 .await
             {

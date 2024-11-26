@@ -18,7 +18,7 @@ pub(super) async fn handle(
     // let list = chezmoi_database::metrics::aggr::ListAggregation::new(&[], (before, current), 10)
     //     .execute(database.as_ref())
     //     .await?;
-    let item = chezmoi_database::metrics::entity::FindLatest::new(&headers)
+    let item = chezmoi_database::metrics::entity::find_latest::Command::new(&headers)
         .execute(database.as_ref())
         .await?;
     println!("item = {item:?}");
