@@ -90,6 +90,12 @@ impl From<String> for MetricTagValue {
     }
 }
 
+impl From<Arc<String>> for MetricTagValue {
+    fn from(value: Arc<String>) -> Self {
+        Self::ArcText(value)
+    }
+}
+
 impl From<f64> for MetricTagValue {
     fn from(value: f64) -> Self {
         Self::Float(value)

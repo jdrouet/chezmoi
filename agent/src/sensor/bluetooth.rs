@@ -5,6 +5,9 @@ use chezmoi_helper::env::parse_env_or;
 use futures::stream::SelectAll;
 use futures::{pin_mut, StreamExt};
 
+pub const DEVICE_POWER: &str = "bluetooth.device.power";
+pub const DEVICE_VISIBLE: &str = "bluetooth.device.visible";
+
 pub(crate) struct Config {
     enabled: bool,
 }
@@ -42,16 +45,16 @@ impl Sensor {
     ) -> anyhow::Result<()> {
         let now = chezmoi_database::helper::now();
         let device = self.adapter.device(addr)?;
-        let device_name = device.name().await?.map(|v| MetricTagValue::Text(v.into()));
+        let device_name = device.name().await?;
         let tags = MetricTags::default()
-            .maybe_with("hostname", hostname.inner().map(MetricTagValue::ArcText))
-            .with("address", MetricTagValue::Text(addr.to_string().into()))
+            .maybe_with(crate::HOSTNAME, hostname.inner())
+            .with(crate::ADDRESS, addr.to_string())
             .maybe_with("name", device_name);
         if let Ok(Some(power)) = device.tx_power().await {
             collector.collect(Metric {
                 timestamp: now,
                 header: MetricHeader {
-                    name: MetricName::new("bluetooth.device.power"),
+                    name: MetricName::new(DEVICE_POWER),
                     tags: tags.clone(),
                 },
                 value: MetricValue::gauge(power as f64),
@@ -60,7 +63,7 @@ impl Sensor {
         collector.collect(Metric {
             timestamp: now,
             header: MetricHeader {
-                name: MetricName::new("bluetooth.device.visible"),
+                name: MetricName::new(DEVICE_VISIBLE),
                 tags,
             },
             value: MetricValue::bool(true),
@@ -81,7 +84,7 @@ impl Sensor {
         collector.collect(Metric {
             timestamp: now,
             header: MetricHeader {
-                name: MetricName::new("bluetooth.device.visible"),
+                name: MetricName::new(DEVICE_VISIBLE),
                 tags,
             },
             value: MetricValue::bool(false),

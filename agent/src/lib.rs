@@ -3,6 +3,9 @@ use tokio::sync::mpsc;
 
 mod sensor;
 
+pub const HOSTNAME: &str = "hostname";
+pub const ADDRESS: &str = "address";
+
 pub struct Config {
     #[cfg(feature = "bluetooth")]
     bluetooth: sensor::bluetooth::Config,

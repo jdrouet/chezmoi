@@ -1,12 +1,17 @@
 use std::time::Duration;
 
 use chezmoi_database::metrics::entity::{Metric, MetricValue};
-use chezmoi_database::metrics::{MetricHeader, MetricName, MetricTagValue, MetricTags};
+use chezmoi_database::metrics::{MetricHeader, MetricName, MetricTags};
 use chezmoi_helper::env::parse_env_or;
 use sysinfo::{MemoryRefreshKind, RefreshKind};
 use tokio::time::Interval;
 
 use super::Collector;
+
+pub const MEMORY_TOTAL: &str = "host.system.memory.total";
+pub const MEMORY_USED: &str = "host.system.memory.used";
+pub const SWAP_TOTAL: &str = "host.system.swap.total";
+pub const SWAP_USED: &str = "host.system.swap.used";
 
 pub(crate) struct Config {
     enabled: bool,
@@ -46,12 +51,11 @@ impl Sensor {
         self.inner.refresh_all();
         let now = chezmoi_database::helper::now();
         let hostname = super::Hostname::default();
-        let base_tags = MetricTags::default()
-            .maybe_with("hostname", hostname.inner().map(MetricTagValue::ArcText));
+        let base_tags = MetricTags::default().maybe_with(crate::HOSTNAME, hostname.inner());
         buffer.collect(Metric {
             timestamp: now,
             header: MetricHeader {
-                name: MetricName::new("host.system.memory.total"),
+                name: MetricName::new(MEMORY_TOTAL),
                 tags: base_tags.clone(),
             },
             value: MetricValue::gauge(self.inner.total_memory() as f64),
@@ -59,7 +63,7 @@ impl Sensor {
         buffer.collect(Metric {
             timestamp: now,
             header: MetricHeader {
-                name: MetricName::new("host.system.memory.used"),
+                name: MetricName::new(MEMORY_USED),
                 tags: base_tags.clone(),
             },
             value: MetricValue::gauge(self.inner.used_memory() as f64),
@@ -67,7 +71,7 @@ impl Sensor {
         buffer.collect(Metric {
             timestamp: now,
             header: MetricHeader {
-                name: MetricName::new("host.system.swap.total"),
+                name: MetricName::new(SWAP_TOTAL),
                 tags: base_tags.clone(),
             },
             value: MetricValue::gauge(self.inner.total_swap() as f64),
@@ -75,7 +79,7 @@ impl Sensor {
         buffer.collect(Metric {
             timestamp: now,
             header: MetricHeader {
-                name: MetricName::new("host.system.swap.used"),
+                name: MetricName::new(SWAP_USED),
                 tags: base_tags,
             },
             value: MetricValue::gauge(self.inner.used_swap() as f64),
