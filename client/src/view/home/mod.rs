@@ -25,6 +25,13 @@ impl Section {
         self.cards.push(card);
         self
     }
+
+    pub fn maybe_with_card(mut self, card: Option<AnyCard>) -> Self {
+        if let Some(inner) = card {
+            self.cards.push(inner);
+        }
+        self
+    }
 }
 
 impl Component for Section {

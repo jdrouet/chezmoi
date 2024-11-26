@@ -6,8 +6,8 @@ use chezmoi_database::metrics::entity::{Metric, MetricValue};
 use tokio::sync::mpsc::Sender;
 
 #[cfg(feature = "bluetooth")]
-pub(crate) mod bluetooth;
-pub(crate) mod system;
+pub mod bluetooth;
+pub mod system;
 
 #[derive(Clone, Debug)]
 pub(crate) struct Hostname(Option<Arc<String>>);

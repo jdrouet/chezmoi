@@ -32,7 +32,7 @@ impl Config {
 }
 
 #[derive(Debug)]
-pub struct Sensor {
+pub(crate) struct Sensor {
     adapter: bluer::Adapter,
 }
 

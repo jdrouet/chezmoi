@@ -1,6 +1,9 @@
 use chezmoi_client::component::any_card::AnyCard;
 use chezmoi_client::component::bluetooth_devices_card::BluetoothDevicesCard;
+use chezmoi_client::component::cpu_card::CpuCard;
+use chezmoi_client::component::memory_card::MemoryCard;
 use chezmoi_client::component::miflora_card::{LastValues, MifloraCard};
+use chezmoi_client::component::swap_card::SwapCard;
 use chezmoi_client::view::home::{Section, View};
 
 mod helper;
@@ -80,5 +83,24 @@ fn with_bluetooth_devices() {
                     ),
                 )),
             ),
+    );
+}
+
+#[test]
+fn with_system() {
+    helper::write(
+        "with-system-cards.html",
+        View::new(helper::STYLE_PATH).with_section(
+            Section::new("Simple")
+                .with_card(AnyCard::Memory(MemoryCard::new(
+                    1024.0 * 1024.0 * 1024.0 * 64.0,
+                    1024.0 * 1024.0 * 1024.0 * 2.2,
+                )))
+                .with_card(AnyCard::Swap(SwapCard::new(
+                    1024.0 * 1024.0 * 1024.0 * 64.0,
+                    1024.0 * 1024.0 * 1024.0 * 2.2,
+                )))
+                .with_card(AnyCard::Cpu(CpuCard::new(68.0))),
+        ),
     );
 }

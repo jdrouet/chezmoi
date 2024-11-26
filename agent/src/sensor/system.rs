@@ -3,11 +3,12 @@ use std::time::Duration;
 use chezmoi_database::metrics::entity::{Metric, MetricValue};
 use chezmoi_database::metrics::{MetricHeader, MetricName, MetricTags};
 use chezmoi_helper::env::parse_env_or;
-use sysinfo::{MemoryRefreshKind, RefreshKind};
+use sysinfo::{CpuRefreshKind, MemoryRefreshKind, RefreshKind};
 use tokio::time::Interval;
 
 use super::Collector;
 
+pub const GLOBAL_CPU_USAGE: &str = "host.system.global_cpu.usage";
 pub const MEMORY_TOTAL: &str = "host.system.memory.total";
 pub const MEMORY_USED: &str = "host.system.memory.used";
 pub const SWAP_TOTAL: &str = "host.system.swap.total";
@@ -30,7 +31,9 @@ impl Config {
         if self.enabled {
             Ok(Some(Sensor {
                 inner: sysinfo::System::new_with_specifics(
-                    RefreshKind::new().with_memory(MemoryRefreshKind::everything()),
+                    RefreshKind::new()
+                        .with_cpu(CpuRefreshKind::everything())
+                        .with_memory(MemoryRefreshKind::everything()),
                 ),
                 interval: tokio::time::interval(Duration::from_secs(self.interval)),
             }))
@@ -41,7 +44,7 @@ impl Config {
 }
 
 #[derive(Debug)]
-pub struct Sensor {
+pub(crate) struct Sensor {
     inner: sysinfo::System,
     interval: Interval,
 }
@@ -52,6 +55,14 @@ impl Sensor {
         let now = chezmoi_database::helper::now();
         let hostname = super::Hostname::default();
         let base_tags = MetricTags::default().maybe_with(crate::HOSTNAME, hostname.inner());
+        buffer.collect(Metric {
+            timestamp: now,
+            header: MetricHeader {
+                name: MetricName::new(GLOBAL_CPU_USAGE),
+                tags: base_tags.clone(),
+            },
+            value: MetricValue::gauge(self.inner.global_cpu_usage() as f64),
+        });
         buffer.collect(Metric {
             timestamp: now,
             header: MetricHeader {
@@ -88,7 +99,7 @@ impl Sensor {
     }
 
     pub async fn run(mut self, context: super::Context) -> anyhow::Result<()> {
-        let mut collector = super::Collector::new(super::Cache::default(), 4);
+        let mut collector = super::Collector::new(super::Cache::default(), 5);
         while context.state.is_running() {
             self.interval.tick().await;
             if let Err(error) = self.iterate(&mut collector).await {

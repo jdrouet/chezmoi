@@ -3,6 +3,10 @@ name = "chezmoi-server"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = []
+bluetooth = ["chezmoi-agent/bluetooth"]
+
 [dependencies]
 chezmoi-agent = { path = "../agent" }
 chezmoi-client = { path = "../client" }

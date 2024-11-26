@@ -1,7 +1,7 @@
 use chezmoi_database::metrics::entity::Metric;
 use tokio::sync::mpsc;
 
-mod sensor;
+pub mod sensor;
 
 pub const HOSTNAME: &str = "hostname";
 pub const ADDRESS: &str = "address";
