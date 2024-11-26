@@ -2,6 +2,7 @@ use sqlx::types::Json;
 
 pub mod create;
 pub mod find_latest;
+pub mod helper;
 
 use crate::metrics::{MetricHeader, MetricName, MetricTags};
 

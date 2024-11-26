@@ -5,7 +5,7 @@ use std::sync::Arc;
 pub mod aggr;
 pub mod entity;
 
-#[derive(Clone, Debug, PartialEq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct MetricHeader {
     pub name: MetricName,
     #[serde(skip_serializing_if = "MetricTags::is_empty")]
@@ -110,7 +110,9 @@ impl std::hash::Hash for MetricTagValue {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+impl Eq for MetricTagValue {}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct MetricTags(pub indexmap::IndexMap<Cow<'static, str>, MetricTagValue>);
 
