@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 pub mod aggr;
 pub mod entity;
+pub mod macros;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct MetricHeader {

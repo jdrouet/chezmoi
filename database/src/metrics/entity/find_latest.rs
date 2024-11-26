@@ -1,5 +1,5 @@
 use crate::metrics::entity::Metric;
-use crate::metrics::{MetricHeader, MetricTagValue};
+use crate::metrics::MetricHeader;
 
 /// Right now, we expect tags to match exactly.
 pub struct Command<'a> {
@@ -39,13 +39,7 @@ impl<'a> Command<'a> {
                         .push(" json_extract(tags, ")
                         .push_bind(format!("$.{name}"))
                         .push(") = ");
-                    match value {
-                        MetricTagValue::Text(inner) => qb.push_bind(inner.as_ref()),
-                        MetricTagValue::ArcText(inner) => qb.push_bind(inner.as_ref()),
-                        MetricTagValue::Float(inner) => qb.push_bind(inner),
-                        MetricTagValue::Int(inner) => qb.push_bind(inner),
-                        MetricTagValue::Boolean(inner) => qb.push_bind(inner),
-                    };
+                    crate::tag_value_bind!(qb, value);
                 }
                 qb.push(")");
             }
@@ -68,12 +62,6 @@ mod tests {
 
     use crate::metrics::entity::{Metric, MetricValue};
     use crate::metrics::MetricHeader;
-
-    async fn init_db() -> crate::Client {
-        let db = crate::config::Config::memory().build().await.unwrap();
-        db.upgrade().await.unwrap();
-        db
-    }
 
     async fn create_metrics(
         db: &crate::Client,
@@ -98,7 +86,7 @@ mod tests {
 
     #[tokio::test]
     async fn should_find_latest_for_single_header() {
-        let db = init_db().await;
+        let db = crate::Client::test().await;
 
         let not_expected_header = MetricHeader::new("bar").with_tag("hostname", "rambo");
         let _not_expected_events = create_metrics(
@@ -130,7 +118,7 @@ mod tests {
 
     #[tokio::test]
     async fn should_find_similar_tags() {
-        let db = init_db().await;
+        let db = crate::Client::test().await;
 
         let expected_header = MetricHeader::new("foo").with_tag("hostname", "rambo");
         let expected_events = create_metrics(
@@ -167,7 +155,7 @@ mod tests {
 
     #[tokio::test]
     async fn should_return_multiple_events() {
-        let db = init_db().await;
+        let db = crate::Client::test().await;
 
         let first_header = MetricHeader::new("first").with_tag("hostname", "rambo");
         let first_events = create_metrics(

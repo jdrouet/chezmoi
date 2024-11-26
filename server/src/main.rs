@@ -25,7 +25,7 @@ fn enable_tracing() {
 async fn main() -> anyhow::Result<()> {
     enable_tracing();
 
-    let database = chezmoi_database::config::Config::from_env()?;
+    let database = chezmoi_database::Config::from_env()?;
     let database = database.build().await?;
     database.upgrade().await?;
 

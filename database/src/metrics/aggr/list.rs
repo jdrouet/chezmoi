@@ -1,69 +1,5 @@
-use sqlx::types::Json;
-
-use crate::metrics::{MetricHeader, MetricName, MetricTagValue, MetricTags};
-
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct TimeRange {
-    pub from: u64,
-    pub to: u64,
-    pub count: u64,
-}
-
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-#[serde(tag = "type", rename_all = "kebab-case")]
-pub enum MetricValueAggr {
-    Count {
-        min: u64,
-        avg: f64,
-        max: u64,
-        sum: u64,
-    },
-    Gauge {
-        min: f64,
-        avg: f64,
-        max: f64,
-    },
-}
-
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct MetricAggr {
-    pub timerange: TimeRange,
-    #[serde(flatten)]
-    pub header: MetricHeader,
-    pub value: MetricValueAggr,
-}
-
-impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for MetricAggr {
-    fn from_row(row: &'r sqlx::sqlite::SqliteRow) -> Result<Self, sqlx::Error> {
-        use sqlx::Row;
-
-        let Json(timerange): Json<TimeRange> = row.try_get(0)?;
-        let metric_name: String = row.try_get(1)?;
-        let Json(metric_tags): Json<MetricTags> = row.try_get(2)?;
-        let Json(metric_value): Json<MetricValueAggr> = row.try_get(3)?;
-
-        Ok(Self {
-            timerange,
-            header: MetricHeader {
-                name: MetricName(metric_name.into()),
-                tags: metric_tags,
-            },
-            value: metric_value,
-        })
-    }
-}
-
-macro_rules! tag_value_bind {
-    ($qb:ident, $value:ident) => {
-        match $value {
-            MetricTagValue::Text(inner) => $qb.push_bind(inner.as_ref()),
-            MetricTagValue::ArcText(inner) => $qb.push_bind(inner.as_ref()),
-            MetricTagValue::Float(inner) => $qb.push_bind(inner),
-            MetricTagValue::Int(inner) => $qb.push_bind(inner),
-            MetricTagValue::Boolean(inner) => $qb.push_bind(inner),
-        }
-    };
-}
+use super::MetricAggr;
+use crate::metrics::MetricHeader;
 
 pub struct ListAggregation<'a> {
     headers: &'a [MetricHeader],
@@ -100,7 +36,7 @@ impl<'a> ListAggregation<'a> {
                     qb.push(" and json_extract(tags, ")
                         .push_bind(name)
                         .push(") = ");
-                    tag_value_bind!(qb, value);
+                    crate::tag_value_bind!(qb, value);
                 }
                 qb.push(")");
             }
@@ -200,23 +136,18 @@ impl<'a> ListAggregation<'a> {
 #[cfg(test)]
 mod tests {
     use crate::helper::now;
-    use crate::metrics::{MetricHeader, MetricName, MetricTagValue, MetricTags};
+    use crate::metrics::MetricHeader;
 
     #[tokio::test]
     async fn should_build_query() {
         let current = now();
         let before = current - 60 * 60; // 1h gap
-        let headers = vec![MetricHeader {
-            name: MetricName::new("hello.world"),
-            tags: MetricTags::default().with("host", MetricTagValue::Text("whatever".into())),
-        }];
-        let client = crate::config::Config::new(":memory:")
-            .build()
-            .await
-            .unwrap();
-        client.upgrade().await.unwrap();
+        let headers = vec![MetricHeader::new("hello.world").with_tag("host", "whatever")];
+
+        let db = crate::Client::test().await;
+
         let list = super::ListAggregation::new(&headers, (before, current), 10)
-            .execute(client.as_ref())
+            .execute(db.as_ref())
             .await
             .unwrap();
         assert_eq!(list.len(), 0);
