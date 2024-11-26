@@ -14,5 +14,7 @@ pub(super) async fn handle(
         .execute(database.as_ref())
         .await?;
     println!("item = {item:?}");
-    Ok(Html(chezmoi_client::view::home::View::default().render()))
+    Ok(Html(
+        chezmoi_client::view::home::View::new(chezmoi_client::asset::STYLE_CSS_PATH).render(),
+    ))
 }

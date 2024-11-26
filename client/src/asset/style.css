@@ -52,6 +52,8 @@ main {
     border-radius: 4px;
     min-height: 48px;
 }
+.card-content {
+}
 .card-footer {
     border-top: 1px solid var(--border-color);
     padding: 4px 8px;
@@ -75,6 +77,9 @@ main {
 }
 .m-md {
     margin: 8px;
+}
+.m-sm {
+    margin: 4px;
 }
 .my-md {
     margin-bottom: 8px;
@@ -101,8 +106,9 @@ main {
 .text-center {
     text-align: center;
 }
-/* single-value-card */
-.single-value-card-content {
+.align-content-center: {
     align-content: center;
-    font-size: 42px;
+}
+.justify-content-center: {
+    justify-content: center;
 }

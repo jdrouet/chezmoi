@@ -4,12 +4,14 @@ use another_html_builder::{Body, Buffer};
 
 pub(crate) struct Head {
     title: Cow<'static, str>,
+    style_path: &'static str,
 }
 
 impl Head {
-    pub fn new(title: impl Into<Cow<'static, str>>) -> Self {
+    pub fn new(title: impl Into<Cow<'static, str>>, style_path: &'static str) -> Self {
         Self {
             title: title.into(),
+            style_path,
         }
     }
 }
@@ -28,7 +30,7 @@ impl super::prelude::Component for Head {
                 .content(|buf| buf.text("🏠 Chez Moi - ").text(self.title.as_ref()))
                 .node("link")
                 .attr(("rel", "stylesheet"))
-                .attr(("href", crate::asset::STYLE_CSS_PATH))
+                .attr(("href", self.style_path))
                 .close()
         })
     }
