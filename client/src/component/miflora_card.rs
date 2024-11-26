@@ -1,7 +1,18 @@
 use std::borrow::Cow;
+use std::sync::LazyLock;
 
 use another_html_builder::{Body, Buffer};
 use human_number::Formatter;
+
+static TEMPERATURE_FMT: LazyLock<Formatter<'static>> =
+    LazyLock::new(|| Formatter::si().with_unit("°C"));
+static BRIGHTNESS_FMT: LazyLock<Formatter<'static>> =
+    LazyLock::new(|| Formatter::si().with_unit("lx"));
+static MOISTURE_FMT: LazyLock<Formatter<'static>> =
+    LazyLock::new(|| Formatter::si().with_unit("%"));
+static CONDUCTIVITY_FMT: LazyLock<Formatter<'static>> =
+    LazyLock::new(|| Formatter::si().with_unit("μS/cm"));
+static BATTERY_FMT: LazyLock<Formatter<'static>> = LazyLock::new(|| Formatter::si().with_unit("%"));
 
 #[derive(Debug)]
 pub struct LastValues {
@@ -18,12 +29,6 @@ pub struct MifloraCard {
     address: Cow<'static, str>,
     name: Option<Cow<'static, str>>,
     last_update: Option<LastValues>,
-
-    temperature_fmt: human_number::Formatter<'static>,
-    brightness_fmt: human_number::Formatter<'static>,
-    moisture_fmt: human_number::Formatter<'static>,
-    conductivity_fmt: human_number::Formatter<'static>,
-    battery_fmt: human_number::Formatter<'static>,
 }
 
 impl MifloraCard {
@@ -36,12 +41,6 @@ impl MifloraCard {
             address: address.into(),
             name: name.map(|n| n.into()),
             last_update,
-
-            temperature_fmt: Formatter::si().with_unit("°C"),
-            brightness_fmt: Formatter::si().with_unit("lx"),
-            moisture_fmt: Formatter::si().with_unit("%"),
-            conductivity_fmt: Formatter::si().with_unit("μS/cm"),
-            battery_fmt: Formatter::si().with_unit("%"),
         }
     }
 
@@ -59,23 +58,23 @@ impl MifloraCard {
                     buf.node("div")
                         .attr(("class", "m-sm"))
                         .attr(("data-label", "moisture"))
-                        .content(|buf| buf.raw(self.moisture_fmt.format(values.moisture)))
+                        .content(|buf| buf.raw(MOISTURE_FMT.format(values.moisture)))
                         .node("div")
                         .attr(("class", "m-sm"))
                         .attr(("data-label", "temperature"))
-                        .content(|buf| buf.raw(self.temperature_fmt.format(values.temperature)))
+                        .content(|buf| buf.raw(TEMPERATURE_FMT.format(values.temperature)))
                         .node("div")
                         .attr(("class", "m-sm"))
                         .attr(("data-label", "brightness"))
-                        .content(|buf| buf.raw(self.brightness_fmt.format(values.brightness)))
+                        .content(|buf| buf.raw(BRIGHTNESS_FMT.format(values.brightness)))
                         .node("div")
                         .attr(("class", "m-sm"))
                         .attr(("data-label", "conductivity"))
-                        .content(|buf| buf.raw(self.conductivity_fmt.format(values.conductivity)))
+                        .content(|buf| buf.raw(CONDUCTIVITY_FMT.format(values.conductivity)))
                         .node("div")
                         .attr(("class", "m-sm"))
                         .attr(("data-label", "battery"))
-                        .content(|buf| buf.raw(self.battery_fmt.format(values.battery)))
+                        .content(|buf| buf.raw(BATTERY_FMT.format(values.battery)))
                 })
         } else {
             buf.node("div")
