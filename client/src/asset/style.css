@@ -81,6 +81,10 @@ main {
 .m-sm {
     margin: 4px;
 }
+.mx-md {
+    margin-left: 8px;
+    margin-right: 8px;
+}
 .my-md {
     margin-bottom: 8px;
     margin-top: 8px;
@@ -97,8 +101,14 @@ main {
 .max-w-400px {
     max-width: 400px;
 }
+.min-w-500px {
+    min-width: 500px;
+}
 .min-w-250px {
     min-width: 250px;
+}
+.h-150px {
+    height: 150px;
 }
 .min-h-150px {
     min-height: 150px;
@@ -111,4 +121,7 @@ main {
 }
 .justify-content-center: {
     justify-content: center;
+}
+.scroll-y {
+    overflow-y: scroll;
 }

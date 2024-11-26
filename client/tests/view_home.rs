@@ -1,4 +1,5 @@
 use chezmoi_client::component::any_card::AnyCard;
+use chezmoi_client::component::bluetooth_devices_card::BluetoothDevicesCard;
 use chezmoi_client::component::miflora_card::{LastValues, MifloraCard};
 use chezmoi_client::view::home::{Section, View};
 
@@ -48,6 +49,36 @@ fn with_miflora_cards() {
                         None::<&'static str>,
                         None,
                     ))),
+            ),
+    );
+}
+
+#[test]
+fn with_bluetooth_devices() {
+    helper::write(
+        "with-bluetooth-devices-cards.html",
+        View::new(helper::STYLE_PATH)
+            .with_section(
+                Section::new("No devices").with_card(AnyCard::BluetoothDevices(
+                    BluetoothDevicesCard::new([].into_iter()),
+                )),
+            )
+            .with_section(
+                Section::new("Many devices").with_card(AnyCard::BluetoothDevices(
+                    BluetoothDevicesCard::new(
+                        [
+                            ("Baz".into(), 10.0),
+                            ("Foo".into(), 80.0),
+                            ("Hello".into(), 100.0),
+                            ("World".into(), 90.0),
+                            ("Asterix".into(), 83.0),
+                            ("Obelix".into(), 83.0),
+                            ("Panoramix".into(), 56.0),
+                            ("Bar".into(), 70.0),
+                        ]
+                        .into_iter(),
+                    ),
+                )),
             ),
     );
 }

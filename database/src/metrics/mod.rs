@@ -68,6 +68,15 @@ pub enum MetricTagValue {
     Boolean(bool),
 }
 
+impl MetricTagValue {
+    pub fn into_text(self) -> Option<Cow<'static, str>> {
+        match self {
+            Self::Text(inner) => Some(inner),
+            _ => None,
+        }
+    }
+}
+
 impl From<&'static str> for MetricTagValue {
     fn from(value: &'static str) -> Self {
         Self::Text(Cow::Borrowed(value))
@@ -126,6 +135,14 @@ impl std::hash::Hash for MetricTags {
 }
 
 impl MetricTags {
+    pub fn remove(&mut self, name: &str) -> Option<MetricTagValue> {
+        self.0.shift_remove(name)
+    }
+
+    pub fn extract(mut self, name: &str) -> Option<MetricTagValue> {
+        self.0.swap_remove(name)
+    }
+
     #[inline]
     pub fn set<N: Into<Cow<'static, str>>, V: Into<MetricTagValue>>(
         &mut self,

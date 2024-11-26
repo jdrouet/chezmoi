@@ -1,16 +1,15 @@
-use sqlx::types::Json;
-
 use crate::metrics::entity::Metric;
-use crate::metrics::MetricHeader;
+use crate::metrics::{MetricHeader, MetricTagValue};
 
 /// Right now, we expect tags to match exactly.
 pub struct Command<'a> {
     headers: &'a [MetricHeader],
+    limit: Option<usize>,
 }
 
 impl<'a> Command<'a> {
-    pub fn new(headers: &'a [MetricHeader]) -> Self {
-        Self { headers }
+    pub fn new(headers: &'a [MetricHeader], limit: Option<usize>) -> Self {
+        Self { headers, limit }
     }
 
     pub async fn execute<'c, E: sqlx::Executor<'c, Database = sqlx::Sqlite>>(
@@ -34,13 +33,27 @@ impl<'a> Command<'a> {
                 }
                 qb.push(" (")
                     .push("name = ")
-                    .push_bind(header.name.as_ref())
-                    .push(" and ")
-                    .push(" tags = ")
-                    .push_bind(Json(&header.tags))
-                    .push(")");
+                    .push_bind(header.name.as_ref());
+                for (name, value) in header.tags.entries() {
+                    qb.push(" and")
+                        .push(" json_extract(tags, ")
+                        .push_bind(format!("$.{name}"))
+                        .push(") = ");
+                    match value {
+                        MetricTagValue::Text(inner) => qb.push_bind(inner.as_ref()),
+                        MetricTagValue::ArcText(inner) => qb.push_bind(inner.as_ref()),
+                        MetricTagValue::Float(inner) => qb.push_bind(inner),
+                        MetricTagValue::Int(inner) => qb.push_bind(inner),
+                        MetricTagValue::Boolean(inner) => qb.push_bind(inner),
+                    };
+                }
+                qb.push(")");
             }
             qb.push(")");
+        }
+        qb.push(" order by timestamp desc");
+        if let Some(limit) = self.limit {
+            qb.push(" limit ").push_bind(limit as i64);
         }
         //
         let query = qb.build_query_as::<'_, Metric>();
@@ -104,7 +117,7 @@ mod tests {
         .await;
         assert_eq!(expected_events.len(), 10);
 
-        let found = super::Command::new(&[expected_header])
+        let found = super::Command::new(&[expected_header], Some(10))
             .execute(db.as_ref())
             .await
             .unwrap();
@@ -116,7 +129,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_find_exact_tags() {
+    async fn should_find_similar_tags() {
         let db = init_db().await;
 
         let expected_header = MetricHeader::new("foo").with_tag("hostname", "rambo");
@@ -128,25 +141,28 @@ mod tests {
         .await;
         assert_eq!(expected_events.len(), 10);
 
-        let not_expected_header = MetricHeader::new("foo")
+        let similar_header = MetricHeader::new("foo")
             .with_tag("hostname", "rambo")
             .with_tag("user", "other");
-        let _not_expected_events = create_metrics(
+        let _similar_events = create_metrics(
             &db,
-            not_expected_header,
-            (0..10).map(|index| (index + 2, MetricValue::count(index))),
+            similar_header,
+            (0..10).map(|index| (index + 20, MetricValue::count(index + 20))),
         )
         .await;
 
-        let found = super::Command::new(&[expected_header])
+        let found = super::Command::new(&[expected_header], Some(10))
             .execute(db.as_ref())
             .await
             .unwrap();
 
-        assert_eq!(found.len(), 1);
+        assert_eq!(found.len(), 2);
         let last = found.last().unwrap();
         assert_eq!(last.timestamp, 9);
         assert_eq!(last.value.as_count().unwrap(), 9);
+        let first = found.first().unwrap();
+        assert_eq!(first.timestamp, 29);
+        assert_eq!(first.value.as_count().unwrap(), 29);
     }
 
     #[tokio::test]
@@ -181,7 +197,7 @@ mod tests {
         )
         .await;
 
-        let found = super::Command::new(&[first_header, second_header])
+        let found = super::Command::new(&[first_header, second_header], Some(10))
             .execute(db.as_ref())
             .await
             .unwrap();

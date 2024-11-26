@@ -1,3 +1,5 @@
+#![feature(extract_if)]
+
 pub(crate) mod app;
 mod router;
 
