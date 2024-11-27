@@ -84,7 +84,6 @@ impl Cache {
 #[derive(Default)]
 pub(crate) struct Collector {
     cache: Cache,
-    // contains header hash and metric
     inner: Vec<Metric>,
 }
 
@@ -102,10 +101,14 @@ impl Collector {
         }
     }
 
-    pub fn flush(&mut self) -> Vec<Metric> {
-        let mut new = Vec::with_capacity(self.inner.len());
-        std::mem::swap(&mut self.inner, &mut new);
-        new
+    pub fn flush(&mut self) -> Option<Vec<Metric>> {
+        if self.inner.is_empty() {
+            None
+        } else {
+            let mut new = Vec::with_capacity(self.inner.len());
+            std::mem::swap(&mut self.inner, &mut new);
+            Some(new)
+        }
     }
 }
 

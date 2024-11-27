@@ -43,31 +43,22 @@ impl Sensor {
         addr: Address,
         collector: &mut super::Collector,
     ) -> anyhow::Result<()> {
-        let now = chezmoi_database::helper::now();
         let device = self.adapter.device(addr)?;
-        let device_name = device.name().await?;
-        let tags = MetricTags::default()
-            .maybe_with(crate::HOSTNAME, hostname.inner())
-            .with(crate::ADDRESS, addr.to_string())
-            .maybe_with("name", device_name);
         if let Ok(Some(power)) = device.tx_power().await {
+            let device_name = device.name().await?;
+            let tags = MetricTags::default()
+                .maybe_with(crate::HOSTNAME, hostname.inner())
+                .with(crate::ADDRESS, addr.to_string())
+                .maybe_with("name", device_name);
             collector.collect(Metric {
-                timestamp: now,
+                timestamp: chezmoi_database::helper::now(),
                 header: MetricHeader {
                     name: MetricName::new(DEVICE_POWER),
-                    tags: tags.clone(),
+                    tags,
                 },
                 value: MetricValue::gauge(power as f64),
             });
         }
-        collector.collect(Metric {
-            timestamp: now,
-            header: MetricHeader {
-                name: MetricName::new(DEVICE_VISIBLE),
-                tags,
-            },
-            value: MetricValue::bool(true),
-        });
         Ok(())
     }
 
@@ -77,17 +68,15 @@ impl Sensor {
         addr: Address,
         collector: &mut super::Collector,
     ) -> anyhow::Result<()> {
-        let now = chezmoi_database::helper::now();
-        let tags = MetricTags::default()
-            .with("address", MetricTagValue::Text(addr.to_string().into()))
-            .maybe_with("hostname", hostname.inner().map(MetricTagValue::ArcText));
         collector.collect(Metric {
-            timestamp: now,
+            timestamp: chezmoi_database::helper::now(),
             header: MetricHeader {
-                name: MetricName::new(DEVICE_VISIBLE),
-                tags,
+                name: MetricName::new(DEVICE_POWER),
+                tags: MetricTags::default()
+                    .with("address", MetricTagValue::Text(addr.to_string().into()))
+                    .maybe_with("hostname", hostname.inner().map(MetricTagValue::ArcText)),
             },
-            value: MetricValue::bool(false),
+            value: MetricValue::gauge(0.0),
         });
         Ok(())
     }
@@ -141,7 +130,11 @@ impl Sensor {
                 }
                 else => break
             };
-            context.sender.send(collector.flush()).await?;
+            if let Some(events) = collector.flush() {
+                if let Err(error) = context.sender.send(events).await {
+                    tracing::error!(message = "unable to send collected metrics", cause = %error);
+                }
+            }
         }
         Ok(())
     }
