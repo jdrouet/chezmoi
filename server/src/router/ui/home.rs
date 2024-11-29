@@ -14,12 +14,13 @@ use super::error::Error;
 
 #[cfg(feature = "bluetooth")]
 fn collect_gauges_with_tag<'a>(
-    metrics: &'a mut Vec<Metric>,
+    metrics: &'a [Metric],
     metric_name: &'static str,
     tag: &'static str,
-) -> impl Iterator<Item = (std::borrow::Cow<'static, str>, f64)> + 'a {
+) -> impl Iterator<Item = (&'a std::borrow::Cow<'static, str>, f64)> + 'a {
     metrics
-        .extract_if(|metric| metric.header.name.as_ref().eq(metric_name))
+        .iter()
+        .filter(|metric| metric.header.name.as_ref().eq(metric_name))
         .filter_map(|item| {
             match (
                 item.header.tags.extract(tag).and_then(|v| v.into_text()),
@@ -31,12 +32,10 @@ fn collect_gauges_with_tag<'a>(
         })
 }
 
-fn collect_latest_gauge<'a>(
-    metrics: &'a mut Vec<Metric>,
-    metric_name: &'static str,
-) -> Option<f64> {
+fn collect_latest_gauge(metrics: &[Metric], metric_name: &'static str) -> Option<f64> {
     metrics
-        .extract_if(|metric| metric.header.name.as_ref().eq(metric_name))
+        .iter()
+        .filter(|metric| metric.header.name.as_ref().eq(metric_name))
         .filter_map(|item| item.value.as_gauge().map(|value| (item.timestamp, value)))
         .max_by(|first, second| first.0.cmp(&second.0))
         .map(|(_, value)| value)
@@ -51,7 +50,7 @@ fn extract_bluetooth_devices_card(metrics: &mut Vec<Metric>) -> BluetoothDevices
     ))
 }
 
-fn extract_memory_card(metrics: &mut Vec<Metric>) -> Option<MemoryCard> {
+fn extract_memory_card(metrics: &[Metric]) -> Option<MemoryCard> {
     let total = collect_latest_gauge(metrics, chezmoi_agent::sensor::system::MEMORY_TOTAL);
     let used = collect_latest_gauge(metrics, chezmoi_agent::sensor::system::MEMORY_USED);
     match (total, used) {
@@ -60,7 +59,7 @@ fn extract_memory_card(metrics: &mut Vec<Metric>) -> Option<MemoryCard> {
     }
 }
 
-fn extract_swap_card(metrics: &mut Vec<Metric>) -> Option<SwapCard> {
+fn extract_swap_card(metrics: &[Metric]) -> Option<SwapCard> {
     let total = collect_latest_gauge(metrics, chezmoi_agent::sensor::system::SWAP_TOTAL);
     let used = collect_latest_gauge(metrics, chezmoi_agent::sensor::system::SWAP_USED);
     match (total, used) {
@@ -100,7 +99,7 @@ pub(super) async fn handle(
         .execute(database.as_ref())
         .await?;
 
-    let page = chezmoi_client::view::home::View::new(chezmoi_client::asset::STYLE_CSS_PATH);
+    let page = chezmoi_client::view::home::View::new();
 
     #[cfg(feature = "bluetooth")]
     let page = {

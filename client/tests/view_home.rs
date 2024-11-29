@@ -12,7 +12,7 @@ mod helper;
 fn with_miflora_cards() {
     helper::write(
         "with-miflora-cards.html",
-        View::new(helper::STYLE_PATH)
+        View::new()
             .with_section(
                 Section::new("With last values")
                     .with_card(AnyCard::Miflora(MifloraCard::new(
@@ -60,7 +60,7 @@ fn with_miflora_cards() {
 fn with_bluetooth_devices() {
     helper::write(
         "with-bluetooth-devices-cards.html",
-        View::new(helper::STYLE_PATH)
+        View::new()
             .with_section(
                 Section::new("No devices").with_card(AnyCard::BluetoothDevices(
                     BluetoothDevicesCard::new([].into_iter()),
@@ -90,7 +90,7 @@ fn with_bluetooth_devices() {
 fn with_system() {
     helper::write(
         "with-system-cards.html",
-        View::new(helper::STYLE_PATH).with_section(
+        View::new().with_section(
             Section::new("Simple")
                 .with_card(AnyCard::Memory(MemoryCard::new(
                     1024.0 * 1024.0 * 1024.0 * 64.0,

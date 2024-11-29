@@ -28,11 +28,7 @@ impl From<chezmoi_database::sqlx::Error> for Error {
 
 impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
-        let html = chezmoi_client::view::error::View::new(
-            self.message,
-            chezmoi_client::asset::STYLE_CSS_PATH,
-        )
-        .render();
+        let html = chezmoi_client::view::error::View::new(self.message).render();
         (self.status, Html(html)).into_response()
     }
 }

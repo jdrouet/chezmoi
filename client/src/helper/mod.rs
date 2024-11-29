@@ -1,22 +1,29 @@
 pub(crate) mod fmt;
 
-// pub(crate) struct Classnames<'a, 'b> {
-//     internal: &'a str,
-//     external: Option<&'b str>,
+// use std::fmt::Write;
+
+// use another_html_builder::AttributeValue;
+
+// pub(crate) struct Classnames<I, E> {
+//     internal: I,
+//     external: Option<E>,
 // }
 
-// impl<'a, 'b> Classnames<'a, 'b> {
-//     pub fn new(internal: &'a str, external: Option<&'b str>) -> Self {
+// impl<I: AttributeValue, E: AttributeValue> Classnames<I, E> {
+//     pub fn new(internal: I, external: Option<E>) -> Self {
 //         Self { internal, external }
 //     }
 // }
 
-// impl another_html_builder::AttributeValue for Classnames<'_, '_> {
+// impl<I: AttributeValue, E: AttributeValue> another_html_builder::AttributeValue
+//     for Classnames<I, E>
+// {
 //     fn render(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         if let Some(external) = self.external {
-//             write!(f, "{} {external}", self.internal)
-//         } else {
-//             write!(f, "{}", self.internal)
+//         self.internal.render(f)?;
+//         if let Some(ref external) = self.external {
+//             f.write_char(' ')?;
+//             external.render(f)?;
 //         }
+//         Ok(())
 //     }
 // }

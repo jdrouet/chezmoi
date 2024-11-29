@@ -81,9 +81,17 @@ main {
 .m-sm {
     margin: 4px;
 }
+.mx-sm {
+    margin-right: 4px;
+    margin-left: 4px;
+}
 .mx-md {
     margin-left: 8px;
     margin-right: 8px;
+}
+.my-sm {
+    margin-bottom: 4px;
+    margin-top: 4px;
 }
 .my-md {
     margin-bottom: 8px;
@@ -92,6 +100,10 @@ main {
 .my-lg {
     margin-bottom: 16px;
     margin-top: 16px;
+}
+.py-md {
+    padding-bottom: 8px;
+    padding-top: 8px;
 }
 .shadow {
     box-shadow:
@@ -130,4 +142,8 @@ main {
 }
 .scroll-y {
     overflow-y: scroll;
+}
+i.icon {
+    width: 1em;
+    height: 1em;
 }

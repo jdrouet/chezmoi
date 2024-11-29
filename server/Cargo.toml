@@ -16,6 +16,11 @@ chezmoi-helper = { path = "../helper" }
 anyhow = { workspace = true }
 axum = { version = "0.7", features = ["macros"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
-tower-http = { version = "0.6", default-features = false, features = ["trace"] }
+tower-http = { version = "0.6", default-features = false, features = [
+    "async-compression",
+    "compression-full",
+    "fs",
+    "trace",
+] }
 tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }

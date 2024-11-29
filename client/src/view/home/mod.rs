@@ -50,14 +50,12 @@ impl Component for Section {
 #[derive(Debug)]
 pub struct View {
     sections: Vec<Section>,
-    style_path: &'static str,
 }
 
 impl View {
-    pub fn new(style_path: &'static str) -> Self {
+    pub fn new() -> Self {
         Self {
             sections: Default::default(),
-            style_path,
         }
     }
 
@@ -70,7 +68,7 @@ impl View {
 impl View {
     #[inline]
     fn render_head<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {
-        crate::component::head::Head::new("Home", self.style_path).render(buf)
+        crate::component::head::Head::new("Home").render(buf)
     }
 
     fn render_content<'v, W: std::fmt::Write>(

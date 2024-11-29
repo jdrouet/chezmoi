@@ -1,8 +1,31 @@
 use std::borrow::Cow;
 
 use another_html_builder::{Body, Buffer};
+use human_number::ScaledValue;
 
+use super::prelude::Component;
+use crate::component::icon::{Icon, IconKind};
 use crate::helper::fmt;
+
+fn render_row<'a, W: std::fmt::Write>(
+    buf: Buffer<W, Body<'a>>,
+    icon: IconKind,
+    name: &str,
+    value: ScaledValue<'a>,
+) -> Buffer<W, Body<'a>> {
+    buf.node("div")
+        .attr(("class", "flex-row mx-md my-sm"))
+        .attr(("data-label", name))
+        .content(|buf| {
+            let buf = Icon::new(icon).render(buf);
+            let buf = buf
+                .node("label")
+                .attr(("class", "flex-1 mx-sm"))
+                .content(|buf| buf.text(name));
+            let buf = buf.node("label").content(|buf| buf.raw(value));
+            buf
+        })
+}
 
 #[derive(Debug)]
 pub struct LastValues {
@@ -40,31 +63,39 @@ impl MifloraCard {
     ) -> Buffer<W, Body<'v>> {
         if let Some(ref values) = self.last_update {
             buf.node("div")
-                .attr((
-                    "class",
-                    "card-content justify-content-center min-h-150px flex-col",
-                ))
+                .attr(("class", "card-content min-h-150px flex-col py-md"))
                 .content(|buf| {
-                    buf.node("div")
-                        .attr(("class", "m-sm"))
-                        .attr(("data-label", "moisture"))
-                        .content(|buf| buf.raw(fmt::PERCENTAGE.format(values.moisture)))
-                        .node("div")
-                        .attr(("class", "m-sm"))
-                        .attr(("data-label", "temperature"))
-                        .content(|buf| buf.raw(fmt::TEMPERATURE.format(values.temperature)))
-                        .node("div")
-                        .attr(("class", "m-sm"))
-                        .attr(("data-label", "brightness"))
-                        .content(|buf| buf.raw(fmt::BRIGHTNESS.format(values.brightness)))
-                        .node("div")
-                        .attr(("class", "m-sm"))
-                        .attr(("data-label", "conductivity"))
-                        .content(|buf| buf.raw(fmt::CONDUCTIVITY.format(values.conductivity)))
-                        .node("div")
-                        .attr(("class", "m-sm"))
-                        .attr(("data-label", "battery"))
-                        .content(|buf| buf.raw(fmt::PERCENTAGE.format(values.battery)))
+                    let buf = render_row(
+                        buf,
+                        IconKind::Water,
+                        "moisture",
+                        fmt::PERCENTAGE.format(values.moisture),
+                    );
+                    let buf = render_row(
+                        buf,
+                        IconKind::TemperatureHot,
+                        "temperature",
+                        fmt::TEMPERATURE.format(values.temperature),
+                    );
+                    let buf = render_row(
+                        buf,
+                        IconKind::Sun,
+                        "brightness",
+                        fmt::BRIGHTNESS.format(values.brightness),
+                    );
+                    let buf = render_row(
+                        buf,
+                        IconKind::Dashboard,
+                        "conductivity",
+                        fmt::CONDUCTIVITY.format(values.conductivity),
+                    );
+                    let buf = render_row(
+                        buf,
+                        IconKind::Battery,
+                        "battery",
+                        fmt::PERCENTAGE.format(values.battery),
+                    );
+                    buf
                 })
         } else {
             buf.node("div")
@@ -86,8 +117,15 @@ impl super::prelude::Component for MifloraCard {
                 buf.node("div")
                     .attr(("class", "card-footer"))
                     .content(|buf| {
-                        buf.optional(self.name.as_deref(), |buf, name| buf.text(name).text(" - "))
-                            .text(&self.address)
+                        if let Some(ref name) = self.name {
+                            buf.node("b")
+                                .content(|buf| buf.text(name))
+                                .text(" - ")
+                                .node("i")
+                                .content(|buf| buf.text(&self.address))
+                        } else {
+                            buf.node("i").content(|buf| buf.text(&self.address))
+                        }
                     })
             })
     }

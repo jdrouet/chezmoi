@@ -7,20 +7,18 @@ use crate::component::prelude::Component;
 #[derive(Debug, Default)]
 pub struct View {
     message: Cow<'static, str>,
-    style_path: &'static str,
 }
 
 impl View {
-    pub fn new(message: impl Into<Cow<'static, str>>, style_path: &'static str) -> Self {
+    pub fn new(message: impl Into<Cow<'static, str>>) -> Self {
         Self {
             message: message.into(),
-            style_path,
         }
     }
 
     #[inline]
     fn render_head<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {
-        crate::component::head::Head::new("Error", self.style_path).render(buf)
+        crate::component::head::Head::new("Error").render(buf)
     }
 
     fn render_body<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {

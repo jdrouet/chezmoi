@@ -57,6 +57,9 @@ FROM alpine
 ENV HOST=0.0.0.0
 ENV PORT=3000
 
+ENV ASSETS_PATH=/etc/chezmoi/assets
+
+COPY client/assets /etc/chezmoi/assets
 COPY --from=server-builder /code/target/release/chezmoi-server /bin/chezmoi-server
 
 EXPOSE 3000
