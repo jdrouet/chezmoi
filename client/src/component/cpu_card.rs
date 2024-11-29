@@ -1,12 +1,6 @@
-use std::sync::LazyLock;
-
 use another_html_builder::{Body, Buffer};
 
-static PERCENTAGE_FORMATTER: LazyLock<human_number::Formatter<'static>> = LazyLock::new(|| {
-    human_number::Formatter::si()
-        .with_unit("%")
-        .with_decimals(1)
-});
+use crate::helper::fmt;
 
 #[derive(Debug)]
 pub struct CpuCard {
@@ -35,7 +29,7 @@ impl super::prelude::Component for CpuCard {
                     .content(|buf| {
                         buf.node("p")
                             .attr(("class", "text-xl"))
-                            .content(|buf| buf.raw(PERCENTAGE_FORMATTER.format(self.usage)))
+                            .content(|buf| buf.raw(fmt::PERCENTAGE.format(self.usage)))
                     })
                     .node("div")
                     .attr(("class", "card-footer"))

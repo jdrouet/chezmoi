@@ -1,18 +1,8 @@
 use std::borrow::Cow;
-use std::sync::LazyLock;
 
 use another_html_builder::{Body, Buffer};
-use human_number::Formatter;
 
-static TEMPERATURE_FMT: LazyLock<Formatter<'static>> =
-    LazyLock::new(|| Formatter::si().with_unit("°C"));
-static BRIGHTNESS_FMT: LazyLock<Formatter<'static>> =
-    LazyLock::new(|| Formatter::si().with_unit("lx"));
-static MOISTURE_FMT: LazyLock<Formatter<'static>> =
-    LazyLock::new(|| Formatter::si().with_unit("%"));
-static CONDUCTIVITY_FMT: LazyLock<Formatter<'static>> =
-    LazyLock::new(|| Formatter::si().with_unit("μS/cm"));
-static BATTERY_FMT: LazyLock<Formatter<'static>> = LazyLock::new(|| Formatter::si().with_unit("%"));
+use crate::helper::fmt;
 
 #[derive(Debug)]
 pub struct LastValues {
@@ -58,23 +48,23 @@ impl MifloraCard {
                     buf.node("div")
                         .attr(("class", "m-sm"))
                         .attr(("data-label", "moisture"))
-                        .content(|buf| buf.raw(MOISTURE_FMT.format(values.moisture)))
+                        .content(|buf| buf.raw(fmt::PERCENTAGE.format(values.moisture)))
                         .node("div")
                         .attr(("class", "m-sm"))
                         .attr(("data-label", "temperature"))
-                        .content(|buf| buf.raw(TEMPERATURE_FMT.format(values.temperature)))
+                        .content(|buf| buf.raw(fmt::TEMPERATURE.format(values.temperature)))
                         .node("div")
                         .attr(("class", "m-sm"))
                         .attr(("data-label", "brightness"))
-                        .content(|buf| buf.raw(BRIGHTNESS_FMT.format(values.brightness)))
+                        .content(|buf| buf.raw(fmt::BRIGHTNESS.format(values.brightness)))
                         .node("div")
                         .attr(("class", "m-sm"))
                         .attr(("data-label", "conductivity"))
-                        .content(|buf| buf.raw(CONDUCTIVITY_FMT.format(values.conductivity)))
+                        .content(|buf| buf.raw(fmt::CONDUCTIVITY.format(values.conductivity)))
                         .node("div")
                         .attr(("class", "m-sm"))
                         .attr(("data-label", "battery"))
-                        .content(|buf| buf.raw(BATTERY_FMT.format(values.battery)))
+                        .content(|buf| buf.raw(fmt::PERCENTAGE.format(values.battery)))
                 })
         } else {
             buf.node("div")

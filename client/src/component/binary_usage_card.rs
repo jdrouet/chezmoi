@@ -1,17 +1,6 @@
-use std::sync::LazyLock;
-
 use another_html_builder::{Body, Buffer};
 
-static PERCENTAGE_FORMATTER: LazyLock<human_number::Formatter<'static>> = LazyLock::new(|| {
-    human_number::Formatter::si()
-        .with_unit("%")
-        .with_decimals(1)
-});
-static BYTES_FORMATTER: LazyLock<human_number::Formatter<'static>> = LazyLock::new(|| {
-    human_number::Formatter::binary()
-        .with_unit("B")
-        .with_decimals(1)
-});
+use crate::helper::fmt;
 
 #[derive(Debug)]
 pub struct BinaryUsageCard {
@@ -43,12 +32,12 @@ impl super::prelude::Component for BinaryUsageCard {
                         let percent = self.used * 100.0 / self.total;
                         buf.node("p")
                             .attr(("class", "text-xl"))
-                            .content(|buf| buf.raw(PERCENTAGE_FORMATTER.format(percent)))
+                            .content(|buf| buf.raw(fmt::PERCENTAGE.format(percent)))
                             .node("p")
                             .content(|buf| {
-                                buf.raw(BYTES_FORMATTER.format(self.used))
+                                buf.raw(fmt::BYTES.format(self.used))
                                     .text(" / ")
-                                    .raw(BYTES_FORMATTER.format(self.total))
+                                    .raw(fmt::BYTES.format(self.total))
                             })
                     })
                     .node("div")

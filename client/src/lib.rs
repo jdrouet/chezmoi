@@ -1,4 +1,4 @@
 pub mod asset;
 pub mod component;
-// mod helper;
+mod helper;
 pub mod view;
