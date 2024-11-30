@@ -84,6 +84,12 @@ impl From<&'static str> for MetricTagValue {
     }
 }
 
+impl From<Cow<'static, str>> for MetricTagValue {
+    fn from(value: Cow<'static, str>) -> Self {
+        Self::Text(value)
+    }
+}
+
 impl From<String> for MetricTagValue {
     fn from(value: String) -> Self {
         Self::Text(Cow::Owned(value))

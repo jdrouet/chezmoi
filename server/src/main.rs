@@ -1,5 +1,6 @@
 pub(crate) mod app;
 mod router;
+mod service;
 
 fn enable_tracing() {
     use tracing_subscriber::prelude::*;

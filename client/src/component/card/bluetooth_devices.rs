@@ -17,11 +17,11 @@ pub struct LastValues {
 }
 
 #[derive(Debug)]
-pub struct BluetoothDevicesCard {
+pub struct Card {
     devices: Vec<(Cow<'static, str>, f64)>,
 }
 
-impl BluetoothDevicesCard {
+impl Card {
     pub fn new(devices: impl Iterator<Item = (Cow<'static, str>, f64)>) -> Self {
         let mut devices = Vec::from_iter(devices);
         devices.sort_by(|first, second| second.1.total_cmp(&first.1));
@@ -59,7 +59,7 @@ impl BluetoothDevicesCard {
     }
 }
 
-impl super::prelude::Component for BluetoothDevicesCard {
+impl crate::component::prelude::Component for Card {
     fn render<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {
         buf.node("div")
             .attr((

@@ -10,21 +10,6 @@ pub mod bluetooth;
 pub mod system;
 
 #[derive(Clone, Debug)]
-pub(crate) struct Hostname(Option<Arc<String>>);
-
-impl Default for Hostname {
-    fn default() -> Self {
-        Self(sysinfo::System::host_name().map(Arc::new))
-    }
-}
-
-impl Hostname {
-    pub fn inner(&self) -> Option<Arc<String>> {
-        self.0.clone()
-    }
-}
-
-#[derive(Clone, Debug)]
 pub(crate) struct RunningState(Arc<AtomicBool>);
 
 impl RunningState {
