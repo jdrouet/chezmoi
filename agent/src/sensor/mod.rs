@@ -110,6 +110,17 @@ impl Context {
             sender,
         }
     }
+
+    pub async fn send_all(&self, events: Option<Vec<Metric>>) {
+        if let Some(events) = events {
+            let count = events.len();
+            if let Err(err) = self.sender.send(events).await {
+                tracing::error!(message = "unable to send collected metrics", metrics = count, cause = %err);
+            } else {
+                tracing::debug!(message = "events collected", count = count);
+            }
+        }
+    }
 }
 
 #[cfg(test)]

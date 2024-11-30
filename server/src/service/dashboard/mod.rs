@@ -95,7 +95,7 @@ impl Dashboard {
         self.sections
             .iter()
             .for_each(|sec| sec.collect_latest_metrics(&mut buf));
-        Vec::from_iter(buf.into_iter())
+        Vec::from_iter(buf)
     }
 
     pub async fn build_view(&self, ctx: BuilderContext) -> Result<dashboard::View, String> {

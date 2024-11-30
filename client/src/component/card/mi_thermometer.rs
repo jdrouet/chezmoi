@@ -124,14 +124,14 @@ impl<'a> Component for Card<'a> {
                 buf.node("div")
                     .attr(("class", "card-footer"))
                     .content(|buf| {
-                        if let Some(ref name) = self.name {
+                        if let Some(name) = self.name {
                             buf.node("b")
                                 .content(|buf| buf.text(name))
                                 .text(" - ")
                                 .node("i")
-                                .content(|buf| buf.text(&self.address))
+                                .content(|buf| buf.text(self.address))
                         } else {
-                            buf.node("i").content(|buf| buf.text(&self.address))
+                            buf.node("i").content(|buf| buf.text(self.address))
                         }
                     })
             })

@@ -124,11 +124,7 @@ impl Sensor {
                 }
                 else => break
             };
-            if let Some(events) = collector.flush() {
-                if let Err(error) = context.sender.send(events).await {
-                    tracing::error!(message = "unable to send collected metrics", cause = %error);
-                }
-            }
+            context.send_all(collector.flush()).await;
         }
         Ok(())
     }

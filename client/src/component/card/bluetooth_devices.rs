@@ -4,7 +4,7 @@ use std::sync::LazyLock;
 use another_html_builder::{Body, Buffer};
 
 static POWER_FORMATTER: LazyLock<human_number::Formatter<'static>> =
-    LazyLock::new(|| human_number::Formatter::si());
+    LazyLock::new(human_number::Formatter::si);
 
 #[derive(Debug)]
 pub struct LastValues {

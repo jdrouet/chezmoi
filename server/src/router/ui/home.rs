@@ -14,9 +14,9 @@ pub(crate) static DASHBOARD: LazyLock<Dashboard> = LazyLock::new(|| {
     Dashboard::default()
         .with_section(
             Section::new("System")
-                .with_card(SystemCpuCard::default())
-                .with_card(SystemMemoryCard::default())
-                .with_card(SystemSwapCard::default()),
+                .with_card(SystemCpuCard)
+                .with_card(SystemMemoryCard)
+                .with_card(SystemSwapCard),
         )
         .with_section(
             Section::new("Temperature").with_card(MiThermometerCard::new(

@@ -16,7 +16,7 @@ impl From<Vec<Metric>> for MetricMap {
 impl MetricMap {
     pub fn remove(mut self, header: &MetricHeader) -> Option<Metric> {
         self.0
-            .remove_entry(&header)
+            .remove_entry(header)
             .map(|(header, (timestamp, value))| Metric {
                 timestamp,
                 header,
