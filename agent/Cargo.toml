@@ -4,9 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-default = []
+default = ["sensor-miflora"]
 bluetooth = ["dep:bluer"]
 sensor-bt-scanner = ["bluetooth"]
+sensor-miflora = ["bluetooth", "dep:bluer-miflora"]
 
 [dependencies]
 chezmoi-database = { path = "../database" }
@@ -14,6 +15,7 @@ chezmoi-helper = { path = "../helper" }
 
 anyhow = { workspace = true }
 bluer = { version = "0.17", features = ["bluetoothd"], optional = true }
+bluer-miflora = { version = "0.2", optional = true }
 futures = { version = "0.3" }
 tokio = { workspace = true }
 tracing = { workspace = true }

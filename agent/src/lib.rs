@@ -16,6 +16,8 @@ async fn default_bt_adapter() -> anyhow::Result<bluer::Adapter> {
 pub struct Config {
     #[cfg(feature = "sensor-bt-scanner")]
     bt_scanner: sensor::bt_scanner::Config,
+    #[cfg(feature = "sensor-miflora")]
+    miflora: sensor::miflora::Config,
     system: sensor::system::Config,
 }
 
@@ -24,6 +26,8 @@ impl Config {
         Ok(Self {
             #[cfg(feature = "sensor-bt-scanner")]
             bt_scanner: sensor::bt_scanner::Config::from_env()?,
+            #[cfg(feature = "sensor-miflora")]
+            miflora: sensor::miflora::Config::from_env()?,
             system: sensor::system::Config::from_env()?,
         })
     }
@@ -35,6 +39,8 @@ impl Config {
         Ok(Agent {
             #[cfg(feature = "sensor-bt-scanner")]
             bt_scanner: self.bt_scanner.build(bt_adapter).await?,
+            #[cfg(feature = "sensor-miflora")]
+            miflora: self.miflora.build(bt_adapter).await?,
             system: self.system.build()?,
         })
     }
@@ -44,6 +50,8 @@ impl Config {
 pub struct Agent {
     #[cfg(feature = "sensor-bt-scanner")]
     bt_scanner: Option<sensor::bt_scanner::Sensor>,
+    #[cfg(feature = "sensor-miflora")]
+    miflora: Option<sensor::miflora::Sensor>,
     system: Option<sensor::system::Sensor>,
 }
 
@@ -56,6 +64,11 @@ impl Agent {
         let mut sensors = Vec::new();
         #[cfg(feature = "sensor-bt-scanner")]
         if let Some(sensor) = self.bt_scanner {
+            let ctx = context.clone();
+            sensors.push(tokio::spawn(async move { sensor.run(ctx).await }));
+        }
+        #[cfg(feature = "sensor-miflora")]
+        if let Some(sensor) = self.miflora {
             let ctx = context.clone();
             sensors.push(tokio::spawn(async move { sensor.run(ctx).await }));
         }

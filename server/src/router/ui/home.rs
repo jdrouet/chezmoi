@@ -26,8 +26,14 @@ pub(crate) static DASHBOARD: LazyLock<Dashboard> = LazyLock::new(|| {
         )
         .with_section(
             Section::new("Plants")
-                .with_card(MifloraCard::new(Some("Orchid"), "00:00:00:00:01"))
-                .with_card(MifloraCard::new(Some("Pilea"), "00:00:00:00:02")),
+                .with_card(MifloraCard::new(
+                    Some("Ficus benjamina"),
+                    "5C:85:7E:B0:4C:3F",
+                ))
+                .with_card(MifloraCard::new(
+                    Some("Pilea peperomioides"),
+                    "5C:85:7E:B0:4C:9C",
+                )),
         )
 });
 

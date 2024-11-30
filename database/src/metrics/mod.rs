@@ -63,7 +63,7 @@ impl std::fmt::Display for MetricName {
 #[serde(untagged)]
 pub enum MetricTagValue {
     Text(Cow<'static, str>),
-    ArcText(Arc<String>),
+    ArcText(Arc<str>),
     Float(f64),
     Int(i64),
     Boolean(bool),
@@ -96,8 +96,8 @@ impl From<String> for MetricTagValue {
     }
 }
 
-impl From<Arc<String>> for MetricTagValue {
-    fn from(value: Arc<String>) -> Self {
+impl From<Arc<str>> for MetricTagValue {
+    fn from(value: Arc<str>) -> Self {
         Self::ArcText(value)
     }
 }

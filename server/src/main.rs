@@ -34,5 +34,9 @@ async fn main() -> anyhow::Result<()> {
     let app = app::Config::from_env()?;
     let app = app.build().await?;
 
-    tokio::try_join!(agent.run(database.clone()), app.run(database)).map(|_| ())
+    let (agent, app) = tokio::join!(agent.run(database.clone()), app.run(database));
+    tracing::debug!("agent success={}", agent.is_ok());
+    tracing::debug!("app success={}", app.is_ok());
+
+    Ok(())
 }
