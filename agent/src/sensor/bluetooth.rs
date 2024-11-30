@@ -39,7 +39,6 @@ pub(crate) struct Sensor {
 impl Sensor {
     async fn handle_device_added(
         &self,
-        hostname: &super::Hostname,
         addr: Address,
         collector: &mut super::Collector,
     ) -> anyhow::Result<()> {
@@ -47,7 +46,6 @@ impl Sensor {
         if let Ok(Some(power)) = device.tx_power().await {
             let device_name = device.name().await?;
             let tags = MetricTags::default()
-                .maybe_with(crate::HOSTNAME, hostname.inner())
                 .with(crate::ADDRESS, addr.to_string())
                 .maybe_with("name", device_name);
             collector.collect(Metric {
@@ -64,7 +62,6 @@ impl Sensor {
 
     async fn handle_device_removed(
         &self,
-        hostname: &super::Hostname,
         addr: Address,
         collector: &mut super::Collector,
     ) -> anyhow::Result<()> {
@@ -73,8 +70,7 @@ impl Sensor {
             header: MetricHeader {
                 name: MetricName::new(DEVICE_POWER),
                 tags: MetricTags::default()
-                    .with("address", MetricTagValue::Text(addr.to_string().into()))
-                    .maybe_with("hostname", hostname.inner().map(MetricTagValue::ArcText)),
+                    .with("address", MetricTagValue::Text(addr.to_string().into())),
             },
             value: MetricValue::gauge(0.0),
         });
@@ -83,16 +79,14 @@ impl Sensor {
 
     async fn handle_property_changed(
         &self,
-        hostname: &super::Hostname,
         addr: Address,
         _changed: DeviceProperty,
         collector: &mut super::Collector,
     ) -> anyhow::Result<()> {
-        self.handle_device_added(hostname, addr, collector).await
+        self.handle_device_added(addr, collector).await
     }
 
     async fn collect(&self, context: &super::Context) -> anyhow::Result<()> {
-        let hostname = super::Hostname::default();
         self.adapter.set_powered(true).await?;
         self.adapter
             .set_discovery_filter(bluer::DiscoveryFilter::default())
@@ -107,7 +101,7 @@ impl Sensor {
                 Some(event) = device_events.next() => {
                     match event {
                         bluer::AdapterEvent::DeviceAdded(addr) => {
-                            if let Err(error) = self.handle_device_added(&hostname, addr, &mut collector).await {
+                            if let Err(error) = self.handle_device_added(addr, &mut collector).await {
                                 tracing::warn!(message = "unable to handle added device", address = %addr, cause = %error);
                             }
                             if let Ok(device) = self.adapter.device(addr) {
@@ -116,7 +110,7 @@ impl Sensor {
                             }
                         }
                         bluer::AdapterEvent::DeviceRemoved(addr) => {
-                            if let Err(error) = self.handle_device_removed(&hostname, addr, &mut collector).await {
+                            if let Err(error) = self.handle_device_removed(addr, &mut collector).await {
                                 tracing::warn!(message = "unable to handle removed device", address = %addr, cause = %error);
                             }
                         }
@@ -124,7 +118,7 @@ impl Sensor {
                     }
                 }
                 Some((addr, DeviceEvent::PropertyChanged(changed))) = all_change_events.next() => {
-                    if let Err(error) = self.handle_property_changed(&hostname, addr, changed, &mut collector).await {
+                    if let Err(error) = self.handle_property_changed(addr, changed, &mut collector).await {
                         tracing::warn!(message = "unable to handle changed property", address = %addr, cause = %error);
                     }
                 }
