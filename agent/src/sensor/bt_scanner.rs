@@ -5,11 +5,11 @@ use chezmoi_helper::env::parse_env_or;
 use futures::stream::SelectAll;
 use futures::{pin_mut, StreamExt};
 
-pub const DEVICE_POWER: &str = "bluetooth.device.power";
-pub const DEVICE_VISIBLE: &str = "bluetooth.device.visible";
+pub const DEVICE_POWER: &str = "bt_scanner.device.power";
+pub const DEVICE_BATTERY: &str = "bt_scanner.device.battery";
 
 pub(crate) struct Config {
-    enabled: bool,
+    pub enabled: bool,
 }
 
 impl Config {
@@ -19,11 +19,8 @@ impl Config {
         })
     }
 
-    pub async fn build(self) -> anyhow::Result<Option<Sensor>> {
+    pub async fn build(self, adapter: bluer::Adapter) -> anyhow::Result<Option<Sensor>> {
         if self.enabled {
-            let session = bluer::Session::new().await?;
-            let adapter = session.default_adapter().await?;
-
             Ok(Some(Sensor { adapter }))
         } else {
             Ok(None)
@@ -43,11 +40,11 @@ impl Sensor {
         collector: &mut super::Collector,
     ) -> anyhow::Result<()> {
         let device = self.adapter.device(addr)?;
+        let device_name = device.name().await?;
         if let Ok(Some(power)) = device.tx_power().await {
-            let device_name = device.name().await?;
             let tags = MetricTags::default()
                 .with(crate::ADDRESS, addr.to_string())
-                .maybe_with("name", device_name);
+                .maybe_with("name", device_name.clone());
             collector.collect(Metric {
                 timestamp: chezmoi_database::helper::now(),
                 header: MetricHeader {
@@ -55,6 +52,19 @@ impl Sensor {
                     tags,
                 },
                 value: MetricValue::gauge(power as f64),
+            });
+        }
+        if let Ok(Some(battery)) = device.battery_percentage().await {
+            let tags = MetricTags::default()
+                .with(crate::ADDRESS, addr.to_string())
+                .maybe_with("name", device_name);
+            collector.collect(Metric {
+                timestamp: chezmoi_database::helper::now(),
+                header: MetricHeader {
+                    name: MetricName::new(DEVICE_BATTERY),
+                    tags,
+                },
+                value: MetricValue::gauge(battery as f64),
             });
         }
         Ok(())

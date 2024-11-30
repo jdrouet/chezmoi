@@ -5,8 +5,8 @@ use std::sync::Arc;
 use chezmoi_database::metrics::entity::{Metric, MetricValue};
 use tokio::sync::mpsc::Sender;
 
-#[cfg(feature = "bluetooth")]
-pub mod bluetooth;
+#[cfg(feature = "sensor-bt-scanner")]
+pub mod bt_scanner;
 pub mod system;
 
 #[derive(Clone, Debug)]

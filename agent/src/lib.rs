@@ -6,25 +6,35 @@ pub mod sensor;
 pub const HOSTNAME: &str = "hostname";
 pub const ADDRESS: &str = "address";
 
+#[cfg(feature = "bluetooth")]
+async fn default_bt_adapter() -> anyhow::Result<bluer::Adapter> {
+    let session = bluer::Session::new().await?;
+    let adapter = session.default_adapter().await?;
+    Ok(adapter)
+}
+
 pub struct Config {
-    #[cfg(feature = "bluetooth")]
-    bluetooth: sensor::bluetooth::Config,
+    #[cfg(feature = "sensor-bt-scanner")]
+    bt_scanner: sensor::bt_scanner::Config,
     system: sensor::system::Config,
 }
 
 impl Config {
     pub fn from_env() -> anyhow::Result<Self> {
         Ok(Self {
-            #[cfg(feature = "bluetooth")]
-            bluetooth: sensor::bluetooth::Config::from_env()?,
+            #[cfg(feature = "sensor-bt-scanner")]
+            bt_scanner: sensor::bt_scanner::Config::from_env()?,
             system: sensor::system::Config::from_env()?,
         })
     }
 
     pub async fn build(self) -> anyhow::Result<Agent> {
+        #[cfg(feature = "bluetooth")]
+        let bt_adapter = default_bt_adapter().await?;
+
         Ok(Agent {
-            #[cfg(feature = "bluetooth")]
-            bluetooth: self.bluetooth.build().await?,
+            #[cfg(feature = "sensor-bt-scanner")]
+            bt_scanner: self.bt_scanner.build(bt_adapter).await?,
             system: self.system.build()?,
         })
     }
@@ -32,8 +42,8 @@ impl Config {
 
 #[derive(Debug)]
 pub struct Agent {
-    #[cfg(feature = "bluetooth")]
-    bluetooth: Option<sensor::bluetooth::Sensor>,
+    #[cfg(feature = "sensor-bt-scanner")]
+    bt_scanner: Option<sensor::bt_scanner::Sensor>,
     system: Option<sensor::system::Sensor>,
 }
 
@@ -44,14 +54,14 @@ impl Agent {
         let context = sensor::Context::new(true, sender);
 
         let mut sensors = Vec::new();
-        #[cfg(feature = "bluetooth")]
-        if let Some(bluetooth) = self.bluetooth {
+        #[cfg(feature = "sensor-bt-scanner")]
+        if let Some(sensor) = self.bt_scanner {
             let ctx = context.clone();
-            sensors.push(tokio::spawn(async move { bluetooth.run(ctx).await }));
+            sensors.push(tokio::spawn(async move { sensor.run(ctx).await }));
         }
-        if let Some(system) = self.system {
+        if let Some(sensor) = self.system {
             let ctx = context.clone();
-            sensors.push(tokio::spawn(async move { system.run(ctx).await }));
+            sensors.push(tokio::spawn(async move { sensor.run(ctx).await }));
         }
 
         while let Some(batch) = receiver.recv().await {
