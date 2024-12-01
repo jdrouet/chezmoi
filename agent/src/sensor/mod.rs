@@ -6,13 +6,23 @@ use chezmoi_database::metrics::entity::{Metric, MetricValue};
 use tokio::sync::mpsc::Sender;
 
 const ONE_HOUR: u64 = 60 * 60;
-// const ONE_DAY: u64 = ONE_HOUR * 24;
+
+const fn one_hour() -> u64 {
+    ONE_HOUR
+}
 
 #[cfg(feature = "sensor-bt-scanner")]
 pub mod bt_scanner;
 #[cfg(feature = "sensor-miflora")]
 pub mod miflora;
 pub mod system;
+
+#[derive(Debug, Default, serde::Deserialize)]
+pub(crate) struct ConfigWrapper<C> {
+    pub enabled: bool,
+    #[serde(flatten)]
+    pub inner: C,
+}
 
 #[derive(Clone, Debug)]
 pub(crate) struct RunningState(Arc<AtomicBool>);

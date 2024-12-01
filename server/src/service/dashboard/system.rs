@@ -15,7 +15,7 @@ fn find_gauge(name: &'static str, ctx: &BuilderContext) -> Option<f64> {
         .and_then(|(_, value)| value.as_gauge())
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, serde::Deserialize)]
 pub(crate) struct SystemCpuCard;
 
 impl From<SystemCpuCard> for super::AnyCard {
@@ -39,7 +39,7 @@ impl SystemCpuCard {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, serde::Deserialize)]
 pub(crate) struct SystemMemoryCard;
 
 impl From<SystemMemoryCard> for super::AnyCard {
@@ -66,7 +66,7 @@ impl SystemMemoryCard {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, serde::Deserialize)]
 pub(crate) struct SystemSwapCard;
 
 impl From<SystemSwapCard> for super::AnyCard {

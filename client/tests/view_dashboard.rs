@@ -1,3 +1,4 @@
+use chezmoi_client::component::card::miflora::ValueState;
 use chezmoi_client::component::card::AnyCard;
 use chezmoi_client::view::dashboard::{Section, View};
 
@@ -16,22 +17,22 @@ fn with_miflora_cards() {
                         "00:00:00:00:00",
                         Some("Orchidee"),
                         LastValues {
-                            temperature: Some(TimedValue::from((0, 12.34))),
-                            brightness: Some(TimedValue::from((0, 12.34))),
-                            moisture: Some(TimedValue::from((0, 12.34))),
-                            conductivity: Some(TimedValue::from((0, 12.34))),
-                            battery: Some(TimedValue::from((0, 12.34))),
+                            temperature: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
+                            brightness: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
+                            moisture: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
+                            conductivity: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
+                            battery: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
                         },
                     )))
                     .with_card(AnyCard::Miflora(Card::new(
                         "00:00:00:00:00",
                         None::<&'static str>,
                         LastValues {
-                            temperature: Some(TimedValue::from((0, 12.34))),
-                            brightness: Some(TimedValue::from((0, 12.34))),
-                            moisture: Some(TimedValue::from((0, 12.34))),
-                            conductivity: Some(TimedValue::from((0, 12.34))),
-                            battery: Some(TimedValue::from((0, 12.34))),
+                            temperature: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
+                            brightness: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
+                            moisture: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
+                            conductivity: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
+                            battery: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
                         },
                     ))),
             )
@@ -52,8 +53,8 @@ fn with_miflora_cards() {
                         "00:00:00:00:00",
                         Some("With name"),
                         LastValues {
-                            temperature: Some(TimedValue::from((0, 12.34))),
-                            brightness: Some(TimedValue::from((0, 12.34))),
+                            temperature: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
+                            brightness: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
                             moisture: None,
                             conductivity: None,
                             battery: None,

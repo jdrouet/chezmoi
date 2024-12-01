@@ -1,30 +1,18 @@
 use bluer::{Address, DeviceEvent, DeviceProperty};
 use chezmoi_database::metrics::entity::{Metric, MetricValue};
 use chezmoi_database::metrics::{MetricHeader, MetricName, MetricTagValue, MetricTags};
-use chezmoi_helper::env::parse_env_or;
 use futures::stream::SelectAll;
 use futures::{pin_mut, StreamExt};
 
 pub const DEVICE_POWER: &str = "bt_scanner.device.power";
 pub const DEVICE_BATTERY: &str = "bt_scanner.device.battery";
 
-pub(crate) struct Config {
-    pub enabled: bool,
-}
+#[derive(Debug, Default, serde::Deserialize)]
+pub(crate) struct Config;
 
 impl Config {
-    pub fn from_env() -> anyhow::Result<Self> {
-        Ok(Self {
-            enabled: parse_env_or("SENSOR_BLUETOOTH_ENABLED", false)?,
-        })
-    }
-
-    pub async fn build(self, adapter: bluer::Adapter) -> anyhow::Result<Option<Sensor>> {
-        if self.enabled {
-            Ok(Some(Sensor { adapter }))
-        } else {
-            Ok(None)
-        }
+    pub fn build(self, adapter: bluer::Adapter) -> anyhow::Result<Sensor> {
+        Ok(Sensor { adapter })
     }
 }
 

@@ -1,4 +1,7 @@
+use std::path::PathBuf;
+
 pub(crate) mod app;
+mod config;
 mod router;
 mod service;
 
@@ -24,15 +27,18 @@ fn enable_tracing() {
 async fn main() -> anyhow::Result<()> {
     enable_tracing();
 
-    let database = chezmoi_database::Config::from_env()?;
+    let root_path = PathBuf::from("./chezmoi.toml");
+    let crate::config::RootConfig {
+        agent,
+        database,
+        server,
+    } = crate::config::RootConfig::from_path(&root_path)?;
+
     let database = database.build().await?;
     database.upgrade().await?;
 
-    let agent = chezmoi_agent::Config::from_env()?;
     let agent = agent.build().await?;
-
-    let app = app::Config::from_env()?;
-    let app = app.build().await?;
+    let app = server.build().await?;
 
     let (agent, app) = tokio::join!(agent.run(database.clone()), app.run(database));
     tracing::debug!("agent success={}", agent.is_ok());

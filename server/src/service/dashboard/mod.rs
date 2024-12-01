@@ -10,7 +10,8 @@ pub(crate) mod mi_thermometer;
 pub(crate) mod miflora;
 pub(crate) mod system;
 
-#[derive(Debug)]
+#[derive(Debug, serde::Deserialize)]
+#[serde(tag = "type", rename_all = "kebab-case")]
 pub(crate) enum AnyCard {
     MiThermometer(mi_thermometer::MiThermometerCard),
     Miflora(miflora::MifloraCard),
@@ -41,29 +42,18 @@ impl AnyCard {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, serde::Deserialize)]
 pub(crate) struct Section {
     name: Cow<'static, str>,
+    #[serde(default)]
     cards: Vec<AnyCard>,
 }
 
 impl Section {
-    pub fn new<N: Into<Cow<'static, str>>>(name: N) -> Self {
-        Self {
-            name: name.into(),
-            cards: Vec::default(),
-        }
-    }
-
     pub fn collect_latest_metrics(&self, buffer: &mut HashSet<MetricHeader>) {
         self.cards
             .iter()
             .for_each(|card| card.collect_latest_metrics(buffer));
-    }
-
-    pub fn with_card(mut self, card: impl Into<AnyCard>) -> Self {
-        self.cards.push(card.into());
-        self
     }
 }
 
@@ -79,17 +69,13 @@ impl BuilderContext {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, serde::Deserialize)]
 pub(crate) struct Dashboard {
+    #[serde(default)]
     sections: Vec<Section>,
 }
 
 impl Dashboard {
-    pub fn with_section(mut self, section: Section) -> Self {
-        self.sections.push(section);
-        self
-    }
-
     pub fn collect_latest_metrics(&self) -> Vec<MetricHeader> {
         let mut buf = HashSet::new();
         self.sections

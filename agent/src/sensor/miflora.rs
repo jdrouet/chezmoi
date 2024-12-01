@@ -6,48 +6,29 @@ use chezmoi_database::{
         MetricHeader,
     },
 };
-use chezmoi_helper::env::parse_env_or;
 use std::{collections::HashSet, str::FromStr, sync::Arc, time::Duration};
 
-use super::ONE_HOUR;
-
+#[derive(Debug, Default, serde::Deserialize)]
 pub(crate) struct Config {
-    pub enabled: bool,
+    #[serde(default)]
     pub devices: HashSet<String>,
+    #[serde(default = "crate::sensor::one_hour")]
     pub interval: u64,
 }
 
 impl Config {
-    pub fn from_env() -> anyhow::Result<Self> {
-        Ok(Self {
-            enabled: parse_env_or("SENSOR_MIFLORA_ENABLED", false)?,
-            devices: HashSet::from_iter(
-                std::env::var("SENSOR_MIFLORA_DEVICES")
-                    .ok()
-                    .unwrap_or_default()
-                    .split(",")
-                    .map(String::from),
-            ),
-            interval: parse_env_or("SENSOR_MIFLORA_INTERVAL", ONE_HOUR)?,
+    pub fn build(self, adapter: bluer::Adapter) -> anyhow::Result<Sensor> {
+        let devices = HashSet::from_iter(
+            self.devices
+                .iter()
+                .filter_map(|addr| bluer::Address::from_str(addr).ok()),
+        );
+        let interval = std::time::Duration::new(self.interval, 0);
+        Ok(Sensor {
+            adapter,
+            devices,
+            interval,
         })
-    }
-
-    pub async fn build(self, adapter: bluer::Adapter) -> anyhow::Result<Option<Sensor>> {
-        if self.enabled {
-            let devices = HashSet::from_iter(
-                self.devices
-                    .iter()
-                    .filter_map(|addr| bluer::Address::from_str(addr).ok()),
-            );
-            let interval = std::time::Duration::new(self.interval, 0);
-            Ok(Some(Sensor {
-                adapter,
-                devices,
-                interval,
-            }))
-        } else {
-            Ok(None)
-        }
     }
 }
 

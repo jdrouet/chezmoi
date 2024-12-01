@@ -13,35 +13,41 @@ async fn default_bt_adapter() -> anyhow::Result<bluer::Adapter> {
     Ok(adapter)
 }
 
+#[derive(Debug, Default, serde::Deserialize)]
 pub struct Config {
     #[cfg(feature = "sensor-bt-scanner")]
-    bt_scanner: sensor::bt_scanner::Config,
+    #[serde(default)]
+    bt_scanner: sensor::ConfigWrapper<sensor::bt_scanner::Config>,
     #[cfg(feature = "sensor-miflora")]
-    miflora: sensor::miflora::Config,
-    system: sensor::system::Config,
+    #[serde(default)]
+    miflora: sensor::ConfigWrapper<sensor::miflora::Config>,
+    #[serde(default)]
+    system: sensor::ConfigWrapper<sensor::system::Config>,
 }
 
 impl Config {
-    pub fn from_env() -> anyhow::Result<Self> {
-        Ok(Self {
-            #[cfg(feature = "sensor-bt-scanner")]
-            bt_scanner: sensor::bt_scanner::Config::from_env()?,
-            #[cfg(feature = "sensor-miflora")]
-            miflora: sensor::miflora::Config::from_env()?,
-            system: sensor::system::Config::from_env()?,
-        })
-    }
-
     pub async fn build(self) -> anyhow::Result<Agent> {
         #[cfg(feature = "bluetooth")]
         let bt_adapter = default_bt_adapter().await?;
 
         Ok(Agent {
             #[cfg(feature = "sensor-bt-scanner")]
-            bt_scanner: self.bt_scanner.build(bt_adapter).await?,
+            bt_scanner: if self.bt_scanner.enabled {
+                Some(self.bt_scanner.inner.build(bt_adapter.clone())?)
+            } else {
+                None
+            },
             #[cfg(feature = "sensor-miflora")]
-            miflora: self.miflora.build(bt_adapter).await?,
-            system: self.system.build()?,
+            miflora: if self.miflora.enabled {
+                Some(self.miflora.inner.build(bt_adapter)?)
+            } else {
+                None
+            },
+            system: if self.system.enabled {
+                Some(self.system.inner.build()?)
+            } else {
+                None
+            },
         })
     }
 }

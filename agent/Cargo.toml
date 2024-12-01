@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-default = ["sensor-miflora"]
+default = ["sensor-bt-scanner", "sensor-miflora"]
 bluetooth = ["dep:bluer"]
 sensor-bt-scanner = ["bluetooth"]
 sensor-miflora = ["bluetooth", "dep:bluer-miflora"]
@@ -17,6 +17,7 @@ anyhow = { workspace = true }
 bluer = { version = "0.17", features = ["bluetoothd"], optional = true }
 bluer-miflora = { version = "0.2", optional = true }
 futures = { version = "0.3" }
+serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true }
 tracing = { workspace = true }
 sysinfo = { version = "0.32.0", default-features = false, features = [

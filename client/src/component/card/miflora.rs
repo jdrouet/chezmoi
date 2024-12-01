@@ -5,14 +5,41 @@ use crate::component::icon::{Icon, IconKind};
 use crate::component::prelude::Component;
 use crate::helper::fmt;
 
+fn empty<'a, W: std::fmt::Write>(buf: Buffer<W, Body<'a>>) -> Buffer<W, Body<'a>> {
+    buf
+}
+
+fn render_state_icon<'a, W: std::fmt::Write>(
+    buf: Buffer<W, Body<'a>>,
+    state: ValueState,
+) -> Buffer<W, Body<'a>> {
+    match state {
+        ValueState::Normal => buf,
+        ValueState::Low { min: _ } => buf
+            .node("i")
+            .attr(("class", "ri-arrow-up-s-line"))
+            .content(empty),
+        ValueState::High { max: _ } => buf
+            .node("i")
+            .attr(("class", "ri-arrow-down-s-line"))
+            .content(empty),
+    }
+}
+
 fn render_row<'a, W: std::fmt::Write>(
     buf: Buffer<W, Body<'a>>,
     icon: IconKind,
     name: &str,
-    value: Option<(u64, ScaledValue<'a>)>,
+    value: Option<(u64, ScaledValue<'a>, ValueState)>,
 ) -> Buffer<W, Body<'a>> {
+    let classname = match value {
+        Some((_, _, ValueState::High { .. })) | Some((_, _, ValueState::Low { .. })) => {
+            "flex-row mx-md my-sm text-error"
+        }
+        _ => "flex-row mx-md my-sm",
+    };
     buf.node("div")
-        .attr(("class", "flex-row mx-md my-sm"))
+        .attr(("class", classname))
         .attr(("data-label", name))
         .content(|buf| {
             let buf = Icon::new(icon).render(buf);
@@ -20,7 +47,8 @@ fn render_row<'a, W: std::fmt::Write>(
                 .node("label")
                 .attr(("class", "flex-1 mx-sm"))
                 .content(|buf| buf.text(name));
-            let buf = buf.optional(value, |buf, (_ts, value)| {
+            let buf = buf.optional(value, |buf, (_ts, value, state)| {
+                let buf = render_state_icon(buf, state);
                 buf.node("label").content(|buf| buf.raw(value))
             });
             buf
@@ -28,14 +56,26 @@ fn render_row<'a, W: std::fmt::Write>(
 }
 
 #[derive(Clone, Copy, Debug)]
+pub enum ValueState {
+    Low { min: f64 },
+    Normal,
+    High { max: f64 },
+}
+
+#[derive(Clone, Copy, Debug)]
 pub struct TimedValue {
     pub timestamp: u64,
     pub value: f64,
+    pub state: ValueState,
 }
 
-impl From<(u64, f64)> for TimedValue {
-    fn from((timestamp, value): (u64, f64)) -> Self {
-        Self { timestamp, value }
+impl From<(u64, f64, ValueState)> for TimedValue {
+    fn from((timestamp, value, state): (u64, f64, ValueState)) -> Self {
+        Self {
+            timestamp,
+            value,
+            state,
+        }
     }
 }
 
@@ -93,46 +133,61 @@ impl<'a> Card<'a> {
                         buf,
                         IconKind::TemperatureHot,
                         "temperature",
-                        self.values
-                            .temperature
-                            .as_ref()
-                            .map(|item| (item.timestamp, fmt::TEMPERATURE.format(item.value))),
+                        self.values.temperature.as_ref().map(|item| {
+                            (
+                                item.timestamp,
+                                fmt::TEMPERATURE.format(item.value),
+                                item.state,
+                            )
+                        }),
                     );
                     let buf = render_row(
                         buf,
                         IconKind::Water,
                         "moisture",
-                        self.values
-                            .moisture
-                            .as_ref()
-                            .map(|item| (item.timestamp, fmt::PERCENTAGE.format(item.value))),
+                        self.values.moisture.as_ref().map(|item| {
+                            (
+                                item.timestamp,
+                                fmt::PERCENTAGE.format(item.value),
+                                item.state,
+                            )
+                        }),
                     );
                     let buf = render_row(
                         buf,
                         IconKind::Sun,
                         "brightness",
-                        self.values
-                            .brightness
-                            .as_ref()
-                            .map(|item| (item.timestamp, fmt::BRIGHTNESS.format(item.value))),
+                        self.values.brightness.as_ref().map(|item| {
+                            (
+                                item.timestamp,
+                                fmt::BRIGHTNESS.format(item.value),
+                                item.state,
+                            )
+                        }),
                     );
                     let buf = render_row(
                         buf,
                         IconKind::Dashboard,
                         "conductivity",
-                        self.values
-                            .conductivity
-                            .as_ref()
-                            .map(|item| (item.timestamp, fmt::CONDUCTIVITY.format(item.value))),
+                        self.values.conductivity.as_ref().map(|item| {
+                            (
+                                item.timestamp,
+                                fmt::CONDUCTIVITY.format(item.value),
+                                item.state,
+                            )
+                        }),
                     );
                     let buf = render_row(
                         buf,
                         IconKind::Battery,
                         "battery",
-                        self.values
-                            .battery
-                            .as_ref()
-                            .map(|item| (item.timestamp, fmt::PERCENTAGE.format(item.value))),
+                        self.values.battery.as_ref().map(|item| {
+                            (
+                                item.timestamp,
+                                fmt::PERCENTAGE.format(item.value),
+                                item.state,
+                            )
+                        }),
                     );
                     buf
                 })

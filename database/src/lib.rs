@@ -11,9 +11,20 @@ use sqlx::Executor;
 
 static MIGRATOR: Migrator = sqlx::migrate!("./migrations/sqlite");
 
-#[derive(Clone, Debug)]
+fn default_url() -> Cow<'static, str> {
+    Cow::Borrowed(":memory:")
+}
+
+#[derive(Clone, Debug, serde::Deserialize)]
 pub struct Config {
+    #[serde(default = "default_url")]
     url: Cow<'static, str>,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self { url: default_url() }
+    }
 }
 
 impl Config {

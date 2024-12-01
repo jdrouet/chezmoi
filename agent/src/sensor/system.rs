@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use chezmoi_database::metrics::entity::{Metric, MetricValue};
 use chezmoi_database::metrics::MetricHeader;
-use chezmoi_helper::env::parse_env_or;
 use sysinfo::{CpuRefreshKind, MemoryRefreshKind, RefreshKind};
 use tokio::time::Interval;
 
@@ -14,32 +13,26 @@ pub const MEMORY_USED: &str = "host.system.memory.used";
 pub const SWAP_TOTAL: &str = "host.system.swap.total";
 pub const SWAP_USED: &str = "host.system.swap.used";
 
+fn default_interval() -> u64 {
+    10
+}
+
+#[derive(Debug, Default, serde::Deserialize)]
 pub(crate) struct Config {
-    enabled: bool,
+    #[serde(default = "default_interval")]
     interval: u64,
 }
 
 impl Config {
-    pub fn from_env() -> anyhow::Result<Self> {
-        Ok(Self {
-            enabled: parse_env_or("SENSOR_SYSTEM_ENABLED", false)?,
-            interval: parse_env_or("SENSOR_SYSTEM_INTERVAL", 10)?,
+    pub fn build(self) -> anyhow::Result<Sensor> {
+        Ok(Sensor {
+            inner: sysinfo::System::new_with_specifics(
+                RefreshKind::new()
+                    .with_cpu(CpuRefreshKind::everything())
+                    .with_memory(MemoryRefreshKind::everything()),
+            ),
+            interval: tokio::time::interval(Duration::from_secs(self.interval)),
         })
-    }
-
-    pub fn build(self) -> anyhow::Result<Option<Sensor>> {
-        if self.enabled {
-            Ok(Some(Sensor {
-                inner: sysinfo::System::new_with_specifics(
-                    RefreshKind::new()
-                        .with_cpu(CpuRefreshKind::everything())
-                        .with_memory(MemoryRefreshKind::everything()),
-                ),
-                interval: tokio::time::interval(Duration::from_secs(self.interval)),
-            }))
-        } else {
-            Ok(None)
-        }
     }
 }
 
@@ -81,6 +74,7 @@ impl Sensor {
         Ok(())
     }
 
+    #[tracing::instrument(name = "system", skip_all)]
     pub async fn run(mut self, context: super::Context) -> anyhow::Result<()> {
         let mut collector = super::Collector::new(super::Cache::default(), 5);
         while context.state.is_running() {

@@ -18,8 +18,9 @@ fn find_gauge(name: &'static str, address: Cow<'static, str>, ctx: &BuilderConte
         .and_then(|(_, value)| value.as_gauge())
 }
 
-#[derive(Debug)]
+#[derive(Debug, serde::Deserialize)]
 pub(crate) struct MiThermometerCard {
+    #[serde(default)]
     name: Option<Cow<'static, str>>,
     address: Cow<'static, str>,
 }
@@ -31,16 +32,6 @@ impl From<MiThermometerCard> for super::AnyCard {
 }
 
 impl MiThermometerCard {
-    pub fn new<N: Into<Cow<'static, str>>, A: Into<Cow<'static, str>>>(
-        name: Option<N>,
-        address: A,
-    ) -> Self {
-        Self {
-            name: name.map(|n| n.into()),
-            address: address.into(),
-        }
-    }
-
     pub fn collect_latest_metrics(&self, buffer: &mut HashSet<MetricHeader>) {
         buffer.insert(header("mithermometer.temperature", self.address.clone()));
         buffer.insert(header("mithermometer.humidity", self.address.clone()));
