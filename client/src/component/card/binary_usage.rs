@@ -18,15 +18,12 @@ impl Card {
 impl crate::component::prelude::Component for Card {
     fn render<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {
         buf.node("div")
-            .attr((
-                "class",
-                "card memory-usage shadow min-w-250px m-md flex-col",
-            ))
+            .attr(("class", "card shadow x-sm y-sm m-md flex-col"))
             .content(|buf| {
                 buf.node("div")
                     .attr((
                         "class",
-                        "card-content flex-1 text-center align-content-center min-h-150px py-md",
+                        "card-content flex-1 text-center align-content-center py-md",
                     ))
                     .content(|buf| {
                         buf.node("p")

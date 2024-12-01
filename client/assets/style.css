@@ -38,6 +38,7 @@ header > section {
 main {
     flex-grow: 1;
     padding: 0 24px;
+    overflow-y: scroll;
 }
 /* classes */
 .bg-error {
@@ -50,12 +51,19 @@ main {
     background-color: var(--background-default);
     border: 1px solid var(--border-color);
     border-radius: 4px;
+    box-sizing: border-box;
     min-height: 48px;
 }
-.card-content {
+.card-image {
+    background-position: center;
+    background-size: cover;
 }
+.card-image + .card-content,
+.card-content + .card-content,
 .card-footer {
     border-top: 1px solid var(--border-color);
+}
+.card-footer {
     padding: 4px 8px;
 }
 .flex-col {
@@ -149,4 +157,16 @@ main {
 i.icon {
     width: 1em;
     height: 1em;
+}
+.card.x-sm {
+    width: 200px;
+}
+.card.x-md {
+    width: 416px;
+}
+.card.y-sm {
+    height: 160px;
+}
+.card.y-md {
+    height: 320px;
 }

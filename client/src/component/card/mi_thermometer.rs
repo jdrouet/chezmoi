@@ -118,7 +118,7 @@ impl<'a> Card<'a> {
 impl<'a> Component for Card<'a> {
     fn render<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {
         buf.node("div")
-            .attr(("class", "card miflora shadow min-w-250px m-md"))
+            .attr(("class", "card x-sm shadow min-w-250px m-md"))
             .content(|buf| {
                 let buf = self.render_last_update(buf);
                 buf.node("div")

@@ -1,4 +1,4 @@
-use another_html_builder::{Body, Buffer};
+use another_html_builder::{AttributeValue, Body, Buffer};
 use human_number::ScaledValue;
 
 use crate::component::icon::{Icon, IconKind};
@@ -98,20 +98,47 @@ impl LastValues {
     }
 }
 
+struct CardImageStyle<'a>(&'a str);
+
+impl AttributeValue for CardImageStyle<'_> {
+    fn render(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "background-image: url({})", self.0)
+    }
+}
+
 #[derive(Debug)]
 pub struct Card<'a> {
     address: &'a str,
     name: Option<&'a str>,
+    image: Option<&'a str>,
     values: LastValues,
 }
 
 impl<'a> Card<'a> {
-    pub fn new(address: &'a str, name: Option<&'a str>, values: LastValues) -> Self {
+    pub fn new(
+        address: &'a str,
+        name: Option<&'a str>,
+        image: Option<&'a str>,
+        values: LastValues,
+    ) -> Self {
         Self {
             address,
             name,
+            image,
             values,
         }
+    }
+
+    fn render_header<'v, W: std::fmt::Write>(
+        &self,
+        buf: Buffer<W, Body<'v>>,
+    ) -> Buffer<W, Body<'v>> {
+        buf.optional(self.image, |buf, url| {
+            buf.node("div")
+                .attr(("class", "card-image flex-1"))
+                .attr(("style", CardImageStyle(url)))
+                .content(|buf| buf)
+        })
     }
 
     fn render_last_update<'v, W: std::fmt::Write>(
@@ -122,12 +149,12 @@ impl<'a> Card<'a> {
             buf.node("div")
                 .attr((
                     "class",
-                    "card-content align-content-center text-center min-h-150px py-md",
+                    "card-content align-content-center text-center py-md",
                 ))
                 .content(|buf| buf.text("No content found"))
         } else {
             buf.node("div")
-                .attr(("class", "card-content min-h-150px flex-col py-md"))
+                .attr(("class", "card-content flex-col py-md"))
                 .content(|buf| {
                     let buf = render_row(
                         buf,
@@ -193,27 +220,35 @@ impl<'a> Card<'a> {
                 })
         }
     }
+
+    fn render_footer<'v, W: std::fmt::Write>(
+        &self,
+        buf: Buffer<W, Body<'v>>,
+    ) -> Buffer<W, Body<'v>> {
+        buf.node("div")
+            .attr(("class", "card-footer"))
+            .content(|buf| {
+                if let Some(name) = self.name {
+                    buf.node("b")
+                        .content(|buf| buf.text(name))
+                        .text(" - ")
+                        .node("i")
+                        .content(|buf| buf.text(self.address))
+                } else {
+                    buf.node("i").content(|buf| buf.text(self.address))
+                }
+            })
+    }
 }
 
 impl<'a> Component for Card<'a> {
     fn render<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {
         buf.node("div")
-            .attr(("class", "card miflora shadow min-w-250px m-md"))
+            .attr(("class", "card x-md y-md shadow m-md flex-col"))
             .content(|buf| {
+                let buf = self.render_header(buf);
                 let buf = self.render_last_update(buf);
-                buf.node("div")
-                    .attr(("class", "card-footer"))
-                    .content(|buf| {
-                        if let Some(name) = self.name {
-                            buf.node("b")
-                                .content(|buf| buf.text(name))
-                                .text(" - ")
-                                .node("i")
-                                .content(|buf| buf.text(self.address))
-                        } else {
-                            buf.node("i").content(|buf| buf.text(self.address))
-                        }
-                    })
+                self.render_footer(buf)
             })
     }
 }

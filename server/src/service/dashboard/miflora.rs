@@ -45,6 +45,7 @@ pub(crate) struct MifloraCard {
     #[serde(default)]
     name: Option<Cow<'static, str>>,
     address: Cow<'static, str>,
+    image: Option<String>,
     #[serde(default)]
     temperature: Range,
     #[serde(default)]
@@ -76,6 +77,7 @@ impl MifloraCard {
         Ok(ClientAnyCard::Miflora(Card::new(
             self.address.as_ref(),
             self.name.as_deref(),
+            self.image.as_deref(),
             LastValues {
                 temperature: find_gauge(
                     "miflora.temperature",

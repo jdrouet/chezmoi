@@ -16,6 +16,7 @@ fn with_miflora_cards() {
                     .with_card(AnyCard::Miflora(Card::new(
                         "00:00:00:00:00",
                         Some("Orchidee"),
+                        None,
                         LastValues {
                             temperature: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
                             brightness: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
@@ -27,6 +28,7 @@ fn with_miflora_cards() {
                     .with_card(AnyCard::Miflora(Card::new(
                         "00:00:00:00:00",
                         None::<&'static str>,
+                        None,
                         LastValues {
                             temperature: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
                             brightness: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
@@ -41,6 +43,7 @@ fn with_miflora_cards() {
                     .with_card(AnyCard::Miflora(Card::new(
                         "00:00:00:00:00",
                         Some("With name"),
+                        None,
                         LastValues {
                             temperature: None,
                             brightness: None,
@@ -52,6 +55,7 @@ fn with_miflora_cards() {
                     .with_card(AnyCard::Miflora(Card::new(
                         "00:00:00:00:00",
                         Some("With name"),
+                        None,
                         LastValues {
                             temperature: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
                             brightness: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
@@ -63,6 +67,7 @@ fn with_miflora_cards() {
                     .with_card(AnyCard::Miflora(Card::new(
                         "00:00:00:00:00",
                         None::<&'static str>,
+                        None,
                         LastValues {
                             temperature: None,
                             brightness: None,
