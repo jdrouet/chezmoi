@@ -122,7 +122,7 @@ impl<'a> Card<'a> {
             buf.node("div")
                 .attr((
                     "class",
-                    "card-content align-content-center text-center min-h-150px",
+                    "card-content align-content-center text-center min-h-150px py-md",
                 ))
                 .content(|buf| buf.text("No content found"))
         } else {

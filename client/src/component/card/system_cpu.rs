@@ -18,13 +18,13 @@ impl crate::component::prelude::Component for Card {
         buf.node("div")
             .attr((
                 "class",
-                "card memory-usage shadow min-w-250px h-150px m-md flex-col",
+                "card memory-usage shadow min-w-250px m-md flex-col",
             ))
             .content(|buf| {
                 buf.node("div")
                     .attr((
                         "class",
-                        "card-content flex-1 text-center align-content-center",
+                        "card-content flex-1 text-center align-content-center min-h-150px py-md",
                     ))
                     .content(|buf| {
                         buf.node("p")

@@ -68,7 +68,7 @@ impl crate::component::prelude::Component for Card {
             ))
             .content(|buf| {
                 buf.node("div")
-                    .attr(("class", "card-content flex-1 scroll-y"))
+                    .attr(("class", "card-content flex-1 scroll-y py-md"))
                     .content(|buf| self.render_device_list(buf))
                     .node("div")
                     .attr(("class", "card-footer"))
