@@ -145,6 +145,9 @@ main {
 .text-xl {
     font-size: 1.5rem;
 }
+.text-xxl {
+    font-size: 2rem;
+}
 .align-content-center {
     align-content: center;
 }
