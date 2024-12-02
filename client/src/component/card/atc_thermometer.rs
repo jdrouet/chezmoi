@@ -1,6 +1,7 @@
 use another_html_builder::{Body, Buffer};
 use human_number::ScaledValue;
 
+use crate::component::helper::format_datetime;
 use crate::component::icon::{Icon, IconKind};
 use crate::component::prelude::Component;
 use crate::helper::fmt;
@@ -20,10 +21,31 @@ fn render_row<'a, W: std::fmt::Write>(
                 .node("label")
                 .attr(("class", "flex-1 mx-sm"))
                 .content(|buf| buf.text(name));
-            let buf = buf.optional(value, |buf, value| {
-                buf.node("label").content(|buf| buf.raw(value))
-            });
-            buf
+            buf.node("label").content(|buf| match value {
+                Some(value) => buf.raw(value),
+                None => buf.text("-"),
+            })
+        })
+}
+
+fn render_date_row<'a, W: std::fmt::Write>(
+    buf: Buffer<W, Body<'a>>,
+    icon: IconKind,
+    name: &str,
+    value: Option<u64>,
+) -> Buffer<W, Body<'a>> {
+    buf.node("div")
+        .attr(("class", "flex-row mx-md my-sm"))
+        .attr(("data-label", name))
+        .content(|buf| {
+            let buf = Icon::new(icon).render(buf);
+
+            buf.node("label")
+                .attr(("class", "flex-1 mx-sm"))
+                .content(|buf| match value.and_then(format_datetime) {
+                    Some(dt) => buf.raw(dt),
+                    None => buf.text("-"),
+                })
         })
 }
 
@@ -47,15 +69,6 @@ pub struct LastValues {
     pub battery: Option<f64>,
 }
 
-impl LastValues {
-    fn is_empty(&self) -> bool {
-        self.timestamp.is_none()
-            && self.temperature.is_none()
-            && self.humidity.is_none()
-            && self.battery.is_none()
-    }
-}
-
 #[derive(Debug)]
 pub struct Card<'a> {
     address: &'a str,
@@ -76,49 +89,41 @@ impl<'a> Card<'a> {
         &self,
         buf: Buffer<W, Body<'v>>,
     ) -> Buffer<W, Body<'v>> {
-        if self.values.is_empty() {
-            buf.node("div")
-                .attr((
-                    "class",
-                    "card-content align-content-center text-center min-h-150px",
-                ))
-                .content(|buf| buf.text("No content found"))
-        } else {
-            buf.node("div")
-                .attr(("class", "card-content min-h-150px flex-col py-md"))
-                .content(|buf| {
-                    let buf = render_row(
-                        buf,
-                        IconKind::TemperatureHot,
-                        "temperature",
-                        self.values
-                            .temperature
-                            .map(|item| fmt::TEMPERATURE.format(item)),
-                    );
-                    let buf = render_row(
-                        buf,
-                        IconKind::Water,
-                        "moisture",
-                        self.values
-                            .humidity
-                            .map(|item| fmt::PERCENTAGE.format(item)),
-                    );
-                    let buf = render_row(
-                        buf,
-                        IconKind::Battery,
-                        "battery",
-                        self.values.battery.map(|item| fmt::PERCENTAGE.format(item)),
-                    );
-                    buf
-                })
-        }
+        buf.node("div")
+            .attr(("class", "card-content flex-col flex-1 py-md"))
+            .content(|buf| {
+                let buf = render_row(
+                    buf,
+                    IconKind::TemperatureHot,
+                    "temperature",
+                    self.values
+                        .temperature
+                        .map(|item| fmt::TEMPERATURE.format(item)),
+                );
+                let buf = render_row(
+                    buf,
+                    IconKind::Water,
+                    "moisture",
+                    self.values
+                        .humidity
+                        .map(|item| fmt::PERCENTAGE.format(item)),
+                );
+                let buf = render_row(
+                    buf,
+                    IconKind::Battery,
+                    "battery",
+                    self.values.battery.map(|item| fmt::PERCENTAGE.format(item)),
+                );
+                let buf = render_date_row(buf, IconKind::Time, "timestamp", self.values.timestamp);
+                buf
+            })
     }
 }
 
 impl<'a> Component for Card<'a> {
     fn render<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {
         buf.node("div")
-            .attr(("class", "card x-sm shadow min-w-250px m-md"))
+            .attr(("class", "card x-sm y-sm shadow flex-col m-md"))
             .content(|buf| {
                 let buf = self.render_last_update(buf);
                 buf.node("div")

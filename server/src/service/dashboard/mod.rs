@@ -6,14 +6,14 @@ use chezmoi_client::view::dashboard;
 use chezmoi_database::metrics::entity::{Metric, MetricValue};
 use chezmoi_database::metrics::MetricHeader;
 
-pub(crate) mod mi_thermometer;
+pub(crate) mod atc_thermometer;
 pub(crate) mod miflora;
 pub(crate) mod system;
 
 #[derive(Debug, serde::Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub(crate) enum AnyCard {
-    MiThermometer(mi_thermometer::MiThermometerCard),
+    AtcThermometer(atc_thermometer::AtcThermometerCard),
     Miflora(miflora::MifloraCard),
     SystemCpu(system::SystemCpuCard),
     SystemMemory(system::SystemMemoryCard),
@@ -23,7 +23,7 @@ pub(crate) enum AnyCard {
 impl AnyCard {
     pub fn collect_latest_metrics(&self, buffer: &mut HashSet<MetricHeader>) {
         match self {
-            Self::MiThermometer(inner) => inner.collect_latest_metrics(buffer),
+            Self::AtcThermometer(inner) => inner.collect_latest_metrics(buffer),
             Self::Miflora(inner) => inner.collect_latest_metrics(buffer),
             Self::SystemCpu(inner) => inner.collect_latest_metrics(buffer),
             Self::SystemMemory(inner) => inner.collect_latest_metrics(buffer),
@@ -33,7 +33,7 @@ impl AnyCard {
 
     pub async fn build_card(&self, ctx: &BuilderContext) -> Result<ClientAnyCard, String> {
         match self {
-            Self::MiThermometer(inner) => inner.build_card(ctx).await,
+            Self::AtcThermometer(inner) => inner.build_card(ctx).await,
             Self::Miflora(inner) => inner.build_card(ctx).await,
             Self::SystemCpu(inner) => inner.build_card(ctx).await,
             Self::SystemMemory(inner) => inner.build_card(ctx).await,

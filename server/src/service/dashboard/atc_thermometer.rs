@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::collections::HashSet;
 
-use chezmoi_client::component::card::mi_thermometer::{Card, LastValues};
+use chezmoi_client::component::card::atc_thermometer::{Card, LastValues};
 use chezmoi_client::component::card::AnyCard as ClientAnyCard;
 use chezmoi_database::metrics::MetricHeader;
 
@@ -19,19 +19,19 @@ fn find_gauge(name: &'static str, address: Cow<'static, str>, ctx: &BuilderConte
 }
 
 #[derive(Debug, serde::Deserialize)]
-pub(crate) struct MiThermometerCard {
+pub(crate) struct AtcThermometerCard {
     #[serde(default)]
     name: Option<Cow<'static, str>>,
     address: Cow<'static, str>,
 }
 
-impl From<MiThermometerCard> for super::AnyCard {
-    fn from(value: MiThermometerCard) -> Self {
-        Self::MiThermometer(value)
+impl From<AtcThermometerCard> for super::AnyCard {
+    fn from(value: AtcThermometerCard) -> Self {
+        Self::AtcThermometer(value)
     }
 }
 
-impl MiThermometerCard {
+impl AtcThermometerCard {
     pub fn collect_latest_metrics(&self, buffer: &mut HashSet<MetricHeader>) {
         buffer.insert(header("mithermometer.temperature", self.address.clone()));
         buffer.insert(header("mithermometer.humidity", self.address.clone()));
@@ -43,7 +43,7 @@ impl MiThermometerCard {
         let humidity = find_gauge("mithermometer.brightness", self.address.clone(), ctx);
         let battery = find_gauge("mithermometer.battery", self.address.clone(), ctx);
 
-        Ok(ClientAnyCard::MiThermometer(Card::new(
+        Ok(ClientAnyCard::AtcThermometer(Card::new(
             self.address.as_ref(),
             self.name.as_deref(),
             LastValues {

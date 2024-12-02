@@ -1,6 +1,7 @@
 use another_html_builder::{AttributeValue, Body, Buffer};
 use human_number::ScaledValue;
 
+use crate::component::helper::format_datetime;
 use crate::component::icon::{Icon, IconKind};
 use crate::component::prelude::Component;
 use crate::helper::fmt;
@@ -47,6 +48,7 @@ fn render_row<'a, W: std::fmt::Write>(
                 .node("label")
                 .attr(("class", "flex-1 mx-sm"))
                 .content(|buf| buf.text(name));
+
             match value {
                 Some((_ts, value, state)) => {
                     let buf = render_state_icon(buf, state);
@@ -73,12 +75,11 @@ fn render_date_row<'a, W: std::fmt::Write>(
                 .attr(("class", "flex-1 mx-sm"))
                 .content(|buf| buf.text(name));
 
-            match value.and_then(|ts| chrono::DateTime::from_timestamp(ts as i64, 0)) {
-                Some(datetime) => buf
-                    .node("label")
-                    .content(|buf| buf.raw(datetime.format("%Y/%m/%d %H:%M"))),
-                None => buf.node("label").content(|buf| buf.text("-")),
-            }
+            buf.node("label")
+                .content(|buf| match value.and_then(format_datetime) {
+                    Some(dt) => buf.raw(dt),
+                    None => buf.text("-"),
+                })
         })
 }
 
