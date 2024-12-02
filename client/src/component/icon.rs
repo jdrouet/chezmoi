@@ -6,6 +6,7 @@ pub enum IconKind {
     Dashboard,
     Sun,
     TemperatureHot,
+    Time,
     Water,
 }
 
@@ -16,6 +17,7 @@ impl IconKind {
             Self::Dashboard => "ri-dashboard-2-line",
             Self::Sun => "ri-sun-line",
             Self::TemperatureHot => "ri-temp-hot-line",
+            Self::Time => "ri-time-line",
             Self::Water => "ri-drop-line",
         }
     }

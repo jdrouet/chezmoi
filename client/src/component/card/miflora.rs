@@ -57,6 +57,31 @@ fn render_row<'a, W: std::fmt::Write>(
         })
 }
 
+fn render_date_row<'a, W: std::fmt::Write>(
+    buf: Buffer<W, Body<'a>>,
+    icon: IconKind,
+    name: &str,
+    value: Option<u64>,
+) -> Buffer<W, Body<'a>> {
+    buf.node("div")
+        .attr(("class", "flex-row mx-md my-sm"))
+        .attr(("data-label", name))
+        .content(|buf| {
+            let buf = Icon::new(icon).render(buf);
+            let buf = buf
+                .node("label")
+                .attr(("class", "flex-1 mx-sm"))
+                .content(|buf| buf.text(name));
+
+            match value.and_then(|ts| chrono::DateTime::from_timestamp(ts as i64, 0)) {
+                Some(datetime) => buf
+                    .node("label")
+                    .content(|buf| buf.raw(datetime.format("%Y/%m/%d %H:%M"))),
+                None => buf.node("label").content(|buf| buf.text("-")),
+            }
+        })
+}
+
 #[derive(Clone, Copy, Debug)]
 pub enum ValueState {
     Low { min: f64 },
@@ -88,6 +113,19 @@ pub struct LastValues {
     pub moisture: Option<TimedValue>,
     pub conductivity: Option<TimedValue>,
     pub battery: Option<TimedValue>,
+}
+
+impl LastValues {
+    pub fn last_timestamp(&self) -> Option<u64> {
+        self.temperature
+            .map(|v| v.timestamp)
+            .into_iter()
+            .chain(self.brightness.map(|v| v.timestamp).into_iter())
+            .chain(self.moisture.map(|v| v.timestamp).into_iter())
+            .chain(self.conductivity.map(|v| v.timestamp).into_iter())
+            .chain(self.battery.map(|v| v.timestamp).into_iter())
+            .max()
+    }
 }
 
 struct CardImageStyle<'a>(&'a str);
@@ -207,6 +245,12 @@ impl<'a> Card<'a> {
                             item.state,
                         )
                     }),
+                );
+                let buf = render_date_row(
+                    buf,
+                    IconKind::Time,
+                    "timestamp",
+                    self.values.last_timestamp(),
                 );
                 buf
             })

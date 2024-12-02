@@ -363,6 +363,7 @@ name = "chezmoi-client"
 version = "0.1.0"
 dependencies = [
  "another-html-builder",
+ "chrono",
  "human-number",
 ]
 
