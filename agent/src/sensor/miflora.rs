@@ -1,12 +1,13 @@
+use std::collections::HashSet;
+use std::str::FromStr;
+use std::sync::Arc;
+use std::time::Duration;
+
+use chezmoi_database::helper::now;
+use chezmoi_database::metrics::entity::{Metric, MetricValue};
+use chezmoi_database::metrics::MetricHeader;
+
 use crate::sensor::Collector;
-use chezmoi_database::{
-    helper::now,
-    metrics::{
-        entity::{Metric, MetricValue},
-        MetricHeader,
-    },
-};
-use std::{collections::HashSet, str::FromStr, sync::Arc, time::Duration};
 
 #[derive(Debug, Default, serde::Deserialize)]
 pub(crate) struct Config {

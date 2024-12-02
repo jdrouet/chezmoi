@@ -15,6 +15,9 @@ async fn default_bt_adapter() -> anyhow::Result<bluer::Adapter> {
 
 #[derive(Debug, Default, serde::Deserialize)]
 pub struct Config {
+    #[cfg(feature = "sensor-atc-thermometer")]
+    #[serde(default)]
+    atc_thermometer: sensor::ConfigWrapper<sensor::atc_thermometer::Config>,
     #[cfg(feature = "sensor-bt-scanner")]
     #[serde(default)]
     bt_scanner: sensor::ConfigWrapper<sensor::bt_scanner::Config>,
@@ -31,6 +34,12 @@ impl Config {
         let bt_adapter = default_bt_adapter().await?;
 
         Ok(Agent {
+            #[cfg(feature = "sensor-atc-thermometer")]
+            atc_thermometer: if self.atc_thermometer.enabled {
+                Some(self.atc_thermometer.inner.build(bt_adapter.clone())?)
+            } else {
+                None
+            },
             #[cfg(feature = "sensor-bt-scanner")]
             bt_scanner: if self.bt_scanner.enabled {
                 Some(self.bt_scanner.inner.build(bt_adapter.clone())?)
@@ -54,6 +63,8 @@ impl Config {
 
 #[derive(Debug)]
 pub struct Agent {
+    #[cfg(feature = "sensor-atc-thermometer")]
+    atc_thermometer: Option<sensor::atc_thermometer::Sensor>,
     #[cfg(feature = "sensor-bt-scanner")]
     bt_scanner: Option<sensor::bt_scanner::Sensor>,
     #[cfg(feature = "sensor-miflora")]
@@ -68,6 +79,11 @@ impl Agent {
         let context = sensor::Context::new(true, sender);
 
         let mut sensors = Vec::new();
+        #[cfg(feature = "sensor-atc-thermometer")]
+        if let Some(sensor) = self.atc_thermometer {
+            let ctx = context.clone();
+            sensors.push(tokio::spawn(async move { sensor.run(ctx).await }));
+        }
         #[cfg(feature = "sensor-bt-scanner")]
         if let Some(sensor) = self.bt_scanner {
             let ctx = context.clone();

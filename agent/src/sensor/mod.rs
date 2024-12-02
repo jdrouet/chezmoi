@@ -11,6 +11,8 @@ const fn one_hour() -> u64 {
     ONE_HOUR
 }
 
+#[cfg(feature = "sensor-atc-thermometer")]
+pub mod atc_thermometer;
 #[cfg(feature = "sensor-bt-scanner")]
 pub mod bt_scanner;
 #[cfg(feature = "sensor-miflora")]

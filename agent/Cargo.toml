@@ -4,8 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-default = ["sensor-bt-scanner", "sensor-miflora"]
+default = ["sensor-atc-thermometer", "sensor-miflora"]
 bluetooth = ["dep:bluer"]
+sensor-atc-thermometer = ["bluetooth"]
 sensor-bt-scanner = ["bluetooth"]
 sensor-miflora = ["bluetooth", "dep:bluer-miflora"]
 
