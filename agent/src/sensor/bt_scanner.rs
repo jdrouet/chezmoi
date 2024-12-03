@@ -1,9 +1,11 @@
-use bluer::{Address, DeviceEvent, DeviceProperty};
-use chezmoi_database::metrics::entity::{Metric, MetricValue};
-use chezmoi_database::metrics::{MetricHeader, MetricName, MetricTagValue, MetricTags};
-use futures::stream::SelectAll;
-use futures::{pin_mut, StreamExt};
 use std::sync::Arc;
+
+use bluer::{Address, DeviceProperty};
+use chezmoi_database::metrics::entity::{Metric, MetricValue};
+use chezmoi_database::metrics::{MetricHeader, MetricTags};
+use tokio::sync::broadcast;
+
+use crate::watcher::bluetooth::WatcherEvent;
 
 pub const DEVICE_POWER: &str = "bt_scanner.device.power";
 pub const DEVICE_BATTERY: &str = "bt_scanner.device.battery";
@@ -12,8 +14,8 @@ pub const DEVICE_BATTERY: &str = "bt_scanner.device.battery";
 pub(crate) struct Config;
 
 impl Config {
-    pub fn build(self, adapter: bluer::Adapter) -> anyhow::Result<Sensor> {
-        Ok(Sensor { adapter })
+    pub fn build(&self, adapter: bluer::Adapter) -> Sensor {
+        Sensor { adapter }
     }
 }
 
@@ -77,52 +79,35 @@ impl Sensor {
         self.handle_device_added(addr, collector).await
     }
 
-    async fn collect(&self, context: &super::Context) -> anyhow::Result<()> {
-        self.adapter.set_powered(true).await?;
-        self.adapter
-            .set_discovery_filter(bluer::DiscoveryFilter::default())
-            .await?;
-        let device_events = self.adapter.discover_devices().await?;
-        pin_mut!(device_events);
-
-        let mut collector = super::Collector::new(super::Cache::default(), 2);
-        let mut all_change_events = SelectAll::new();
-        while context.state.is_running() {
-            tokio::select! {
-                Some(event) = device_events.next() => {
-                    match event {
-                        bluer::AdapterEvent::DeviceAdded(addr) => {
-                            if let Err(error) = self.handle_device_added(addr, &mut collector).await {
-                                tracing::warn!(message = "unable to handle added device", address = %addr, cause = %error);
-                            }
-                            if let Ok(device) = self.adapter.device(addr) {
-                                let change_events = device.events().await?.map(move |evt| (addr, evt));
-                                all_change_events.push(change_events);
-                            }
-                        }
-                        bluer::AdapterEvent::DeviceRemoved(addr) => {
-                            if let Err(error) = self.handle_device_removed(addr, &mut collector).await {
-                                tracing::warn!(message = "unable to handle removed device", address = %addr, cause = %error);
-                            }
-                        }
-                        _ => (),
-                    }
-                }
-                Some((addr, DeviceEvent::PropertyChanged(changed))) = all_change_events.next() => {
-                    if let Err(error) = self.handle_property_changed(addr, changed, &mut collector).await {
-                        tracing::warn!(message = "unable to handle changed property", address = %addr, cause = %error);
-                    }
-                }
-                else => break
-            };
-            context.send_all(collector.flush()).await;
+    async fn handle_event(&self, event: WatcherEvent, collector: &mut super::Collector) {
+        let res = match event {
+            WatcherEvent::DeviceAdded(addr) => self.handle_device_added(addr, collector).await,
+            WatcherEvent::DeviceRemoved(addr) => self.handle_device_removed(addr, collector).await,
+            WatcherEvent::DeviceChanged(addr, changed) => {
+                self.handle_property_changed(addr, changed, collector).await
+            }
+        };
+        if let Err(err) = res {
+            tracing::error!(message = "unable to handle bluetooth event", error = %err);
         }
-        Ok(())
     }
 
-    pub async fn run(self, context: super::Context) -> anyhow::Result<()> {
-        while context.state.is_running() {
-            self.collect(&context).await?;
+    pub async fn run(
+        self,
+        ctx: super::Context,
+        mut recv: broadcast::Receiver<WatcherEvent>,
+    ) -> anyhow::Result<()> {
+        let mut collector = super::Collector::new(super::Cache::default(), 2);
+        while ctx.state.is_running() {
+            match recv.recv().await {
+                Ok(event) => self.handle_event(event, &mut collector).await,
+                Err(broadcast::error::RecvError::Lagged(count)) => {
+                    tracing::warn!(message = "bluetooth events got lost", count = %count);
+                }
+                Err(broadcast::error::RecvError::Closed) => {
+                    return Ok(());
+                }
+            };
         }
         Ok(())
     }

@@ -1,7 +1,11 @@
+use std::collections::HashSet;
+use std::str::FromStr;
+
 use chezmoi_database::metrics::entity::Metric;
-use tokio::sync::mpsc;
+use tokio::sync::{broadcast, mpsc};
 
 pub mod sensor;
+pub mod watcher;
 
 pub const HOSTNAME: &str = "hostname";
 pub const ADDRESS: &str = "address";
@@ -29,40 +33,123 @@ pub struct Config {
 }
 
 impl Config {
+    #[cfg(feature = "bluetooth")]
+    fn bt_addresses(&self) -> HashSet<bluer::Address> {
+        let mut res = HashSet::default();
+        #[cfg(feature = "sensor-atc-thermometer")]
+        if self.atc_thermometer.enabled {
+            res.extend(
+                self.atc_thermometer
+                    .inner
+                    .devices
+                    .iter()
+                    .filter_map(|addr| bluer::Address::from_str(addr.as_str()).ok()),
+            );
+        }
+        #[cfg(feature = "sensor-miflora")]
+        if self.miflora.enabled {
+            res.extend(
+                self.miflora
+                    .inner
+                    .devices
+                    .iter()
+                    .filter_map(|addr| bluer::Address::from_str(addr.as_str()).ok()),
+            );
+        }
+        res
+    }
+
+    #[cfg(feature = "bluetooth")]
+    fn bt_watcher(&self, adapter: bluer::Adapter) -> Option<watcher::bluetooth::Watcher> {
+        if self.atc_thermometer.enabled || self.miflora.enabled {
+            Some(watcher::bluetooth::Watcher::new(
+                adapter,
+                self.bt_addresses(),
+            ))
+        } else {
+            None
+        }
+    }
+
+    #[cfg(feature = "sensor-atc-thermometer")]
+    fn atc_thermometer(&self, adapter: bluer::Adapter) -> Option<sensor::atc_thermometer::Sensor> {
+        if self.atc_thermometer.enabled {
+            Some(self.atc_thermometer.inner.build(adapter))
+        } else {
+            None
+        }
+    }
+
+    #[cfg(feature = "sensor-bt-scanner")]
+    fn bt_scanner(&self, adapter: bluer::Adapter) -> Option<sensor::bt_scanner::Sensor> {
+        if self.bt_scanner.enabled {
+            Some(self.bt_scanner.inner.build(adapter))
+        } else {
+            None
+        }
+    }
+
+    #[cfg(feature = "sensor-miflora")]
+    fn miflora(&self, adapter: bluer::Adapter) -> Option<sensor::miflora::Sensor> {
+        if self.miflora.enabled {
+            Some(self.miflora.inner.build(adapter))
+        } else {
+            None
+        }
+    }
+
+    fn system(&self) -> Option<sensor::system::Sensor> {
+        if self.system.enabled {
+            Some(self.system.inner.build())
+        } else {
+            None
+        }
+    }
+
     pub async fn build(self) -> anyhow::Result<Agent> {
         #[cfg(feature = "bluetooth")]
         let bt_adapter = default_bt_adapter().await?;
 
         Ok(Agent {
+            #[cfg(feature = "bluetooth")]
+            bt_watcher: self.bt_watcher(bt_adapter.clone()),
+
             #[cfg(feature = "sensor-atc-thermometer")]
-            atc_thermometer: if self.atc_thermometer.enabled {
-                Some(self.atc_thermometer.inner.build(bt_adapter.clone())?)
-            } else {
-                None
-            },
+            atc_thermometer: self.atc_thermometer(bt_adapter.clone()),
             #[cfg(feature = "sensor-bt-scanner")]
-            bt_scanner: if self.bt_scanner.enabled {
-                Some(self.bt_scanner.inner.build(bt_adapter.clone())?)
-            } else {
-                None
-            },
+            bt_scanner: self.bt_scanner(bt_adapter.clone()),
             #[cfg(feature = "sensor-miflora")]
-            miflora: if self.miflora.enabled {
-                Some(self.miflora.inner.build(bt_adapter)?)
-            } else {
-                None
-            },
-            system: if self.system.enabled {
-                Some(self.system.inner.build()?)
-            } else {
-                None
-            },
+            miflora: self.miflora(bt_adapter.clone()),
+            system: self.system(),
         })
     }
 }
 
+#[tracing::instrument(name = "collector", skip_all)]
+async fn collect(
+    database: chezmoi_database::Client,
+    mut receiver: mpsc::Receiver<Vec<Metric>>,
+) -> anyhow::Result<()> {
+    while let Some(batch) = receiver.recv().await {
+        if batch.is_empty() {
+            continue;
+        }
+        match chezmoi_database::metrics::entity::create::Command::new(&batch)
+            .execute(database.as_ref())
+            .await
+        {
+            Ok(count) => tracing::debug!(message = "stored events", count = count),
+            Err(error) => {
+                tracing::error!(message = "unable to store received metrics", cause = %error)
+            }
+        }
+    }
+    Ok(())
+}
+
 #[derive(Debug)]
 pub struct Agent {
+    bt_watcher: Option<watcher::bluetooth::Watcher>,
     #[cfg(feature = "sensor-atc-thermometer")]
     atc_thermometer: Option<sensor::atc_thermometer::Sensor>,
     #[cfg(feature = "sensor-bt-scanner")]
@@ -74,52 +161,51 @@ pub struct Agent {
 
 impl Agent {
     pub async fn run(self, database: chezmoi_database::Client) -> anyhow::Result<()> {
-        let (sender, mut receiver) = mpsc::channel::<Vec<Metric>>(100);
+        let (sender, receiver) = mpsc::channel::<Vec<Metric>>(100);
+        #[cfg(feature = "bluetooth")]
+        let (bt_sender, bt_receiver) = broadcast::channel::<watcher::bluetooth::WatcherEvent>(100);
 
         let context = sensor::Context::new(true, sender);
 
-        let mut sensors = Vec::new();
+        let mut tasks = Vec::new();
         #[cfg(feature = "sensor-atc-thermometer")]
         if let Some(sensor) = self.atc_thermometer {
             let ctx = context.clone();
-            sensors.push(tokio::spawn(async move { sensor.run(ctx).await }));
+            let rcv = bt_receiver.resubscribe();
+            tasks.push(tokio::spawn(async move { sensor.run(ctx, rcv).await }));
         }
         #[cfg(feature = "sensor-bt-scanner")]
         if let Some(sensor) = self.bt_scanner {
             let ctx = context.clone();
-            sensors.push(tokio::spawn(async move { sensor.run(ctx).await }));
+            let rcv = bt_receiver.resubscribe();
+            tasks.push(tokio::spawn(async move { sensor.run(ctx, rcv).await }));
         }
         #[cfg(feature = "sensor-miflora")]
         if let Some(sensor) = self.miflora {
             let ctx = context.clone();
-            sensors.push(tokio::spawn(async move { sensor.run(ctx).await }));
+            let rcv = bt_receiver.resubscribe();
+            tasks.push(tokio::spawn(async move { sensor.run(ctx, rcv).await }));
         }
         if let Some(sensor) = self.system {
             let ctx = context.clone();
-            sensors.push(tokio::spawn(async move { sensor.run(ctx).await }));
+            tasks.push(tokio::spawn(async move { sensor.run(ctx).await }));
         }
 
-        while let Some(batch) = receiver.recv().await {
-            tracing::debug!(message = "received events", count = batch.len());
-            if batch.is_empty() {
-                continue;
-            }
-            match chezmoi_database::metrics::entity::create::Command::new(&batch)
-                .execute(database.as_ref())
-                .await
-            {
-                Ok(count) => tracing::debug!(message = "stored events", count = count),
-                Err(error) => {
-                    tracing::error!(message = "unable to store received metrics", cause = %error)
-                }
-            }
+        #[cfg(feature = "bluetooth")]
+        if let Some(watcher) = self.bt_watcher {
+            let ctx = context.clone();
+            tasks.push(tokio::spawn(
+                async move { watcher.run(ctx, bt_sender).await },
+            ));
         }
 
-        while let Some(sensor) = sensors.pop() {
+        collect(database, receiver).await?;
+
+        while let Some(sensor) = tasks.pop() {
             match sensor.await {
                 Ok(Ok(_)) => {}
-                Ok(Err(inner)) => tracing::error!(message = "sensor failed", cause = %inner),
-                Err(inner) => tracing::error!(message = "unable to join sensor", cause = %inner),
+                Ok(Err(inner)) => tracing::error!(message = "task failed", cause = %inner),
+                Err(inner) => tracing::error!(message = "unable to join taask", cause = %inner),
             }
         }
 

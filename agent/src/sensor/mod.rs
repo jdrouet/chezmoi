@@ -34,7 +34,7 @@ impl RunningState {
         Self(Arc::new(AtomicBool::new(running)))
     }
 
-    fn is_running(&self) -> bool {
+    pub fn is_running(&self) -> bool {
         self.0.load(Ordering::Relaxed)
     }
 
@@ -116,7 +116,7 @@ impl Collector {
 
 #[derive(Clone, Debug)]
 pub(crate) struct Context {
-    state: RunningState,
+    pub state: RunningState,
     sender: Sender<Vec<Metric>>,
 }
 

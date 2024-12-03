@@ -6,8 +6,10 @@ use bluer::Address;
 use chezmoi_database::helper::now;
 use chezmoi_database::metrics::entity::{Metric, MetricValue};
 use chezmoi_database::metrics::MetricHeader;
+use tokio::sync::broadcast;
 
 use crate::sensor::Collector;
+use crate::watcher::bluetooth::WatcherEvent;
 
 pub const DEVICE_TEMPERATURE: &str = "atc-thermometer.temperature";
 pub const DEVICE_HUMIDITY: &str = "atc-thermometer.humidity";
@@ -65,16 +67,16 @@ pub(crate) struct Config {
 }
 
 impl Config {
-    pub fn build(self, adapter: bluer::Adapter) -> anyhow::Result<Sensor> {
-        Ok(Sensor {
+    pub fn build(&self, adapter: bluer::Adapter) -> Sensor {
+        Sensor {
             adapter,
             devices: HashSet::from_iter(
                 self.devices
-                    .into_iter()
+                    .iter()
                     .filter_map(|addr| Address::from_str(addr.as_str()).ok()),
             ),
             interval: std::time::Duration::new(self.interval, 0),
-        })
+        }
     }
 }
 
@@ -114,24 +116,13 @@ impl Sensor {
         Ok(())
     }
 
-    async fn collect(&self, ctx: &super::Context) {
-        tracing::debug!("starting scan");
-        if let Err(err) = self
-            .adapter
-            .set_discovery_filter(bluer::DiscoveryFilter::default())
-            .await
-        {
-            tracing::error!(message = "unable to set discovery filter", error = %err);
-        }
-        let _stream = self.adapter.discover_devices().await;
-
-        let mut collector = Collector::default();
+    async fn collect(&self, ctx: &super::Context, collector: &mut Collector) {
         let mut missing: HashSet<Address> = self.devices.clone();
         let mut retry = 0;
         while !missing.is_empty() && retry < 5 {
             tokio::time::sleep(std::time::Duration::new(10, 0)).await;
             for addr in missing.clone() {
-                if let Err(err) = self.handle(&mut collector, addr).await {
+                if let Err(err) = self.handle(collector, addr).await {
                     tracing::warn!(message = "unable to handle device", address = %addr, retry = retry, error = %err, cause = ?err.source());
                 } else {
                     missing.remove(&addr);
@@ -143,11 +134,35 @@ impl Sensor {
     }
 
     #[tracing::instrument(name = "atc_thermometer", skip_all, fields(adapter = %self.adapter.name()))]
-    pub async fn run(self, ctx: super::Context) -> anyhow::Result<()> {
+    pub async fn run(
+        self,
+        ctx: super::Context,
+        mut rcv: broadcast::Receiver<WatcherEvent>,
+    ) -> anyhow::Result<()> {
         let mut interval = tokio::time::interval(self.interval);
+        let mut collector = Collector::default();
+
         while ctx.state.is_running() {
-            interval.tick().await;
-            self.collect(&ctx).await;
+            tokio::select! {
+                _ = interval.tick() => {
+                    self.collect(&ctx, &mut collector).await;
+                }
+                res = rcv.recv() => {
+                    match res {
+                        Ok(WatcherEvent::DeviceAdded(addr)) | Ok(WatcherEvent::DeviceChanged(addr, _)) => {
+                            if let Err(err) = self.handle(&mut collector, addr).await {
+                                tracing::warn!(message = "unable to handle device", address = %addr, error = %err, cause = ?err.source());
+                            }
+                        }
+                        Ok(_) => {}
+                        Err(broadcast::error::RecvError::Lagged(count)) => {
+                            tracing::warn!(message = "bluetooth events got lost", count = %count);
+                        }
+                        Err(broadcast::error::RecvError::Closed) => break
+                    }
+                }
+                else => break
+            }
         }
         Ok(())
     }

@@ -24,15 +24,15 @@ pub(crate) struct Config {
 }
 
 impl Config {
-    pub fn build(self) -> anyhow::Result<Sensor> {
-        Ok(Sensor {
+    pub fn build(&self) -> Sensor {
+        Sensor {
             inner: sysinfo::System::new_with_specifics(
                 RefreshKind::new()
                     .with_cpu(CpuRefreshKind::everything())
                     .with_memory(MemoryRefreshKind::everything()),
             ),
             interval: tokio::time::interval(Duration::from_secs(self.interval)),
-        })
+        }
     }
 }
 
