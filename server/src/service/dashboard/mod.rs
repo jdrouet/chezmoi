@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
 use chezmoi_client::component::card::AnyCard as ClientAnyCard;
-use chezmoi_client::view::dashboard;
+use chezmoi_client::view::dashboard::{self, TimePickerDuration};
 use chezmoi_database::metrics::entity::{Metric, MetricValue};
 use chezmoi_database::metrics::MetricHeader;
 
@@ -59,10 +59,15 @@ impl Section {
 
 #[derive(Debug, Default)]
 pub struct BuilderContext {
+    window: Option<TimePickerDuration>,
     latest: HashMap<MetricHeader, (u64, MetricValue)>,
 }
 
 impl BuilderContext {
+    pub fn set_window(&mut self, window: Option<TimePickerDuration>) {
+        self.window = window;
+    }
+
     pub fn add_latests(&mut self, list: impl Iterator<Item = Metric>) {
         self.latest
             .extend(list.map(|metric| (metric.header, (metric.timestamp, metric.value))));
@@ -93,6 +98,6 @@ impl Dashboard {
             }
             sections.push(vsec);
         }
-        Ok(dashboard::View::new(sections))
+        Ok(dashboard::View::new(sections, ctx.window))
     }
 }

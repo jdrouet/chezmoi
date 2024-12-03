@@ -23,7 +23,7 @@ impl View {
 
     fn render_body<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {
         buf.node("body").content(|buf| {
-            let buf = crate::component::header::Header::new("Error").render(buf);
+            let buf = crate::component::header::Header::<()>::new("Error").render(buf);
             buf.node("main")
                 .content(|buf| buf.text(self.message.as_ref()))
         })

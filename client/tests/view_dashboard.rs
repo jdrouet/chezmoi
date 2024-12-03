@@ -11,18 +11,20 @@ fn with_atc_thermometer() {
 
     helper::write(
         "with-atc-thermometer-cards.html",
-        View::default().with_section(Section::new("With values").with_card(
-            AnyCard::AtcThermometer(Card::new(
-                FAKE_ADDRESS,
-                None,
-                Values {
-                    timestamp: Some(0),
-                    temperature: Some(12.34),
-                    humidity: Some(12.34),
-                    battery: Some(12.34),
-                },
-            )),
-        )),
+        View::default()
+            .with_window(chezmoi_client::view::dashboard::TimePickerDuration::OneWeek)
+            .with_section(
+                Section::new("With values").with_card(AnyCard::AtcThermometer(Card::new(
+                    FAKE_ADDRESS,
+                    None,
+                    Values {
+                        timestamp: Some(0),
+                        temperature: Some(12.34),
+                        humidity: Some(12.34),
+                        battery: Some(12.34),
+                    },
+                ))),
+            ),
     );
 }
 

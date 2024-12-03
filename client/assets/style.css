@@ -30,10 +30,10 @@ header {
     padding: 0 24px;
     min-height: 48px;
     border-bottom: 1px solid var(--border-color);
+    justify-content: space-between;
 }
 header > section {
     background-color: var(--background-default);
-    flex-grow: 1;
 }
 main {
     flex-grow: 1;

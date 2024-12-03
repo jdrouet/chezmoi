@@ -3,6 +3,7 @@ use std::sync::Arc;
 use axum::extract::Query;
 use axum::response::Html;
 use axum::Extension;
+use chezmoi_client::view::dashboard::TimePickerDuration;
 use chezmoi_client::view::prelude::View;
 use chezmoi_database::helper::now;
 use chezmoi_database::metrics::entity::find_latest;
@@ -10,10 +11,13 @@ use chezmoi_database::metrics::entity::find_latest;
 use super::error::Error;
 use crate::service::dashboard::{BuilderContext, Dashboard};
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Default, serde::Deserialize)]
 pub enum TimeDuration {
+    #[serde(alias = "1h")]
+    OneHour,
     #[serde(alias = "1d")]
     OneDay,
+    #[default]
     #[serde(alias = "1w")]
     OneWeek,
     #[serde(alias = "2w")]
@@ -23,6 +27,7 @@ pub enum TimeDuration {
 impl TimeDuration {
     const fn as_secs(&self) -> u64 {
         match self {
+            Self::OneHour => 60 * 60,
             Self::OneDay => 60 * 60 * 24,
             Self::OneWeek => 60 * 60 * 24 * 7,
             Self::TwoWeeks => 60 * 60 * 24 * 7 * 2,
@@ -30,29 +35,37 @@ impl TimeDuration {
     }
 }
 
+impl From<TimeDuration> for TimePickerDuration {
+    fn from(value: TimeDuration) -> Self {
+        match value {
+            TimeDuration::OneHour => Self::OneHour,
+            TimeDuration::OneDay => Self::OneDay,
+            TimeDuration::OneWeek => Self::OneWeek,
+            TimeDuration::TwoWeeks => Self::TwoWeeks,
+        }
+    }
+}
+
 #[derive(Debug, serde::Deserialize)]
+#[serde(untagged)]
 pub(crate) enum QueryParams {
     Duration {
+        #[serde(default)]
         duration: TimeDuration,
-    },
-    Window {
-        // minimum
-        #[serde(default)]
-        after: Option<u64>,
-        // maximum
-        #[serde(default)]
-        before: Option<u64>,
     },
 }
 
 impl QueryParams {
+    fn duration(&self) -> Option<TimePickerDuration> {
+        self.duration.map(|d| d.into())
+    }
+
     fn window(&self) -> (Option<u64>, Option<u64>) {
         match self {
             Self::Duration { duration } => {
                 let current = now();
                 (Some(current - duration.as_secs()), Some(current))
             }
-            Self::Window { after, before } => (*after, *before),
         }
     }
 }
@@ -63,6 +76,7 @@ pub(super) async fn handle(
     Query(params): Query<QueryParams>,
 ) -> Result<Html<String>, Error> {
     let mut ctx = BuilderContext::default();
+    ctx.set_window(params.duration());
     let headers = dashboard.collect_latest_metrics();
     let latests = find_latest::Command::new(&headers, params.window(), None)
         .execute(database.as_ref())

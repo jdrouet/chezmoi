@@ -3,7 +3,80 @@ use std::borrow::Cow;
 use another_html_builder::{Body, Buffer};
 
 use crate::component::card::AnyCard;
+use crate::component::helper::Classnames;
 use crate::component::prelude::Component;
+
+#[derive(Clone, Copy, Debug)]
+pub enum TimePickerDuration {
+    OneHour,
+    OneDay,
+    OneWeek,
+    TwoWeeks,
+}
+
+impl TimePickerDuration {
+    pub const fn as_value(&self) -> &'static str {
+        match self {
+            Self::OneHour => "1h",
+            Self::OneDay => "1d",
+            Self::OneWeek => "1w",
+            Self::TwoWeeks => "2w",
+        }
+    }
+}
+
+impl PartialEq<str> for TimePickerDuration {
+    fn eq(&self, other: &str) -> bool {
+        self.as_value() == other
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct TimePickerForm {
+    classname: Option<&'static str>,
+    value: Option<TimePickerDuration>,
+}
+
+impl TimePickerForm {
+    pub fn new(classname: Option<&'static str>, value: Option<TimePickerDuration>) -> Self {
+        Self { classname, value }
+    }
+}
+
+impl crate::component::prelude::Component for TimePickerForm {
+    fn render<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {
+        buf.node("form")
+            .attr(("method", "GET"))
+            .attr(("class", Classnames::from(("flex-row", self.classname))))
+            .content(|buf| {
+                buf.node("select")
+                    .attr(("name", "duration"))
+                    .attr(("class", "mx-md"))
+                    .content(|buf| {
+                        [
+                            ("", ""),
+                            ("1h", "One hour"),
+                            ("1d", "One day"),
+                            ("1w", "One week"),
+                            ("2w", "Two weeks"),
+                        ]
+                        .into_iter()
+                        .fold(buf, |buf, (value, label)| {
+                            buf.node("option")
+                                .attr(("value", value))
+                                .cond_attr(
+                                    self.value.map(|v| v.eq(value)).unwrap_or(false),
+                                    "selected",
+                                )
+                                .content(|buf| buf.text(label))
+                        })
+                    })
+                    .node("button")
+                    .attr(("type", "submit"))
+                    .content(|but| but.text("Update"))
+            })
+    }
+}
 
 #[derive(Debug)]
 pub struct Section<'a> {
@@ -53,12 +126,18 @@ impl<'a> Component for Section<'a> {
 
 #[derive(Debug, Default)]
 pub struct View<'a> {
+    window: Option<TimePickerDuration>,
     sections: Vec<Section<'a>>,
 }
 
 impl<'a> View<'a> {
-    pub fn new(sections: Vec<Section<'a>>) -> Self {
-        Self { sections }
+    pub fn new(sections: Vec<Section<'a>>, window: Option<TimePickerDuration>) -> Self {
+        Self { sections, window }
+    }
+
+    pub fn with_window(mut self, window: TimePickerDuration) -> Self {
+        self.window = Some(window);
+        self
     }
 
     pub fn with_section(mut self, section: Section<'a>) -> Self {
@@ -86,7 +165,9 @@ impl<'a> View<'a> {
 
     fn render_body<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {
         buf.node("body").content(|buf| {
-            let buf = crate::component::header::Header::new("Home").render(buf);
+            let buf = crate::component::header::Header::new("Home")
+                .with_content(TimePickerForm::new(Some("flex-1"), self.window))
+                .render(buf);
             self.render_content(buf)
         })
     }
