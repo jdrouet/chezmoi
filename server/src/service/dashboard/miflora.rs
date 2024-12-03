@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::collections::HashSet;
 
-use chezmoi_client::component::card::miflora::{Card, LastValues, TimedValue, ValueState};
+use chezmoi_client::component::card::miflora::{Card, TimedValue, ValueState, Values};
 use chezmoi_client::component::card::AnyCard as ClientAnyCard;
 use chezmoi_database::metrics::MetricHeader;
 
@@ -78,7 +78,7 @@ impl MifloraCard {
             self.address.as_ref(),
             self.name.as_deref(),
             self.image.as_deref(),
-            LastValues {
+            Values {
                 temperature: find_gauge(
                     "miflora.temperature",
                     self.address.clone(),

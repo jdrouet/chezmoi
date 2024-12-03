@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::collections::HashSet;
 
 use chezmoi_agent::sensor::atc_thermometer::{DEVICE_BATTERY, DEVICE_HUMIDITY, DEVICE_TEMPERATURE};
-use chezmoi_client::component::card::atc_thermometer::{Card, LastValues};
+use chezmoi_client::component::card::atc_thermometer::{Card, Values};
 use chezmoi_client::component::card::AnyCard as ClientAnyCard;
 use chezmoi_database::metrics::MetricHeader;
 
@@ -56,7 +56,7 @@ impl AtcThermometerCard {
         Ok(ClientAnyCard::AtcThermometer(Card::new(
             self.address.as_ref(),
             self.name.as_deref(),
-            LastValues {
+            Values {
                 timestamp,
                 temperature: temperature.map(|(_, v)| v),
                 humidity: humidity.map(|(_, v)| v),

@@ -62,7 +62,7 @@ impl From<(u64, f64)> for TimedValue {
 }
 
 #[derive(Debug)]
-pub struct LastValues {
+pub struct Values {
     pub timestamp: Option<u64>,
     pub temperature: Option<f64>,
     pub humidity: Option<f64>,
@@ -73,11 +73,11 @@ pub struct LastValues {
 pub struct Card<'a> {
     address: &'a str,
     name: Option<&'a str>,
-    values: LastValues,
+    values: Values,
 }
 
 impl<'a> Card<'a> {
-    pub fn new(address: &'a str, name: Option<&'a str>, values: LastValues) -> Self {
+    pub fn new(address: &'a str, name: Option<&'a str>, values: Values) -> Self {
         Self {
             address,
             name,

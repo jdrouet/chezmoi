@@ -3,19 +3,19 @@ use another_html_builder::{Body, Buffer};
 use crate::helper::fmt;
 
 #[derive(Debug)]
-pub struct Card {
-    title: &'static str,
+pub struct Card<'a> {
+    title: &'a str,
     total: Option<f64>,
     used: Option<f64>,
 }
 
-impl Card {
-    pub fn new(title: &'static str, total: Option<f64>, used: Option<f64>) -> Self {
+impl<'a> Card<'a> {
+    pub fn new(title: &'a str, total: Option<f64>, used: Option<f64>) -> Self {
         Self { title, total, used }
     }
 }
 
-impl crate::component::prelude::Component for Card {
+impl<'a> crate::component::prelude::Component for Card<'a> {
     fn render<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {
         buf.node("div")
             .attr(("class", "card shadow x-sm y-sm m-md flex-col"))

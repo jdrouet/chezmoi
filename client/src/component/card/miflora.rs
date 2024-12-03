@@ -108,7 +108,7 @@ impl From<(u64, f64, ValueState)> for TimedValue {
 }
 
 #[derive(Debug)]
-pub struct LastValues {
+pub struct Values {
     pub temperature: Option<TimedValue>,
     pub brightness: Option<TimedValue>,
     pub moisture: Option<TimedValue>,
@@ -116,7 +116,7 @@ pub struct LastValues {
     pub battery: Option<TimedValue>,
 }
 
-impl LastValues {
+impl Values {
     pub fn last_timestamp(&self) -> Option<u64> {
         self.temperature
             .map(|v| v.timestamp)
@@ -142,7 +142,7 @@ pub struct Card<'a> {
     address: &'a str,
     name: Option<&'a str>,
     image: Option<&'a str>,
-    values: LastValues,
+    values: Values,
 }
 
 impl<'a> Card<'a> {
@@ -150,7 +150,7 @@ impl<'a> Card<'a> {
         address: &'a str,
         name: Option<&'a str>,
         image: Option<&'a str>,
-        values: LastValues,
+        values: Values,
     ) -> Self {
         Self {
             address,

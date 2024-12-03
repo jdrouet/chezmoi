@@ -1,7 +1,7 @@
 use another_html_builder::{Body, Buffer};
 
 #[derive(Debug)]
-pub struct Card(super::binary_usage::Card);
+pub struct Card(super::binary_usage::Card<'static>);
 
 impl Card {
     pub fn new(total: Option<f64>, used: Option<f64>) -> Self {

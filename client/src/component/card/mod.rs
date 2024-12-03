@@ -9,7 +9,7 @@ pub mod system_swap;
 #[derive(Debug)]
 pub enum AnyCard<'a> {
     AtcThermometer(atc_thermometer::Card<'a>),
-    BluetoothDevices(bluetooth_devices::Card),
+    BluetoothDevices(bluetooth_devices::Card<'a>),
     Cpu(system_cpu::Card),
     Memory(system_memory::Card),
     Miflora(miflora::Card<'a>),

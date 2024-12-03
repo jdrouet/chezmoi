@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::sync::LazyLock;
 
 use another_html_builder::{Body, Buffer};
@@ -7,42 +6,40 @@ static POWER_FORMATTER: LazyLock<human_number::Formatter<'static>> =
     LazyLock::new(human_number::Formatter::si);
 
 #[derive(Debug)]
-pub struct LastValues {
+pub struct DeviceValues<'a> {
+    pub address: &'a str,
+    pub name: Option<&'a str>,
+    pub tx_power: f64,
+    pub battery: Option<f64>,
     pub timestamp: u64,
-    pub temperature: f64,
-    pub brightness: f64,
-    pub moisture: f64,
-    pub conductivity: f64,
-    pub battery: f64,
 }
 
-#[derive(Debug)]
-pub struct Card {
-    devices: Vec<(Cow<'static, str>, f64)>,
+#[derive(Debug, Default)]
+pub struct Card<'a> {
+    devices: Vec<DeviceValues<'a>>,
 }
 
-impl Card {
-    pub fn new(devices: impl Iterator<Item = (Cow<'static, str>, f64)>) -> Self {
-        let mut devices = Vec::from_iter(devices);
-        devices.sort_by(|first, second| second.1.total_cmp(&first.1));
+impl<'a> Card<'a> {
+    pub fn new(mut devices: Vec<DeviceValues<'a>>) -> Self {
+        devices.sort_by(|first, second| second.tx_power.total_cmp(&first.tx_power));
         Self { devices }
     }
 
     fn render_device_row<'v, W: std::fmt::Write>(
         &self,
         buf: Buffer<W, Body<'v>>,
-        (name, power): &(Cow<'static, str>, f64),
+        device: &DeviceValues<'a>,
     ) -> Buffer<W, Body<'v>> {
         buf.node("div")
             .attr(("class", "flex-row m-sm mx-md"))
             .content(|buf| {
                 buf.node("div")
                     .attr(("class", "flex-1"))
-                    .content(|buf| buf.text(name.as_ref()))
+                    .content(|buf| buf.text(device.name.as_deref().unwrap_or(device.address)))
                     .node("div")
-                    .content(|buf| buf.raw(POWER_FORMATTER.format(*power)))
+                    .content(|buf| buf.raw(POWER_FORMATTER.format(device.tx_power)))
                     .node("progress")
-                    .attr(("value", *power as u64))
+                    .attr(("value", device.tx_power as u64))
                     .attr(("max", 100))
                     .attr(("min", 0))
                     .content(|buf| buf)
@@ -59,7 +56,7 @@ impl Card {
     }
 }
 
-impl crate::component::prelude::Component for Card {
+impl<'a> crate::component::prelude::Component for Card<'a> {
     fn render<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {
         buf.node("div")
             .attr((

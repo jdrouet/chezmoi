@@ -7,7 +7,7 @@ const FAKE_ADDRESS: &str = "00:00:00:00:00";
 
 #[test]
 fn with_atc_thermometer() {
-    use chezmoi_client::component::card::atc_thermometer::{Card, LastValues};
+    use chezmoi_client::component::card::atc_thermometer::{Card, Values};
 
     helper::write(
         "with-atc-thermometer-cards.html",
@@ -15,7 +15,7 @@ fn with_atc_thermometer() {
             AnyCard::AtcThermometer(Card::new(
                 FAKE_ADDRESS,
                 None,
-                LastValues {
+                Values {
                     timestamp: Some(0),
                     temperature: Some(12.34),
                     humidity: Some(12.34),
@@ -28,29 +28,74 @@ fn with_atc_thermometer() {
 
 #[test]
 fn with_bluetooth_devices() {
-    use chezmoi_client::component::card::bluetooth_devices::Card;
+    use chezmoi_client::component::card::bluetooth_devices::{Card, DeviceValues};
 
     helper::write(
         "with-bluetooth-devices-cards.html",
         View::default()
             .with_section(
                 Section::new("No devices")
-                    .with_card(AnyCard::BluetoothDevices(Card::new([].into_iter()))),
+                    .with_card(AnyCard::BluetoothDevices(Card::new(Vec::new()))),
             )
             .with_section(
-                Section::new("Many devices").with_card(AnyCard::BluetoothDevices(Card::new(
-                    [
-                        ("Baz".into(), 10.0),
-                        ("Foo".into(), 80.0),
-                        ("Hello".into(), 100.0),
-                        ("World".into(), 90.0),
-                        ("Asterix".into(), 83.0),
-                        ("Obelix".into(), 83.0),
-                        ("Panoramix".into(), 56.0),
-                        ("Bar".into(), 70.0),
-                    ]
-                    .into_iter(),
-                ))),
+                Section::new("Many devices").with_card(AnyCard::BluetoothDevices(Card::new(vec![
+                    DeviceValues {
+                        address: "00:00:00:00:00",
+                        name: Some("Foo"),
+                        tx_power: 80.0,
+                        battery: None,
+                        timestamp: 0,
+                    },
+                    DeviceValues {
+                        address: "00:00:00:00:01",
+                        name: Some("Baz"),
+                        tx_power: 10.0,
+                        battery: None,
+                        timestamp: 0,
+                    },
+                    DeviceValues {
+                        address: "00:00:00:00:02",
+                        name: Some("Hello"),
+                        tx_power: 100.0,
+                        battery: None,
+                        timestamp: 0,
+                    },
+                    DeviceValues {
+                        address: "00:00:00:00:03",
+                        name: Some("World"),
+                        tx_power: 90.0,
+                        battery: None,
+                        timestamp: 0,
+                    },
+                    DeviceValues {
+                        address: "00:00:00:00:04",
+                        name: Some("Asterix"),
+                        tx_power: 83.0,
+                        battery: None,
+                        timestamp: 0,
+                    },
+                    DeviceValues {
+                        address: "00:00:00:00:05",
+                        name: Some("Obelix"),
+                        tx_power: 83.0,
+                        battery: None,
+                        timestamp: 0,
+                    },
+                    DeviceValues {
+                        address: "00:00:00:00:06",
+                        name: Some("Panoramix"),
+                        tx_power: 56.0,
+                        battery: None,
+                        timestamp: 0,
+                    },
+                    DeviceValues {
+                        address: "00:00:00:00:07",
+                        name: Some("Bar"),
+                        tx_power: 70.0,
+                        battery: None,
+                        timestamp: 0,
+                    },
+                ]))),
             ),
     );
 }
@@ -79,7 +124,7 @@ fn with_system() {
 
 #[test]
 fn with_miflora_cards() {
-    use chezmoi_client::component::card::miflora::{Card, LastValues, TimedValue, ValueState};
+    use chezmoi_client::component::card::miflora::{Card, TimedValue, ValueState, Values};
 
     let flower_url = "https://www.withouraloha.com/wp-content/uploads/2018/01/orchid-care.jpg";
 
@@ -92,7 +137,7 @@ fn with_miflora_cards() {
                         "00:00:00:00:00",
                         Some("Orchidee"),
                         None,
-                        LastValues {
+                        Values {
                             temperature: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
                             brightness: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
                             moisture: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
@@ -104,7 +149,7 @@ fn with_miflora_cards() {
                         "00:00:00:00:00",
                         None::<&'static str>,
                         Some(flower_url),
-                        LastValues {
+                        Values {
                             temperature: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
                             brightness: Some(TimedValue::from((
                                 0,
@@ -127,7 +172,7 @@ fn with_miflora_cards() {
                         "00:00:00:00:00",
                         Some("With name"),
                         None,
-                        LastValues {
+                        Values {
                             temperature: None,
                             brightness: None,
                             moisture: None,
@@ -139,7 +184,7 @@ fn with_miflora_cards() {
                         "00:00:00:00:00",
                         Some("With name"),
                         Some(flower_url),
-                        LastValues {
+                        Values {
                             temperature: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
                             brightness: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
                             moisture: None,
@@ -151,7 +196,7 @@ fn with_miflora_cards() {
                         "00:00:00:00:00",
                         None::<&'static str>,
                         None,
-                        LastValues {
+                        Values {
                             temperature: None,
                             brightness: None,
                             moisture: None,
