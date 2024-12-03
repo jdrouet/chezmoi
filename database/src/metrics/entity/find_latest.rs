@@ -4,12 +4,21 @@ use crate::metrics::MetricHeader;
 /// Right now, we expect tags to match exactly.
 pub struct Command<'a> {
     headers: &'a [MetricHeader],
+    window: (Option<u64>, Option<u64>),
     limit: Option<usize>,
 }
 
 impl<'a> Command<'a> {
-    pub fn new(headers: &'a [MetricHeader], limit: Option<usize>) -> Self {
-        Self { headers, limit }
+    pub fn new(
+        headers: &'a [MetricHeader],
+        window: (Option<u64>, Option<u64>),
+        limit: Option<usize>,
+    ) -> Self {
+        Self {
+            headers,
+            window,
+            limit,
+        }
     }
 
     pub async fn execute<'c, E: sqlx::Executor<'c, Database = sqlx::Sqlite>>(
@@ -21,6 +30,21 @@ impl<'a> Command<'a> {
         qb.push("select timestamp, name, tags, value,");
         qb.push(" row_number() over (partition by name, tags order by timestamp desc) as idx");
         qb.push(" from metrics");
+        match self.window {
+            (Some(min), Some(max)) => {
+                qb.push(" where timestamp >= ")
+                    .push_bind(min as i64)
+                    .push(" and timestamp <= ")
+                    .push_bind(max as i64);
+            }
+            (Some(min), None) => {
+                qb.push(" where timestamp > ").push_bind(min as i64);
+            }
+            (None, Some(max)) => {
+                qb.push(" where timestamp < ").push_bind(max as i64);
+            }
+            _ => {}
+        }
         qb.push(")");
         qb.push(" select timestamp, name, tags, value");
         qb.push(" from metrics_subset");
@@ -105,7 +129,7 @@ mod tests {
         .await;
         assert_eq!(expected_events.len(), 10);
 
-        let found = super::Command::new(&[expected_header], Some(10))
+        let found = super::Command::new(&[expected_header], (None, None), Some(10))
             .execute(db.as_ref())
             .await
             .unwrap();
@@ -139,7 +163,7 @@ mod tests {
         )
         .await;
 
-        let found = super::Command::new(&[expected_header], Some(10))
+        let found = super::Command::new(&[expected_header], (None, None), Some(10))
             .execute(db.as_ref())
             .await
             .unwrap();
@@ -185,7 +209,7 @@ mod tests {
         )
         .await;
 
-        let found = super::Command::new(&[first_header, second_header], Some(10))
+        let found = super::Command::new(&[first_header, second_header], (None, None), Some(10))
             .execute(db.as_ref())
             .await
             .unwrap();
@@ -194,5 +218,27 @@ mod tests {
         let found: HashSet<_> = found.into_iter().map(|item| item.timestamp).collect();
         assert!(found.contains(&19));
         assert!(found.contains(&29));
+    }
+
+    #[tokio::test]
+    async fn should_return_events_in_window() {
+        let db = crate::Client::test().await;
+
+        let header = MetricHeader::new("first").with_tag("hostname", "rambo");
+        let events = create_metrics(
+            &db,
+            header.clone(),
+            (0..100).map(|index| (index, MetricValue::count(index))),
+        )
+        .await;
+        assert_eq!(events.len(), 100);
+
+        let found = super::Command::new(&[header], (Some(15), Some(20)), Some(10))
+            .execute(db.as_ref())
+            .await
+            .unwrap();
+
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].timestamp, 20);
     }
 }

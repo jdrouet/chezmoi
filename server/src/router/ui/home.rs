@@ -1,46 +1,70 @@
 use std::sync::Arc;
 
+use axum::extract::Query;
 use axum::response::Html;
 use axum::Extension;
 use chezmoi_client::view::prelude::View;
+use chezmoi_database::helper::now;
+use chezmoi_database::metrics::entity::find_latest;
 
 use super::error::Error;
 use crate::service::dashboard::{BuilderContext, Dashboard};
 
-// pub(crate) static DASHBOARD: LazyLock<Dashboard> = LazyLock::new(|| {
-//     Dashboard::default()
-//         .with_section(
-//             Section::new("System")
-//                 .with_card(SystemCpuCard)
-//                 .with_card(SystemMemoryCard)
-//                 .with_card(SystemSwapCard),
-//         )
-//         .with_section(
-//             Section::new("Temperature").with_card(MiThermometerCard::new(
-//                 Some("Living Room"),
-//                 "00:00:00:00:00",
-//             )),
-//         )
-//         .with_section(
-//             Section::new("Plants")
-//                 .with_card(MifloraCard::new(
-//                     Some("Ficus benjamina"),
-//                     "5C:85:7E:B0:4C:3F",
-//                 ))
-//                 .with_card(MifloraCard::new(
-//                     Some("Pilea peperomioides"),
-//                     "5C:85:7E:B0:4C:9C",
-//                 )),
-//         )
-// });
+#[derive(Debug, serde::Deserialize)]
+pub enum TimeDuration {
+    #[serde(alias = "1d")]
+    OneDay,
+    #[serde(alias = "1w")]
+    OneWeek,
+    #[serde(alias = "2w")]
+    TwoWeeks,
+}
+
+impl TimeDuration {
+    const fn as_secs(&self) -> u64 {
+        match self {
+            Self::OneDay => 60 * 60 * 24,
+            Self::OneWeek => 60 * 60 * 24 * 7,
+            Self::TwoWeeks => 60 * 60 * 24 * 7 * 2,
+        }
+    }
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub(crate) enum QueryParams {
+    Duration {
+        duration: TimeDuration,
+    },
+    Window {
+        // minimum
+        #[serde(default)]
+        after: Option<u64>,
+        // maximum
+        #[serde(default)]
+        before: Option<u64>,
+    },
+}
+
+impl QueryParams {
+    fn window(&self) -> (Option<u64>, Option<u64>) {
+        match self {
+            Self::Duration { duration } => {
+                let current = now();
+                (Some(current - duration.as_secs()), Some(current))
+            }
+            Self::Window { after, before } => (*after, *before),
+        }
+    }
+}
 
 pub(super) async fn handle(
     Extension(dashboard): Extension<Arc<Dashboard>>,
     Extension(database): Extension<chezmoi_database::Client>,
+    Query(params): Query<QueryParams>,
 ) -> Result<Html<String>, Error> {
     let mut ctx = BuilderContext::default();
     let headers = dashboard.collect_latest_metrics();
-    let latests = chezmoi_database::metrics::entity::find_latest::Command::new(&headers, None)
+    let latests = find_latest::Command::new(&headers, params.window(), None)
         .execute(database.as_ref())
         .await?;
     ctx.add_latests(latests.into_iter());
