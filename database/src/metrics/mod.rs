@@ -13,6 +13,15 @@ pub struct MetricHeader {
     pub tags: MetricTags,
 }
 
+impl<N: Into<Cow<'static, str>>> From<(N, MetricTags)> for MetricHeader {
+    fn from((name, tags): (N, MetricTags)) -> Self {
+        Self {
+            name: MetricName::new(name),
+            tags,
+        }
+    }
+}
+
 impl MetricHeader {
     pub fn new(name: impl Into<Cow<'static, str>>) -> Self {
         Self {

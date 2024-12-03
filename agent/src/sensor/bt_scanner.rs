@@ -3,6 +3,7 @@ use chezmoi_database::metrics::entity::{Metric, MetricValue};
 use chezmoi_database::metrics::{MetricHeader, MetricName, MetricTagValue, MetricTags};
 use futures::stream::SelectAll;
 use futures::{pin_mut, StreamExt};
+use std::sync::Arc;
 
 pub const DEVICE_POWER: &str = "bt_scanner.device.power";
 pub const DEVICE_BATTERY: &str = "bt_scanner.device.battery";
@@ -29,29 +30,24 @@ impl Sensor {
     ) -> anyhow::Result<()> {
         let device = self.adapter.device(addr)?;
         let device_name = device.name().await?;
+        let address: Arc<str> = Arc::from(addr.to_string());
         if let Ok(Some(power)) = device.tx_power().await {
             let tags = MetricTags::default()
-                .with(crate::ADDRESS, addr.to_string())
+                .with(crate::ADDRESS, address.clone())
                 .maybe_with("name", device_name.clone());
             collector.collect(Metric {
                 timestamp: chezmoi_database::helper::now(),
-                header: MetricHeader {
-                    name: MetricName::new(DEVICE_POWER),
-                    tags,
-                },
+                header: MetricHeader::from((DEVICE_POWER, tags)),
                 value: MetricValue::gauge(power as f64),
             });
         }
         if let Ok(Some(battery)) = device.battery_percentage().await {
             let tags = MetricTags::default()
-                .with(crate::ADDRESS, addr.to_string())
+                .with(crate::ADDRESS, address.clone())
                 .maybe_with("name", device_name);
             collector.collect(Metric {
                 timestamp: chezmoi_database::helper::now(),
-                header: MetricHeader {
-                    name: MetricName::new(DEVICE_BATTERY),
-                    tags,
-                },
+                header: MetricHeader::from((DEVICE_BATTERY, tags)),
                 value: MetricValue::gauge(battery as f64),
             });
         }
@@ -63,13 +59,10 @@ impl Sensor {
         addr: Address,
         collector: &mut super::Collector,
     ) -> anyhow::Result<()> {
+        let tags = MetricTags::default().with("address", addr.to_string());
         collector.collect(Metric {
             timestamp: chezmoi_database::helper::now(),
-            header: MetricHeader {
-                name: MetricName::new(DEVICE_POWER),
-                tags: MetricTags::default()
-                    .with("address", MetricTagValue::Text(addr.to_string().into())),
-            },
+            header: MetricHeader::from((DEVICE_POWER, tags)),
             value: MetricValue::gauge(0.0),
         });
         Ok(())
