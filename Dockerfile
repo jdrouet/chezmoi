@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM rust:1-alpine AS server-vendor
+FROM --platform=$BUILDPLATFORM rust:1-bookworm AS server-vendor
 
 ENV USER=root
 
@@ -21,9 +21,9 @@ RUN --mount=type=cache,target=$CARGO_HOME/git,sharing=locked \
     mkdir -p /code/.cargo \
     && cargo vendor >> /code/.cargo/config.toml
 
-FROM rust:1-alpine AS server-builder
+FROM rust:1-bookworm AS server-builder
 
-RUN apk add --no-cache musl-dev
+RUN apt-get update && apt install -y libdbus-1-dev pkg-config
 
 ENV USER=root
 
@@ -52,7 +52,11 @@ RUN --mount=type=cache,target=/code/target/release/deps,sharing=locked \
 
 RUN strip /code/target/release/chezmoi-server
 
-FROM alpine
+FROM debian:bookworm-slim
+
+RUN apt-get update \
+    && apt-get install -y libdbus-1-3 \
+    && rm -rf /var/lig/apt/lists
 
 ENV HOST=0.0.0.0
 ENV PORT=3000

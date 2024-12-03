@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use anyhow::Context;
+
 pub(crate) mod app;
 mod config;
 mod router;
@@ -32,13 +34,13 @@ async fn main() -> anyhow::Result<()> {
         agent,
         database,
         server,
-    } = crate::config::RootConfig::from_path(&root_path)?;
+    } = crate::config::RootConfig::from_path(&root_path).context("loading configuration")?;
 
-    let database = database.build().await?;
-    database.upgrade().await?;
+    let database = database.build().await.context("building database")?;
+    database.upgrade().await.context("migrating database")?;
 
-    let agent = agent.build().await?;
-    let app = server.build().await?;
+    let agent = agent.build().await.context("building agent")?;
+    let app = server.build().await.context("building server")?;
 
     let (agent, app) = tokio::join!(agent.run(database.clone()), app.run(database));
     tracing::debug!("agent success={}", agent.is_ok());
