@@ -47,28 +47,19 @@ impl From<TimeDuration> for TimePickerDuration {
 }
 
 #[derive(Debug, serde::Deserialize)]
-#[serde(untagged)]
-pub(crate) enum QueryParams {
-    Duration {
-        #[serde(default)]
-        duration: TimeDuration,
-    },
+pub(crate) struct QueryParams {
+    #[serde(default)]
+    duration: TimeDuration,
 }
 
 impl QueryParams {
-    fn duration(&self) -> Option<TimePickerDuration> {
-        match self {
-            Self::Duration { duration } => Some((*duration).into()),
-        }
+    fn duration(&self) -> TimePickerDuration {
+        self.duration.into()
     }
 
     fn window(&self) -> (Option<u64>, Option<u64>) {
-        match self {
-            Self::Duration { duration } => {
-                let current = now();
-                (Some(current - duration.as_secs()), None)
-            }
-        }
+        let current = now();
+        (Some(current - self.duration.as_secs()), None)
     }
 }
 
@@ -77,8 +68,7 @@ pub(super) async fn handle(
     Extension(database): Extension<chezmoi_database::Client>,
     Query(params): Query<QueryParams>,
 ) -> Result<Html<String>, Error> {
-    let mut ctx = BuilderContext::default();
-    ctx.set_window(params.duration());
+    let mut ctx = BuilderContext::default().with_window(params.duration());
     let headers = dashboard.collect_latest_metrics();
     let latests = find_latest::Command::new(&headers, params.window(), None)
         .execute(database.as_ref())

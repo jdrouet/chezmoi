@@ -64,8 +64,9 @@ pub struct BuilderContext {
 }
 
 impl BuilderContext {
-    pub fn set_window(&mut self, window: Option<TimePickerDuration>) {
-        self.window = window;
+    pub fn with_window(mut self, window: TimePickerDuration) -> Self {
+        self.window = Some(window);
+        self
     }
 
     pub fn add_latests(&mut self, list: impl Iterator<Item = Metric>) {
