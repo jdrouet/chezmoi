@@ -11,7 +11,7 @@ use chezmoi_database::metrics::entity::find_latest;
 use super::error::Error;
 use crate::service::dashboard::{BuilderContext, Dashboard};
 
-#[derive(Debug, Default, serde::Deserialize)]
+#[derive(Clone, Copy, Debug, Default, serde::Deserialize)]
 pub enum TimeDuration {
     #[serde(alias = "1h")]
     OneHour,
@@ -57,14 +57,16 @@ pub(crate) enum QueryParams {
 
 impl QueryParams {
     fn duration(&self) -> Option<TimePickerDuration> {
-        self.duration.map(|d| d.into())
+        match self {
+            Self::Duration { duration } => Some((*duration).into()),
+        }
     }
 
     fn window(&self) -> (Option<u64>, Option<u64>) {
         match self {
             Self::Duration { duration } => {
                 let current = now();
-                (Some(current - duration.as_secs()), Some(current))
+                (Some(current - duration.as_secs()), None)
             }
         }
     }
