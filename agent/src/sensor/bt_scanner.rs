@@ -32,11 +32,15 @@ impl Sensor {
     ) -> anyhow::Result<()> {
         let device = self.adapter.device(addr)?;
         let device_name = device.name().await?;
+        let device_name: Option<Arc<str>> = device_name.map(Arc::from);
+        let device_icon = device.icon().await?;
+        let device_icon: Option<Arc<str>> = device_icon.map(Arc::from);
         let address: Arc<str> = Arc::from(addr.to_string());
         if let Ok(Some(power)) = device.tx_power().await {
             let tags = MetricTags::default()
                 .with(crate::ADDRESS, address.clone())
-                .maybe_with("name", device_name.clone());
+                .maybe_with("name", device_name.clone())
+                .maybe_with("icon", device_icon.clone());
             collector.collect(Metric {
                 timestamp: chezmoi_database::helper::now(),
                 header: MetricHeader::from((DEVICE_POWER, tags)),
@@ -45,8 +49,9 @@ impl Sensor {
         }
         if let Ok(Some(battery)) = device.battery_percentage().await {
             let tags = MetricTags::default()
-                .with(crate::ADDRESS, address.clone())
-                .maybe_with("name", device_name);
+                .with(crate::ADDRESS, address)
+                .maybe_with("name", device_name)
+                .maybe_with("icon", device_icon);
             collector.collect(Metric {
                 timestamp: chezmoi_database::helper::now(),
                 header: MetricHeader::from((DEVICE_BATTERY, tags)),
