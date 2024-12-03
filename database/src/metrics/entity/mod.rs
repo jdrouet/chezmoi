@@ -4,7 +4,7 @@ pub mod create;
 pub mod find_latest;
 pub mod helper;
 
-use crate::metrics::{MetricHeader, MetricName, MetricTags};
+use crate::metrics::{MetricHeader, MetricTags};
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Metric {
@@ -26,7 +26,7 @@ impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for Metric {
         Ok(Self {
             timestamp: row.try_get(0)?,
             header: MetricHeader {
-                name: MetricName(metric_name.into()),
+                name: metric_name.into(),
                 tags: metric_tags,
             },
             value: metric_value,
@@ -40,16 +40,6 @@ pub enum MetricValue {
     Count { value: u64 },
     Gauge { value: f64 },
     Bool { value: bool },
-}
-
-impl std::fmt::Display for MetricValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Count { value } => write!(f, "{value} # count"),
-            Self::Gauge { value } => write!(f, "{value} # gauge"),
-            Self::Bool { value } => write!(f, "{value} # bool"),
-        }
-    }
 }
 
 impl MetricValue {

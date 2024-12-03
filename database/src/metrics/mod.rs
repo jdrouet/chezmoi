@@ -13,19 +13,19 @@ pub struct MetricHeader {
     pub tags: MetricTags,
 }
 
-impl<N: Into<Cow<'static, str>>> From<(N, MetricTags)> for MetricHeader {
+impl<N: Into<MetricName>> From<(N, MetricTags)> for MetricHeader {
     fn from((name, tags): (N, MetricTags)) -> Self {
         Self {
-            name: MetricName::new(name),
+            name: name.into(),
             tags,
         }
     }
 }
 
 impl MetricHeader {
-    pub fn new(name: impl Into<Cow<'static, str>>) -> Self {
+    pub fn new(name: impl Into<MetricName>) -> Self {
         Self {
-            name: MetricName::new(name),
+            name: name.into(),
             tags: Default::default(),
         }
     }
@@ -46,27 +46,7 @@ impl MetricHeader {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
-#[serde(transparent)]
-pub struct MetricName(pub Cow<'static, str>);
-
-impl MetricName {
-    pub fn new(name: impl Into<Cow<'static, str>>) -> Self {
-        Self(name.into())
-    }
-}
-
-impl AsRef<str> for MetricName {
-    fn as_ref(&self) -> &str {
-        self.0.as_ref()
-    }
-}
-
-impl std::fmt::Display for MetricName {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
-    }
-}
+pub type MetricName = Cow<'static, str>;
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(untagged)]

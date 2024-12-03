@@ -143,34 +143,25 @@ impl Context {
 #[cfg(test)]
 mod tests {
     use chezmoi_database::metrics::entity::{Metric, MetricValue};
-    use chezmoi_database::metrics::{MetricHeader, MetricName, MetricTags};
+    use chezmoi_database::metrics::MetricHeader;
 
     #[test]
     fn should_skip_metrics_without_tags() {
         let mut col = super::Collector::default();
         col.collect(Metric {
             timestamp: 0,
-            header: MetricHeader {
-                name: MetricName::new("foo"),
-                tags: MetricTags::default(),
-            },
+            header: MetricHeader::new("foo"),
             value: MetricValue::count(10),
         });
         col.collect(Metric {
             timestamp: 10,
-            header: MetricHeader {
-                name: MetricName::new("foo"),
-                tags: MetricTags::default(),
-            },
+            header: MetricHeader::new("foo"),
             value: MetricValue::count(10),
         });
         assert_eq!(col.inner.len(), 1);
         col.collect(Metric {
             timestamp: 60 * 60 * 2,
-            header: MetricHeader {
-                name: MetricName::new("foo"),
-                tags: MetricTags::default(),
-            },
+            header: MetricHeader::new("foo"),
             value: MetricValue::count(10),
         });
         assert_eq!(col.inner.len(), 2);

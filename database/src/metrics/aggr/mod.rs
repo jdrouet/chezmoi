@@ -1,6 +1,6 @@
 use sqlx::types::Json;
 
-use crate::metrics::{MetricHeader, MetricName, MetricTags};
+use crate::metrics::{MetricHeader, MetricTags};
 
 pub mod list;
 
@@ -47,7 +47,7 @@ impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for MetricAggr {
         Ok(Self {
             timerange,
             header: MetricHeader {
-                name: MetricName(metric_name.into()),
+                name: metric_name.into(),
                 tags: metric_tags,
             },
             value: metric_value,
