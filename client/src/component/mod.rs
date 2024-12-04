@@ -3,4 +3,5 @@ pub(crate) mod head;
 pub(crate) mod header;
 pub(crate) mod helper;
 pub(crate) mod icon;
-pub(crate) mod prelude;
+pub mod line_chart;
+pub mod prelude;

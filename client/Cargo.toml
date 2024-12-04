@@ -7,3 +7,9 @@ edition = "2021"
 another-html-builder = "0.1"
 chrono = { version = "0.4", default-features = false, features = ["alloc"] }
 human-number = "0.1"
+plotters = { version = "0.3.7", default-features = false, features = [
+    "chrono",
+    "line_series",
+    "svg_backend",
+] }
+tracing = { workspace = true }

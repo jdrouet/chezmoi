@@ -209,3 +209,84 @@ fn with_miflora_cards() {
             ),
     );
 }
+
+#[test]
+fn with_history_chart_cards() {
+    use chezmoi_client::component::card::history_chart::{Card, CardSize};
+    use chezmoi_client::component::line_chart::Serie;
+
+    helper::write(
+        "with-history-chart-cards.html",
+        View::default()
+            .with_section(
+                Section::new("Small height")
+                    .with_card(AnyCard::HistoryChart(Card::new(
+                        "Small width",
+                        CardSize::Sm,
+                        CardSize::Sm,
+                        vec![Serie::new(
+                            "CPU",
+                            vec![
+                                (0, 10.0),
+                                (1, 20.0),
+                                (2, 10.0),
+                                (5, 70.0),
+                                (7, 40.0),
+                                (10, 70.0),
+                            ],
+                        )],
+                    )))
+                    .with_card(AnyCard::HistoryChart(Card::new(
+                        "Medium width",
+                        CardSize::Md,
+                        CardSize::Sm,
+                        vec![Serie::new(
+                            "CPU",
+                            vec![
+                                (0, 10.0),
+                                (1, 20.0),
+                                (2, 10.0),
+                                (5, 70.0),
+                                (7, 40.0),
+                                (10, 70.0),
+                            ],
+                        )],
+                    ))),
+            )
+            .with_section(
+                Section::new("Medium height")
+                    .with_card(AnyCard::HistoryChart(Card::new(
+                        "Small width",
+                        CardSize::Sm,
+                        CardSize::Md,
+                        vec![Serie::new(
+                            "CPU",
+                            vec![
+                                (0, 10.0),
+                                (1, 20.0),
+                                (2, 10.0),
+                                (5, 70.0),
+                                (7, 40.0),
+                                (10, 70.0),
+                            ],
+                        )],
+                    )))
+                    .with_card(AnyCard::HistoryChart(Card::new(
+                        "CPU",
+                        CardSize::Md,
+                        CardSize::Md,
+                        vec![Serie::new(
+                            "Medium width",
+                            vec![
+                                (0, 10.0),
+                                (1, 20.0),
+                                (2, 10.0),
+                                (5, 70.0),
+                                (7, 40.0),
+                                (10, 70.0),
+                            ],
+                        )],
+                    ))),
+            ),
+    );
+}
