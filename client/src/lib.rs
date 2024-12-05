@@ -1,3 +1,7 @@
 pub mod component;
-mod helper;
 pub mod view;
+
+mod helper;
+mod size;
+
+pub use crate::size::*;

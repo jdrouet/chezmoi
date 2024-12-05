@@ -1,5 +1,6 @@
 use chezmoi_client::component::card::AnyCard;
 use chezmoi_client::view::dashboard::{Section, View};
+use chezmoi_client::{Dimension, Size};
 
 mod helper;
 
@@ -212,7 +213,7 @@ fn with_miflora_cards() {
 
 #[test]
 fn with_history_chart_cards() {
-    use chezmoi_client::component::card::history_chart::{Card, CardSize};
+    use chezmoi_client::component::card::history_chart::Card;
     use chezmoi_client::component::line_chart::Serie;
 
     helper::write(
@@ -222,8 +223,7 @@ fn with_history_chart_cards() {
                 Section::new("Small height")
                     .with_card(AnyCard::HistoryChart(Card::new(
                         "Small width",
-                        CardSize::Sm,
-                        CardSize::Sm,
+                        Dimension::new(Size::Sm, Size::Sm),
                         vec![Serie::new(
                             "CPU",
                             vec![
@@ -238,8 +238,7 @@ fn with_history_chart_cards() {
                     )))
                     .with_card(AnyCard::HistoryChart(Card::new(
                         "Medium width",
-                        CardSize::Md,
-                        CardSize::Sm,
+                        Dimension::new(Size::Md, Size::Sm),
                         vec![Serie::new(
                             "CPU",
                             vec![
@@ -257,8 +256,7 @@ fn with_history_chart_cards() {
                 Section::new("Medium height")
                     .with_card(AnyCard::HistoryChart(Card::new(
                         "Small width",
-                        CardSize::Sm,
-                        CardSize::Md,
+                        Dimension::new(Size::Sm, Size::Md),
                         vec![Serie::new(
                             "CPU",
                             vec![
@@ -273,8 +271,7 @@ fn with_history_chart_cards() {
                     )))
                     .with_card(AnyCard::HistoryChart(Card::new(
                         "CPU",
-                        CardSize::Md,
-                        CardSize::Md,
+                        Dimension::new(Size::Md, Size::Md),
                         vec![Serie::new(
                             "Medium width",
                             vec![

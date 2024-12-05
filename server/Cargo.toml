@@ -3,8 +3,17 @@ name = "chezmoi-server"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+# default = ["bluetooth"]
+default = []
+bluetooth = [
+    "chezmoi-agent/sensor-atc-thermometer",
+    "chezmoi-agent/sensor-bt-scanner",
+    "chezmoi-agent/sensor-miflora",
+]
+
 [dependencies]
-chezmoi-agent = { path = "../agent" }
+chezmoi-agent = { path = "../agent", default-features = false }
 chezmoi-client = { path = "../client" }
 chezmoi-database = { path = "../database" }
 chezmoi-helper = { path = "../helper" }

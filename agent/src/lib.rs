@@ -149,6 +149,7 @@ async fn collect(
 
 #[derive(Debug)]
 pub struct Agent {
+    #[cfg(feature = "bluetooth")]
     bt_watcher: Option<watcher::bluetooth::Watcher>,
     #[cfg(feature = "sensor-atc-thermometer")]
     atc_thermometer: Option<sensor::atc_thermometer::Sensor>,
