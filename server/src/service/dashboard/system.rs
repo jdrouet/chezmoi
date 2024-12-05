@@ -127,25 +127,41 @@ impl From<SystemMemoryHistoryCard> for super::AnyCard {
 impl SystemMemoryHistoryCard {
     pub fn collect_history_metrics(&self, buffer: &mut HashSet<MetricHeader>) {
         buffer.insert(MetricHeader::new(
-            chezmoi_agent::sensor::system::GLOBAL_CPU_USAGE,
+            chezmoi_agent::sensor::system::MEMORY_USED,
+        ));
+        buffer.insert(MetricHeader::new(
+            chezmoi_agent::sensor::system::MEMORY_TOTAL,
         ));
     }
 
     pub async fn build_card(&self, ctx: &BuilderContext) -> Result<ClientAnyCard, String> {
-        let header = MetricHeader::new(chezmoi_agent::sensor::system::GLOBAL_CPU_USAGE);
-        let cpu_values = ctx
+        let used_header = MetricHeader::new(chezmoi_agent::sensor::system::MEMORY_USED);
+        let total_header = MetricHeader::new(chezmoi_agent::sensor::system::MEMORY_TOTAL);
+        let used_values: Vec<(u64, f64)> = ctx
             .history
-            .get(&header)
+            .get(&used_header)
             .map(|list| {
                 list.iter()
                     .filter_map(|(ts, value)| value.as_gauge().map(|v| (*ts, v)))
                     .collect()
             })
             .unwrap_or_default();
+        let total_values: Vec<(u64, f64)> = ctx
+            .history
+            .get(&total_header)
+            .map(|list| {
+                list.iter()
+                    .filter_map(|(ts, value)| value.as_gauge().map(|v| (*ts, v)))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let values = super::helper::merge_timelines(&used_values, &total_values)
+            .map(|(ts, used, total)| (ts, used * 100.0 / total))
+            .collect::<Vec<(u64, f64)>>();
         Ok(ClientAnyCard::HistoryChart(ClientHistoryChardCard::new(
-            "CPU usage",
+            "Memory usage",
             Dimension::new(self.width.into(), self.height.into()),
-            vec![Serie::new("CPU", cpu_values)],
+            vec![Serie::new("Memory usage", values)],
             ctx.window.0..ctx.window.1,
         )))
     }
