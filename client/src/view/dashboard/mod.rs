@@ -31,14 +31,14 @@ impl PartialEq<str> for TimePickerDuration {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct TimePickerForm {
     classname: Option<&'static str>,
-    value: Option<TimePickerDuration>,
+    value: TimePickerDuration,
 }
 
 impl TimePickerForm {
-    pub fn new(classname: Option<&'static str>, value: Option<TimePickerDuration>) -> Self {
+    pub fn new(classname: Option<&'static str>, value: TimePickerDuration) -> Self {
         Self { classname, value }
     }
 }
@@ -64,10 +64,7 @@ impl crate::component::prelude::Component for TimePickerForm {
                         .fold(buf, |buf, (value, label)| {
                             buf.node("option")
                                 .attr(("value", value))
-                                .cond_attr(
-                                    self.value.map(|v| v.eq(value)).unwrap_or(false),
-                                    "selected",
-                                )
+                                .cond_attr(self.value.eq(value), "selected")
                                 .content(|buf| buf.text(label))
                         })
                     })
@@ -124,20 +121,15 @@ impl<'a> Component for Section<'a> {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct View<'a> {
-    window: Option<TimePickerDuration>,
+    duration: TimePickerDuration,
     sections: Vec<Section<'a>>,
 }
 
 impl<'a> View<'a> {
-    pub fn new(sections: Vec<Section<'a>>, window: Option<TimePickerDuration>) -> Self {
-        Self { sections, window }
-    }
-
-    pub fn with_window(mut self, window: TimePickerDuration) -> Self {
-        self.window = Some(window);
-        self
+    pub fn new(sections: Vec<Section<'a>>, duration: TimePickerDuration) -> Self {
+        Self { sections, duration }
     }
 
     pub fn with_section(mut self, section: Section<'a>) -> Self {
@@ -166,7 +158,7 @@ impl<'a> View<'a> {
     fn render_body<'v, W: std::fmt::Write>(&self, buf: Buffer<W, Body<'v>>) -> Buffer<W, Body<'v>> {
         buf.node("body").content(|buf| {
             let buf = crate::component::header::Header::new("Home")
-                .with_content(TimePickerForm::new(Some("flex-1"), self.window))
+                .with_content(TimePickerForm::new(Some("flex-1"), self.duration))
                 .render(buf);
             self.render_content(buf)
         })

@@ -110,17 +110,22 @@ impl Section {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct BuilderContext {
-    window: Option<TimePickerDuration>,
+    window: (u64, u64),
+    duration: TimePickerDuration,
     latest: HashMap<MetricHeader, (u64, MetricValue)>,
     history: HashMap<MetricHeader, Vec<(u64, MetricValue)>>,
 }
 
 impl BuilderContext {
-    pub fn with_window(mut self, window: TimePickerDuration) -> Self {
-        self.window = Some(window);
-        self
+    pub fn new(duration: TimePickerDuration, window: (u64, u64)) -> Self {
+        Self {
+            window,
+            duration,
+            latest: Default::default(),
+            history: Default::default(),
+        }
     }
 
     pub fn add_latests(&mut self, list: impl Iterator<Item = Metric>) {
@@ -168,6 +173,6 @@ impl Dashboard {
             }
             sections.push(vsec);
         }
-        Ok(dashboard::View::new(sections, ctx.window))
+        Ok(dashboard::View::new(sections, ctx.duration))
     }
 }

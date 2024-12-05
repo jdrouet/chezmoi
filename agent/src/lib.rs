@@ -1,8 +1,12 @@
+#[cfg(feature = "bluetooth")]
 use std::collections::HashSet;
+#[cfg(feature = "bluetooth")]
 use std::str::FromStr;
 
 use chezmoi_database::metrics::entity::Metric;
-use tokio::sync::{broadcast, mpsc};
+#[cfg(feature = "bluetooth")]
+use tokio::sync::broadcast;
+use tokio::sync::mpsc;
 
 pub mod sensor;
 pub mod watcher;

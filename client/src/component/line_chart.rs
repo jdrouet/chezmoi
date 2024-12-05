@@ -1,4 +1,12 @@
+use std::ops::Range;
+
 use another_html_builder::{Body, Buffer};
+
+fn format_hourly(ts: &u64) -> String {
+    chrono::DateTime::from_timestamp(*ts as i64, 0)
+        .map(|ts| ts.format("%H:%M").to_string())
+        .unwrap_or_default()
+}
 
 #[derive(Debug)]
 pub struct Serie<'a> {
@@ -32,6 +40,8 @@ pub struct LineChart<'a> {
     size: (u32, u32),
     margin_left: u32,
     margin_bottom: u32,
+    x_range: Option<Range<u64>>,
+    y_range: Option<Range<f64>>,
 }
 
 impl<'a> LineChart<'a> {
@@ -46,6 +56,8 @@ impl<'a> LineChart<'a> {
             size,
             margin_left,
             margin_bottom,
+            x_range: None,
+            y_range: None,
         }
     }
 
@@ -58,26 +70,55 @@ impl<'a> LineChart<'a> {
         self
     }
 
-    fn boundaries(&self) -> Option<((u64, u64), (f64, f64))> {
-        self.series.iter().flat_map(|s| s.values.iter()).fold(
-            None,
-            |prev, (ts, value)| match prev {
-                Some(((min_ts, max_ts), (min_value, max_value))) => Some((
-                    (min_ts.min(*ts), max_ts.max(*ts)),
-                    (min_value.min(*value), max_value.max(*value)),
-                )),
-                None => Some(((*ts, *ts), (*value, *value))),
-            },
-        )
+    pub fn with_x_range(mut self, range: Range<u64>) -> Self {
+        self.x_range = Some(range);
+        self
+    }
+
+    pub fn with_y_range(mut self, range: Range<f64>) -> Self {
+        self.y_range = Some(range);
+        self
+    }
+
+    fn x_range(&self) -> Option<Range<u64>> {
+        if let Some(ref value) = self.x_range {
+            Some(value.clone())
+        } else {
+            self.series
+                .iter()
+                .flat_map(|s| s.values.iter().map(|(ts, _)| *ts))
+                .fold(None::<(u64, u64)>, |prev, value| match prev {
+                    Some((min, max)) => Some((min.min(value), max.max(value))),
+                    None => Some((value, value)),
+                })
+                .map(|(min, max)| min..max)
+        }
+    }
+
+    fn y_range(&self) -> Option<Range<f64>> {
+        if let Some(ref value) = self.y_range {
+            Some(value.clone())
+        } else {
+            self.series
+                .iter()
+                .flat_map(|s| s.values.iter().map(|(_, value)| *value))
+                .fold(None::<(f64, f64)>, |prev, value| match prev {
+                    Some((min, max)) => Some((min.min(value), max.max(value))),
+                    None => Some((value, value)),
+                })
+                .map(|(min, max)| min..max)
+        }
     }
 
     fn into_svg(&self) -> Result<String, std::io::Error> {
         use plotters::prelude::*;
 
-        let Some(((min_ts, max_ts), (min_value, max_value))) = self.boundaries() else {
+        let Some(x_range) = self.x_range() else {
             return Ok(String::default());
         };
-
+        let Some(y_range) = self.y_range() else {
+            return Ok(String::default());
+        };
         // TODO find a way to access the buffer content
         let mut buffer = String::new();
         {
@@ -88,7 +129,7 @@ impl<'a> LineChart<'a> {
                 .margin(10)
                 .set_label_area_size(LabelAreaPosition::Left, self.margin_left)
                 .set_label_area_size(LabelAreaPosition::Bottom, self.margin_bottom)
-                .build_cartesian_2d(min_ts..max_ts, min_value..max_value)
+                .build_cartesian_2d(x_range, y_range)
                 .map_err(from_chart_error)?;
 
             chart
@@ -97,6 +138,7 @@ impl<'a> LineChart<'a> {
                 .disable_y_mesh()
                 // .x_labels(30)
                 // .max_light_lines(4)
+                .x_label_formatter(&format_hourly)
                 .draw()
                 .map_err(from_chart_error)?;
 

@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use another_html_builder::{Body, Buffer};
 
 use crate::component::helper::Classnames;
@@ -12,7 +14,12 @@ pub struct Card<'a> {
 }
 
 impl<'a> Card<'a> {
-    pub fn new(title: &'a str, dimension: Dimension, series: Vec<Serie<'a>>) -> Self {
+    pub fn new(
+        title: &'a str,
+        dimension: Dimension,
+        series: Vec<Serie<'a>>,
+        x_range: Range<u64>,
+    ) -> Self {
         let (size_x, margin_left) = match dimension.width {
             Size::Sm => (190, 25),
             Size::Md => (410, 35),
@@ -24,7 +31,8 @@ impl<'a> Card<'a> {
         Self {
             title,
             dimension,
-            content: LineChart::new((size_x, size_y), margin_left, margin_bottom, series),
+            content: LineChart::new((size_x, size_y), margin_left, margin_bottom, series)
+                .with_x_range(x_range),
         }
     }
 }

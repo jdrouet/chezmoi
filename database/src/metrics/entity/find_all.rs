@@ -4,16 +4,12 @@ use crate::metrics::MetricHeader;
 /// Right now, we expect tags to match exactly.
 pub struct Command<'a> {
     headers: &'a [MetricHeader],
-    window: (Option<u64>, Option<u64>),
+    window: (u64, u64),
     limit: Option<usize>,
 }
 
 impl<'a> Command<'a> {
-    pub fn new(
-        headers: &'a [MetricHeader],
-        window: (Option<u64>, Option<u64>),
-        limit: Option<usize>,
-    ) -> Self {
+    pub fn new(headers: &'a [MetricHeader], window: (u64, u64), limit: Option<usize>) -> Self {
         Self {
             headers,
             window,
@@ -27,23 +23,10 @@ impl<'a> Command<'a> {
     ) -> sqlx::Result<Vec<Metric>> {
         let mut qb = sqlx::QueryBuilder::new("select timestamp, name, tags, value");
         qb.push(" from metrics");
-        match self.window {
-            (Some(min), Some(max)) => {
-                qb.push(" where timestamp >= ")
-                    .push_bind(min as i64)
-                    .push(" and timestamp <= ")
-                    .push_bind(max as i64);
-            }
-            (Some(min), None) => {
-                qb.push(" where timestamp > ").push_bind(min as i64);
-            }
-            (None, Some(max)) => {
-                qb.push(" where timestamp < ").push_bind(max as i64);
-            }
-            _ => {
-                qb.push(" where true");
-            }
-        }
+        qb.push(" where timestamp >= ")
+            .push_bind(self.window.0 as i64)
+            .push(" and timestamp <= ")
+            .push_bind(self.window.1 as i64);
         if !self.headers.is_empty() {
             qb.push(" and (");
             for (index, header) in self.headers.iter().enumerate() {
@@ -124,7 +107,7 @@ mod tests {
         .await;
         assert_eq!(expected_events.len(), 10);
 
-        let found = super::Command::new(&[expected_header], (None, None), Some(10))
+        let found = super::Command::new(&[expected_header], (0, 100), Some(10))
             .execute(db.as_ref())
             .await
             .unwrap();
@@ -158,7 +141,7 @@ mod tests {
         )
         .await;
 
-        let found = super::Command::new(&[expected_header], (None, None), Some(10))
+        let found = super::Command::new(&[expected_header], (0, 100), Some(10))
             .execute(db.as_ref())
             .await
             .unwrap();
@@ -204,7 +187,7 @@ mod tests {
         )
         .await;
 
-        let found = super::Command::new(&[first_header, second_header], (None, None), Some(10))
+        let found = super::Command::new(&[first_header, second_header], (0, 100), Some(10))
             .execute(db.as_ref())
             .await
             .unwrap();
@@ -228,7 +211,7 @@ mod tests {
         .await;
         assert_eq!(events.len(), 100);
 
-        let found = super::Command::new(&[header], (Some(15), Some(20)), Some(10))
+        let found = super::Command::new(&[header], (15, 20), Some(10))
             .execute(db.as_ref())
             .await
             .unwrap();

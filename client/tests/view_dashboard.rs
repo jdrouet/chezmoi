@@ -1,5 +1,5 @@
 use chezmoi_client::component::card::AnyCard;
-use chezmoi_client::view::dashboard::{Section, View};
+use chezmoi_client::view::dashboard::{Section, TimePickerDuration, View};
 use chezmoi_client::{Dimension, Size};
 
 mod helper;
@@ -12,20 +12,18 @@ fn with_atc_thermometer() {
 
     helper::write(
         "with-atc-thermometer-cards.html",
-        View::default()
-            .with_window(chezmoi_client::view::dashboard::TimePickerDuration::OneWeek)
-            .with_section(
-                Section::new("With values").with_card(AnyCard::AtcThermometer(Card::new(
-                    FAKE_ADDRESS,
-                    None,
-                    Values {
-                        timestamp: Some(0),
-                        temperature: Some(12.34),
-                        humidity: Some(12.34),
-                        battery: Some(12.34),
-                    },
-                ))),
-            ),
+        View::new(Vec::new(), TimePickerDuration::OneWeek).with_section(
+            Section::new("With values").with_card(AnyCard::AtcThermometer(Card::new(
+                FAKE_ADDRESS,
+                None,
+                Values {
+                    timestamp: Some(0),
+                    temperature: Some(12.34),
+                    humidity: Some(12.34),
+                    battery: Some(12.34),
+                },
+            ))),
+        ),
     );
 }
 
@@ -35,7 +33,7 @@ fn with_bluetooth_devices() {
 
     helper::write(
         "with-bluetooth-devices-cards.html",
-        View::default()
+        View::new(Vec::new(), TimePickerDuration::OneWeek)
             .with_section(
                 Section::new("No devices")
                     .with_card(AnyCard::BluetoothDevices(Card::new(Vec::new()))),
@@ -109,7 +107,7 @@ fn with_system() {
 
     helper::write(
         "with-system-cards.html",
-        View::default().with_section(
+        View::new(Vec::new(), TimePickerDuration::OneWeek).with_section(
             Section::new("Simple")
                 .with_card(AnyCard::Memory(system_memory::Card::new(
                     Some(1024.0 * 1024.0 * 1024.0 * 64.0),
@@ -133,7 +131,7 @@ fn with_miflora_cards() {
 
     helper::write(
         "with-miflora-cards.html",
-        View::default()
+        View::new(Vec::new(), TimePickerDuration::OneWeek)
             .with_section(
                 Section::new("With last values")
                     .with_card(AnyCard::Miflora(Card::new(
@@ -218,7 +216,7 @@ fn with_history_chart_cards() {
 
     helper::write(
         "with-history-chart-cards.html",
-        View::default()
+        View::new(Vec::new(), TimePickerDuration::OneWeek)
             .with_section(
                 Section::new("Small height")
                     .with_card(AnyCard::HistoryChart(Card::new(
@@ -235,6 +233,7 @@ fn with_history_chart_cards() {
                                 (10, 70.0),
                             ],
                         )],
+                        0..10,
                     )))
                     .with_card(AnyCard::HistoryChart(Card::new(
                         "Medium width",
@@ -250,6 +249,7 @@ fn with_history_chart_cards() {
                                 (10, 70.0),
                             ],
                         )],
+                        0..10,
                     ))),
             )
             .with_section(
@@ -268,6 +268,7 @@ fn with_history_chart_cards() {
                                 (10, 70.0),
                             ],
                         )],
+                        0..10,
                     )))
                     .with_card(AnyCard::HistoryChart(Card::new(
                         "CPU",
@@ -283,6 +284,7 @@ fn with_history_chart_cards() {
                                 (10, 70.0),
                             ],
                         )],
+                        0..10,
                     ))),
             ),
     );

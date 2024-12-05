@@ -78,6 +78,7 @@ impl SystemCpuHistoryCard {
             "CPU usage",
             Dimension::new(self.width.into(), self.height.into()),
             vec![Serie::new("CPU", cpu_values)],
+            ctx.window.0..ctx.window.1,
         )))
     }
 }
@@ -145,6 +146,7 @@ impl SystemMemoryHistoryCard {
             "CPU usage",
             Dimension::new(self.width.into(), self.height.into()),
             vec![Serie::new("CPU", cpu_values)],
+            ctx.window.0..ctx.window.1,
         )))
     }
 }

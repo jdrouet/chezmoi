@@ -5,8 +5,10 @@ use std::sync::Arc;
 use chezmoi_database::metrics::entity::{Metric, MetricValue};
 use tokio::sync::mpsc::Sender;
 
+#[allow(unused)]
 const ONE_HOUR: u64 = 60 * 60;
 
+#[allow(unused)]
 const fn one_hour() -> u64 {
     ONE_HOUR
 }

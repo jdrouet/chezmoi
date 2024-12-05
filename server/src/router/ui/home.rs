@@ -57,9 +57,9 @@ impl QueryParams {
         self.duration.into()
     }
 
-    fn window(&self) -> (Option<u64>, Option<u64>) {
+    fn window(&self) -> (u64, u64) {
         let current = now();
-        (Some(current - self.duration.as_secs()), None)
+        (current - self.duration.as_secs(), current)
     }
 }
 
@@ -68,7 +68,7 @@ pub(super) async fn handle(
     Extension(database): Extension<chezmoi_database::Client>,
     Query(params): Query<QueryParams>,
 ) -> Result<Html<String>, Error> {
-    let mut ctx = BuilderContext::default().with_window(params.duration());
+    let mut ctx = BuilderContext::new(params.duration(), params.window());
     let latest_headers = dashboard.collect_latest_metrics();
     let history_headers = dashboard.collect_history_metrics();
     let latests = find_latest::Command::new(&latest_headers, params.window(), None)
