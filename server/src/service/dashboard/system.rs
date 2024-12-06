@@ -74,6 +74,7 @@ impl SystemCpuHistoryCard {
                     .collect()
             })
             .unwrap_or_default();
+
         Ok(ClientAnyCard::HistoryChart(ClientHistoryChardCard::new(
             "CPU usage",
             Dimension::new(self.width.into(), self.height.into()),
@@ -128,37 +129,21 @@ impl From<SystemMemoryHistoryCard> for super::AnyCard {
 impl SystemMemoryHistoryCard {
     pub fn collect_history_metrics(&self, buffer: &mut HashSet<MetricHeader>) {
         buffer.insert(MetricHeader::new(
-            chezmoi_agent::sensor::system::MEMORY_USED,
-        ));
-        buffer.insert(MetricHeader::new(
-            chezmoi_agent::sensor::system::MEMORY_TOTAL,
+            chezmoi_agent::sensor::system::MEMORY_RATIO,
         ));
     }
 
     pub async fn build_card(&self, ctx: &BuilderContext) -> Result<ClientAnyCard, String> {
-        let used_header = MetricHeader::new(chezmoi_agent::sensor::system::MEMORY_USED);
-        let total_header = MetricHeader::new(chezmoi_agent::sensor::system::MEMORY_TOTAL);
-        let used_values: Vec<(u64, f64)> = ctx
+        let header = MetricHeader::new(chezmoi_agent::sensor::system::MEMORY_RATIO);
+        let values: Vec<(u64, f64)> = ctx
             .history
-            .get(&used_header)
+            .get(&header)
             .map(|list| {
                 list.iter()
                     .filter_map(|(ts, value)| value.as_gauge().map(|v| (*ts, v.avg)))
                     .collect()
             })
             .unwrap_or_default();
-        let total_values: Vec<(u64, f64)> = ctx
-            .history
-            .get(&total_header)
-            .map(|list| {
-                list.iter()
-                    .filter_map(|(ts, value)| value.as_gauge().map(|v| (*ts, v.avg)))
-                    .collect()
-            })
-            .unwrap_or_default();
-        let values = super::helper::merge_timelines(&used_values, &total_values)
-            .map(|(ts, used, total)| (ts, used * 100.0 / total))
-            .collect::<Vec<(u64, f64)>>();
         Ok(ClientAnyCard::HistoryChart(ClientHistoryChardCard::new(
             "Memory usage",
             Dimension::new(self.width.into(), self.height.into()),

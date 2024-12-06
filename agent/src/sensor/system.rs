@@ -10,8 +10,10 @@ use super::Collector;
 pub const GLOBAL_CPU_USAGE: &str = "host.system.global_cpu.usage";
 pub const MEMORY_TOTAL: &str = "host.system.memory.total";
 pub const MEMORY_USED: &str = "host.system.memory.used";
+pub const MEMORY_RATIO: &str = "host.system.memory.ratio";
 pub const SWAP_TOTAL: &str = "host.system.swap.total";
 pub const SWAP_USED: &str = "host.system.swap.used";
+pub const SWAP_RATIO: &str = "host.system.swap.ratio";
 
 fn default_interval() -> u64 {
     10
@@ -51,25 +53,39 @@ impl Sensor {
             header: MetricHeader::new(GLOBAL_CPU_USAGE),
             value: MetricValue::gauge(self.inner.global_cpu_usage() as f64),
         });
+        let total_memory = self.inner.total_memory() as f64;
+        let used_memory = self.inner.used_memory() as f64;
         buffer.collect(Metric {
             timestamp: now,
             header: MetricHeader::new(MEMORY_TOTAL),
-            value: MetricValue::gauge(self.inner.total_memory() as f64),
+            value: MetricValue::gauge(total_memory),
         });
         buffer.collect(Metric {
             timestamp: now,
             header: MetricHeader::new(MEMORY_USED),
-            value: MetricValue::gauge(self.inner.used_memory() as f64),
+            value: MetricValue::gauge(used_memory),
         });
         buffer.collect(Metric {
             timestamp: now,
+            header: MetricHeader::new(MEMORY_RATIO),
+            value: MetricValue::gauge(used_memory * 100.0 / total_memory),
+        });
+        let total_swap = self.inner.total_swap() as f64;
+        let used_swap = self.inner.used_swap() as f64;
+        buffer.collect(Metric {
+            timestamp: now,
             header: MetricHeader::new(SWAP_TOTAL),
-            value: MetricValue::gauge(self.inner.total_swap() as f64),
+            value: MetricValue::gauge(total_swap),
         });
         buffer.collect(Metric {
             timestamp: now,
             header: MetricHeader::new(SWAP_USED),
-            value: MetricValue::gauge(self.inner.used_swap() as f64),
+            value: MetricValue::gauge(used_swap),
+        });
+        buffer.collect(Metric {
+            timestamp: now,
+            header: MetricHeader::new(SWAP_RATIO),
+            value: MetricValue::gauge(used_swap * 100.0 / total_swap),
         });
         Ok(())
     }
