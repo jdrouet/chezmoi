@@ -13,8 +13,6 @@ pub(crate) mod atc_thermometer;
 pub(crate) mod miflora;
 pub(crate) mod system;
 
-mod helper;
-
 #[derive(Clone, Copy, Debug, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Size {
