@@ -50,14 +50,16 @@ impl<'a> LineChart<'a> {
         margin_left: u32,
         margin_bottom: u32,
         series: Vec<Serie<'a>>,
+        x_range: Option<Range<u64>>,
+        y_range: Option<Range<f64>>,
     ) -> Self {
         Self {
             series,
             size,
             margin_left,
             margin_bottom,
-            x_range: None,
-            y_range: None,
+            x_range,
+            y_range,
         }
     }
 
@@ -75,9 +77,17 @@ impl<'a> LineChart<'a> {
         self
     }
 
+    pub fn set_x_range(&mut self, range: Option<Range<u64>>) {
+        self.x_range = range;
+    }
+
     pub fn with_y_range(mut self, range: Range<f64>) -> Self {
         self.y_range = Some(range);
         self
+    }
+
+    pub fn set_y_range(&mut self, range: Option<Range<f64>>) {
+        self.y_range = range;
     }
 
     fn x_range(&self) -> Option<Range<u64>> {

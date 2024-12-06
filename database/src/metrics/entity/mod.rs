@@ -1,7 +1,6 @@
 use sqlx::types::Json;
 
 pub mod create;
-pub mod find_all;
 pub mod find_latest;
 pub mod helper;
 

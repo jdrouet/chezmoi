@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 
 use chezmoi_client::component::card::AnyCard as ClientAnyCard;
 use chezmoi_client::view::dashboard::{self, TimePickerDuration};
+use chezmoi_database::metrics::aggr::{MetricAggr, MetricValueAggr};
 use chezmoi_database::metrics::entity::{Metric, MetricValue};
 use chezmoi_database::metrics::MetricHeader;
 
@@ -117,7 +118,7 @@ pub struct BuilderContext {
     window: (u64, u64),
     duration: TimePickerDuration,
     latest: HashMap<MetricHeader, (u64, MetricValue)>,
-    history: HashMap<MetricHeader, Vec<(u64, MetricValue)>>,
+    history: HashMap<MetricHeader, Vec<(u64, MetricValueAggr)>>,
 }
 
 impl BuilderContext {
@@ -135,10 +136,10 @@ impl BuilderContext {
             .extend(list.map(|metric| (metric.header, (metric.timestamp, metric.value))));
     }
 
-    pub fn add_history(&mut self, list: impl Iterator<Item = Metric>) {
+    pub fn add_history(&mut self, list: impl Iterator<Item = MetricAggr>) {
         list.for_each(|metric| {
             let entry = self.history.entry(metric.header).or_default();
-            entry.push((metric.timestamp, metric.value));
+            entry.push((metric.timerange.middle(), metric.value));
         });
     }
 }

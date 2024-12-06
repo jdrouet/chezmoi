@@ -18,7 +18,8 @@ impl<'a> Card<'a> {
         title: &'a str,
         dimension: Dimension,
         series: Vec<Serie<'a>>,
-        x_range: Range<u64>,
+        x_range: Option<Range<u64>>,
+        y_range: Option<Range<f64>>,
     ) -> Self {
         let (size_x, margin_left) = match dimension.width {
             Size::Sm => (190, 25),
@@ -28,11 +29,19 @@ impl<'a> Card<'a> {
             Size::Sm => (120, 10),
             Size::Md => (280, 15),
         };
+        let content = LineChart::new(
+            (size_x, size_y),
+            margin_left,
+            margin_bottom,
+            series,
+            x_range,
+            y_range,
+        );
+
         Self {
             title,
             dimension,
-            content: LineChart::new((size_x, size_y), margin_left, margin_bottom, series)
-                .with_x_range(x_range),
+            content,
         }
     }
 }

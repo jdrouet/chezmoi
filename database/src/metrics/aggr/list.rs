@@ -1,18 +1,18 @@
 use super::MetricAggr;
 use crate::metrics::MetricHeader;
 
-pub struct ListAggregation<'a> {
+pub struct Command<'a> {
     headers: &'a [MetricHeader],
     timerange: (u64, u64),
-    count: usize,
+    divisions: usize,
 }
 
-impl<'a> ListAggregation<'a> {
-    pub fn new(headers: &'a [MetricHeader], timerange: (u64, u64), count: usize) -> Self {
+impl<'a> Command<'a> {
+    pub fn new(headers: &'a [MetricHeader], timerange: (u64, u64), divisions: usize) -> Self {
         Self {
             headers,
             timerange,
-            count,
+            divisions,
         }
     }
 
@@ -34,7 +34,7 @@ impl<'a> ListAggregation<'a> {
                 qb.push(" (name = ").push_bind(header.name.as_ref());
                 for (name, value) in header.tags.entries() {
                     qb.push(" and json_extract(tags, ")
-                        .push_bind(name)
+                        .push_bind(format!("$.{name}"))
                         .push(") = ");
                     crate::tag_value_bind!(qb, value);
                 }
@@ -57,13 +57,13 @@ impl<'a> ListAggregation<'a> {
         qb.push(" (timestamp - ")
             .push_bind(from_ts as i64)
             .push(") * ")
-            .push_bind(self.count as i64)
+            .push_bind(self.divisions as i64)
             .push(" / (")
             .push_bind(to_ts as i64)
             .push(" - ")
             .push_bind(from_ts as i64)
             .push(")")
-            .push(" as section,");
+            .push(" as division,");
         qb.push(" name,");
         qb.push(" tags,");
         qb.push(" value");
@@ -87,7 +87,7 @@ impl<'a> ListAggregation<'a> {
             .push(" json_object('type', 'count', 'min', min(json_extract(value, '$.value')), 'avg', avg(json_extract(value, '$.value')), 'max', max(json_extract(value, '$.value')), 'sum', sum(json_extract(value, '$.value'))) as value");
         qb.push(" from metrics_subset");
         qb.push(" where json_extract(value, '$.type') = 'count'");
-        qb.push(" group by section, name, tags")
+        qb.push(" group by division, name, tags")
     }
 
     fn build_gauge_subset<'b>(
@@ -104,7 +104,7 @@ impl<'a> ListAggregation<'a> {
             .push(" json_object('type', 'gauge', 'min', min(json_extract(value, '$.value')), 'avg', avg(json_extract(value, '$.value')), 'max', max(json_extract(value, '$.value'))) as value");
         qb.push(" from metrics_subset");
         qb.push(" where json_extract(value, '$.type') = 'gauge'");
-        qb.push(" group by section, name, tags")
+        qb.push(" group by division, name, tags")
     }
 
     pub async fn execute<'c, E: sqlx::Executor<'c, Database = sqlx::Sqlite>>(
@@ -136,7 +136,41 @@ impl<'a> ListAggregation<'a> {
 #[cfg(test)]
 mod tests {
     use crate::helper::now;
+    use crate::metrics::entity::MetricValue;
     use crate::metrics::MetricHeader;
+
+    const NOW: u64 = 633009600;
+    const ONE_MINUTE: u64 = 60 * 60;
+    const ONE_HOUR: u64 = 60 * 60;
+    const ONE_DAY: u64 = ONE_HOUR * 24;
+    const ONE_WEEK: u64 = ONE_DAY * 7;
+    const ONE_WEEK_AGO: u64 = NOW - ONE_WEEK;
+
+    struct TimestampGenerator {
+        from: u64,
+        to: u64,
+        interval: u64,
+    }
+
+    impl TimestampGenerator {
+        fn new(from: u64, to: u64, interval: u64) -> Self {
+            Self { from, to, interval }
+        }
+    }
+
+    impl Iterator for TimestampGenerator {
+        type Item = u64;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.from <= self.to {
+                let now = self.from;
+                self.from += self.interval;
+                Some(now)
+            } else {
+                None
+            }
+        }
+    }
 
     #[tokio::test]
     async fn should_build_query() {
@@ -146,10 +180,35 @@ mod tests {
 
         let db = crate::Client::test().await;
 
-        let list = super::ListAggregation::new(&headers, (before, current), 10)
+        let list = super::Command::new(&headers, (before, current), 10)
             .execute(db.as_ref())
             .await
             .unwrap();
         assert_eq!(list.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn should_aggregare_regular_values() {
+        let db = crate::Client::test().await;
+
+        let header = MetricHeader::new("foo").with_tag("host", "rpi");
+        let generated = crate::helper::create_metrics(
+            &db,
+            header.clone(),
+            TimestampGenerator::new(ONE_WEEK_AGO - ONE_DAY, NOW + ONE_DAY, ONE_MINUTE)
+                .enumerate()
+                .map(|(index, ts)| (ts, MetricValue::gauge(index as f64))),
+        )
+        .await;
+        assert_eq!(generated.len(), 217);
+
+        let list = super::Command::new(&[header], (ONE_WEEK_AGO + 1, NOW + 1), 7)
+            .execute(db.as_ref())
+            .await
+            .unwrap();
+        assert_eq!(list.len(), 7);
+        for item in list {
+            assert_eq!(item.timerange.count, 24);
+        }
     }
 }

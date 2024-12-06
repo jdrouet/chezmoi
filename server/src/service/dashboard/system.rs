@@ -70,7 +70,7 @@ impl SystemCpuHistoryCard {
             .get(&header)
             .map(|list| {
                 list.iter()
-                    .filter_map(|(ts, value)| value.as_gauge().map(|v| (*ts, v)))
+                    .filter_map(|(ts, value)| value.as_gauge().map(|v| (*ts, v.avg)))
                     .collect()
             })
             .unwrap_or_default();
@@ -78,7 +78,8 @@ impl SystemCpuHistoryCard {
             "CPU usage",
             Dimension::new(self.width.into(), self.height.into()),
             vec![Serie::new("CPU", cpu_values)],
-            ctx.window.0..ctx.window.1,
+            Some(ctx.window.0..ctx.window.1),
+            Some(0.0..100.0),
         )))
     }
 }
@@ -142,7 +143,7 @@ impl SystemMemoryHistoryCard {
             .get(&used_header)
             .map(|list| {
                 list.iter()
-                    .filter_map(|(ts, value)| value.as_gauge().map(|v| (*ts, v)))
+                    .filter_map(|(ts, value)| value.as_gauge().map(|v| (*ts, v.avg)))
                     .collect()
             })
             .unwrap_or_default();
@@ -151,7 +152,7 @@ impl SystemMemoryHistoryCard {
             .get(&total_header)
             .map(|list| {
                 list.iter()
-                    .filter_map(|(ts, value)| value.as_gauge().map(|v| (*ts, v)))
+                    .filter_map(|(ts, value)| value.as_gauge().map(|v| (*ts, v.avg)))
                     .collect()
             })
             .unwrap_or_default();
@@ -162,7 +163,8 @@ impl SystemMemoryHistoryCard {
             "Memory usage",
             Dimension::new(self.width.into(), self.height.into()),
             vec![Serie::new("Memory usage", values)],
-            ctx.window.0..ctx.window.1,
+            Some(ctx.window.0..ctx.window.1),
+            Some(0.0..100.0),
         )))
     }
 }

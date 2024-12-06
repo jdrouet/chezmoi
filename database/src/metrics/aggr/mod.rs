@@ -11,20 +11,62 @@ pub struct TimeRange {
     pub count: u64,
 }
 
+impl TimeRange {
+    pub fn middle(&self) -> u64 {
+        (self.from + self.to) / 2
+    }
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct MetricCountAggr {
+    pub min: u64,
+    pub avg: f64,
+    pub max: u64,
+    pub sum: u64,
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct MetricGaugeAggr {
+    pub min: f64,
+    pub avg: f64,
+    pub max: f64,
+}
+
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum MetricValueAggr {
-    Count {
-        min: u64,
-        avg: f64,
-        max: u64,
-        sum: u64,
-    },
-    Gauge {
-        min: f64,
-        avg: f64,
-        max: f64,
-    },
+    Count(MetricCountAggr),
+    Gauge(MetricGaugeAggr),
+}
+
+impl MetricValueAggr {
+    pub fn as_count(&self) -> Option<&MetricCountAggr> {
+        match self {
+            Self::Count(inner) => Some(inner),
+            _ => None,
+        }
+    }
+
+    pub fn into_count(self) -> Option<MetricCountAggr> {
+        match self {
+            Self::Count(inner) => Some(inner),
+            _ => None,
+        }
+    }
+
+    pub fn as_gauge(&self) -> Option<&MetricGaugeAggr> {
+        match self {
+            Self::Gauge(inner) => Some(inner),
+            _ => None,
+        }
+    }
+
+    pub fn into_gauge(self) -> Option<MetricGaugeAggr> {
+        match self {
+            Self::Gauge(inner) => Some(inner),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]

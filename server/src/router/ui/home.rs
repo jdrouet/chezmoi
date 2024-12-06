@@ -6,7 +6,8 @@ use axum::Extension;
 use chezmoi_client::view::dashboard::TimePickerDuration;
 use chezmoi_client::view::prelude::View;
 use chezmoi_database::helper::now;
-use chezmoi_database::metrics::entity::{find_all, find_latest};
+use chezmoi_database::metrics::aggr;
+use chezmoi_database::metrics::entity::find_latest;
 
 use super::error::Error;
 use crate::service::dashboard::{BuilderContext, Dashboard};
@@ -74,7 +75,7 @@ pub(super) async fn handle(
     let latests = find_latest::Command::new(&latest_headers, params.window(), None)
         .execute(database.as_ref())
         .await?;
-    let history = find_all::Command::new(&history_headers, params.window(), None)
+    let history = aggr::list::Command::new(&history_headers, params.window(), 30)
         .execute(database.as_ref())
         .await?;
     ctx.add_latests(latests.into_iter());

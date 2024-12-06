@@ -233,7 +233,8 @@ fn with_history_chart_cards() {
                                 (10, 70.0),
                             ],
                         )],
-                        0..10,
+                        Some(0..10),
+                        Some(0.0..100.0),
                     )))
                     .with_card(AnyCard::HistoryChart(Card::new(
                         "Medium width",
@@ -249,7 +250,8 @@ fn with_history_chart_cards() {
                                 (10, 70.0),
                             ],
                         )],
-                        0..10,
+                        Some(0..10),
+                        Some(0.0..100.0),
                     ))),
             )
             .with_section(
@@ -268,7 +270,8 @@ fn with_history_chart_cards() {
                                 (10, 70.0),
                             ],
                         )],
-                        0..10,
+                        Some(0..10),
+                        Some(0.0..100.0),
                     )))
                     .with_card(AnyCard::HistoryChart(Card::new(
                         "CPU",
@@ -284,7 +287,8 @@ fn with_history_chart_cards() {
                                 (10, 70.0),
                             ],
                         )],
-                        0..10,
+                        Some(0..10),
+                        Some(0.0..100.0),
                     ))),
             ),
     );
