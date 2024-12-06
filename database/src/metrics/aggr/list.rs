@@ -211,4 +211,29 @@ mod tests {
             assert_eq!(item.timerange.count, 24);
         }
     }
+
+    #[tokio::test]
+    async fn should_handle_empty_spots() {
+        let db = crate::Client::test().await;
+
+        let header = MetricHeader::new("foo").with_tag("host", "rpi");
+        let generated = crate::helper::create_metrics(
+            &db,
+            header.clone(),
+            TimestampGenerator::new(NOW - 2 * ONE_DAY, NOW + ONE_DAY, ONE_MINUTE)
+                .enumerate()
+                .map(|(index, ts)| (ts, MetricValue::gauge(index as f64))),
+        )
+        .await;
+        assert_eq!(generated.len(), 73);
+
+        let list = super::Command::new(&[header], (ONE_WEEK_AGO, NOW), 7)
+            .execute(db.as_ref())
+            .await
+            .unwrap();
+        assert_eq!(list.len(), 3);
+        assert_eq!(list[0].timerange.count, 24);
+        assert_eq!(list[1].timerange.count, 24);
+        assert_eq!(list[2].timerange.count, 1);
+    }
 }
