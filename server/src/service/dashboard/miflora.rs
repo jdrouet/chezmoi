@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::collections::HashSet;
 
-use chezmoi_client::component::card::miflora::{Card, TimedValue, ValueState, Values};
+use chezmoi_client::component::card::miflora::{Card, TimedValue, Values};
 use chezmoi_client::component::card::AnyCard as ClientAnyCard;
 use chezmoi_database::metrics::MetricHeader;
 
@@ -14,13 +14,12 @@ fn header(name: &'static str, address: Cow<'static, str>) -> MetricHeader {
 fn find_gauge(
     name: &'static str,
     address: Cow<'static, str>,
-    expected: &Range,
     ctx: &BuilderContext,
 ) -> Option<TimedValue> {
     let header = header(name, address);
     ctx.latest
         .get(&header)
-        .and_then(|(ts, value)| value.as_gauge().map(|v| (*ts, v, expected.evaluate(v))))
+        .and_then(|(ts, value)| value.as_gauge().map(|v| (*ts, v)))
         .map(TimedValue::from)
 }
 
@@ -33,16 +32,6 @@ pub(crate) struct Range {
 impl Range {
     fn as_tuple(&self) -> (Option<f64>, Option<f64>) {
         (self.min, self.max)
-    }
-}
-
-impl Range {
-    fn evaluate(&self, value: f64) -> ValueState {
-        match (self.min, self.max) {
-            (Some(min), _) if value < min => ValueState::Low { min },
-            (_, Some(max)) if value > max => ValueState::High { max },
-            _ => ValueState::Normal,
-        }
     }
 }
 
@@ -85,36 +74,16 @@ impl MifloraCard {
             self.name.as_deref(),
             self.image.as_deref(),
             Values {
-                temperature: find_gauge(
-                    "miflora.temperature",
-                    self.address.clone(),
-                    &self.temperature,
-                    ctx,
-                ),
-                temperature_range: self.temperature.as_range(),
-                brightness: find_gauge(
-                    "miflora.brightness",
-                    self.address.clone(),
-                    &self.brightness,
-                    ctx,
-                ),
-                brightness_range: self.brightness.as_range(),
-                moisture: find_gauge(
-                    "miflora.moisture",
-                    self.address.clone(),
-                    &self.moisture,
-                    ctx,
-                ),
-                moisture_range: self.moisture.as_range(),
-                conductivity: find_gauge(
-                    "miflora.conductivity",
-                    self.address.clone(),
-                    &self.conductivity,
-                    ctx,
-                ),
-                conductivity_range: self.conductivity.as_range(),
-                battery: find_gauge("miflora.battery", self.address.clone(), &self.battery, ctx),
-                battery_range: self.battery.as_range(),
+                temperature: find_gauge("miflora.temperature", self.address.clone(), ctx),
+                temperature_range: self.temperature.as_tuple(),
+                brightness: find_gauge("miflora.brightness", self.address.clone(), ctx),
+                brightness_range: self.brightness.as_tuple(),
+                moisture: find_gauge("miflora.moisture", self.address.clone(), ctx),
+                moisture_range: self.moisture.as_tuple(),
+                conductivity: find_gauge("miflora.conductivity", self.address.clone(), ctx),
+                conductivity_range: self.conductivity.as_tuple(),
+                battery: find_gauge("miflora.battery", self.address.clone(), ctx),
+                battery_range: self.battery.as_tuple(),
             },
         )))
     }
