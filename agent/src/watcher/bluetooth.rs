@@ -93,7 +93,7 @@ impl Watcher {
     ) -> anyhow::Result<()> {
         while ctx.state.is_running() {
             if let Err(err) = self.execute(&ctx, &sender).await {
-                tracing::error!(message = "something went wrong", error = %err);
+                tracing::error!(message = "something went wrong", error = %err, cause = ?err.source());
             }
         }
         Ok(())
