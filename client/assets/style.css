@@ -9,6 +9,9 @@
     --error-color: #dc2626;
     --success-color: #93c5fd;
     --success-color-hover: #60a5fa;
+    --size-sm: 4px;
+    --size-md: 8px;
+    --size-lg: 16px;
 }
 html,
 body {
@@ -50,7 +53,7 @@ main {
 .card {
     background-color: var(--background-default);
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--size-sm);
     box-sizing: border-box;
     min-height: 48px;
 }
@@ -64,7 +67,7 @@ main {
     border-top: 1px solid var(--border-color);
 }
 .card-footer {
-    padding: 4px 8px;
+    padding: var(--size-sm) var(--size-md);
 }
 .flex-col {
     display: flex;
@@ -84,34 +87,34 @@ main {
     margin-top: 24px;
 }
 .m-md {
-    margin: 8px;
+    margin: var(--size-md);
 }
 .m-sm {
-    margin: 4px;
+    margin: var(--size-sm);
 }
 .mx-sm {
-    margin-right: 4px;
-    margin-left: 4px;
+    margin-right: var(--size-sm);
+    margin-left: var(--size-sm);
 }
 .mx-md {
-    margin-left: 8px;
-    margin-right: 8px;
+    margin-left: var(--size-md);
+    margin-right: var(--size-md);
 }
 .my-sm {
-    margin-bottom: 4px;
-    margin-top: 4px;
+    margin-bottom: var(--size-sm);
+    margin-top: var(--size-sm);
 }
 .my-md {
-    margin-bottom: 8px;
-    margin-top: 8px;
+    margin-bottom: var(--size-md);
+    margin-top: var(--size-md);
 }
 .my-lg {
-    margin-bottom: 16px;
-    margin-top: 16px;
+    margin-bottom: var(--size-lg);
+    margin-top: var(--size-lg);
 }
 .py-md {
-    padding-bottom: 8px;
-    padding-top: 8px;
+    padding-bottom: var(--size-md);
+    padding-top: var(--size-md);
 }
 .shadow {
     box-shadow:
@@ -172,4 +175,38 @@ i.icon {
 }
 .card.y-md {
     height: 320px;
+}
+.tooltip {
+    position: relative;
+    display: inline-block;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+}
+.tooltip .tooltip-content {
+    visibility: hidden;
+    width: 180px;
+    background-color: black;
+    color: #fff;
+    font-size: 0.7rem;
+    text-align: center;
+    padding: var(--size-md) 0;
+    border-radius: var(--size-sm);
+
+    position: absolute;
+    z-index: 1;
+    margin-top: -0.3rem;
+    margin-left: var(--size-md);
+}
+.tooltip:hover .tooltip-content {
+    visibility: visible;
+}
+.tooltip .tooltip-content::after {
+    content: " ";
+    position: absolute;
+    top: 50%;
+    right: 100%; /* To the left of the tooltip */
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
 }

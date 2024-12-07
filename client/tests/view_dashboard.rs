@@ -125,7 +125,7 @@ fn with_system() {
 
 #[test]
 fn with_miflora_cards() {
-    use chezmoi_client::component::card::miflora::{Card, TimedValue, ValueState, Values};
+    use chezmoi_client::component::card::miflora::{Card, TimedValue, Values};
 
     let flower_url = "https://www.withouraloha.com/wp-content/uploads/2018/01/orchid-care.jpg";
 
@@ -139,11 +139,16 @@ fn with_miflora_cards() {
                         Some("Orchidee"),
                         None,
                         Values {
-                            temperature: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
-                            brightness: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
-                            moisture: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
-                            conductivity: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
-                            battery: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
+                            temperature: Some(TimedValue::from((0, 12.34))),
+                            temperature_range: Default::default(),
+                            brightness: Some(TimedValue::from((0, 12.34))),
+                            brightness_range: Default::default(),
+                            moisture: Some(TimedValue::from((0, 12.34))),
+                            moisture_range: Default::default(),
+                            conductivity: Some(TimedValue::from((0, 12.34))),
+                            conductivity_range: Default::default(),
+                            battery: Some(TimedValue::from((0, 12.34))),
+                            battery_range: Default::default(),
                         },
                     )))
                     .with_card(AnyCard::Miflora(Card::new(
@@ -151,19 +156,16 @@ fn with_miflora_cards() {
                         None::<&'static str>,
                         Some(flower_url),
                         Values {
-                            temperature: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
-                            brightness: Some(TimedValue::from((
-                                0,
-                                12.34,
-                                ValueState::Low { min: 15.0 },
-                            ))),
-                            moisture: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
-                            conductivity: Some(TimedValue::from((
-                                0,
-                                12.34,
-                                ValueState::High { max: 10.0 },
-                            ))),
-                            battery: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
+                            temperature: Some(TimedValue::from((0, 12.34))),
+                            temperature_range: Default::default(),
+                            brightness: Some(TimedValue::from((0, 12.34))),
+                            brightness_range: (Some(15.0), None),
+                            moisture: Some(TimedValue::from((0, 12.34))),
+                            moisture_range: (Some(10.0), Some(20.0)),
+                            conductivity: Some(TimedValue::from((0, 12.34))),
+                            conductivity_range: (Some(5.0), Some(10.0)),
+                            battery: Some(TimedValue::from((0, 12.34))),
+                            battery_range: (Some(5.0), None),
                         },
                     ))),
             )
@@ -175,10 +177,15 @@ fn with_miflora_cards() {
                         None,
                         Values {
                             temperature: None,
+                            temperature_range: (None, None),
                             brightness: None,
+                            brightness_range: (None, None),
                             moisture: None,
+                            moisture_range: (None, None),
                             conductivity: None,
+                            conductivity_range: (None, None),
                             battery: None,
+                            battery_range: (None, None),
                         },
                     )))
                     .with_card(AnyCard::Miflora(Card::new(
@@ -186,11 +193,16 @@ fn with_miflora_cards() {
                         Some("With name"),
                         Some(flower_url),
                         Values {
-                            temperature: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
-                            brightness: Some(TimedValue::from((0, 12.34, ValueState::Normal))),
+                            temperature: Some(TimedValue::from((0, 12.34))),
+                            temperature_range: (None, None),
+                            brightness: Some(TimedValue::from((0, 12.34))),
+                            brightness_range: (None, None),
                             moisture: None,
+                            moisture_range: (None, None),
                             conductivity: None,
+                            conductivity_range: (None, None),
                             battery: None,
+                            battery_range: (None, None),
                         },
                     )))
                     .with_card(AnyCard::Miflora(Card::new(
@@ -199,10 +211,15 @@ fn with_miflora_cards() {
                         None,
                         Values {
                             temperature: None,
+                            temperature_range: (None, None),
                             brightness: None,
+                            brightness_range: (None, None),
                             moisture: None,
+                            moisture_range: (None, None),
                             conductivity: None,
+                            conductivity_range: (None, None),
                             battery: None,
+                            battery_range: (None, None),
                         },
                     ))),
             ),

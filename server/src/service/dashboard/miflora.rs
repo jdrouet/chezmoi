@@ -31,6 +31,12 @@ pub(crate) struct Range {
 }
 
 impl Range {
+    fn as_tuple(&self) -> (Option<f64>, Option<f64>) {
+        (self.min, self.max)
+    }
+}
+
+impl Range {
     fn evaluate(&self, value: f64) -> ValueState {
         match (self.min, self.max) {
             (Some(min), _) if value < min => ValueState::Low { min },
@@ -85,25 +91,30 @@ impl MifloraCard {
                     &self.temperature,
                     ctx,
                 ),
+                temperature_range: self.temperature.as_range(),
                 brightness: find_gauge(
                     "miflora.brightness",
                     self.address.clone(),
                     &self.brightness,
                     ctx,
                 ),
+                brightness_range: self.brightness.as_range(),
                 moisture: find_gauge(
                     "miflora.moisture",
                     self.address.clone(),
                     &self.moisture,
                     ctx,
                 ),
+                moisture_range: self.moisture.as_range(),
                 conductivity: find_gauge(
                     "miflora.conductivity",
                     self.address.clone(),
                     &self.conductivity,
                     ctx,
                 ),
+                conductivity_range: self.conductivity.as_range(),
                 battery: find_gauge("miflora.battery", self.address.clone(), &self.battery, ctx),
+                battery_range: self.battery.as_range(),
             },
         )))
     }

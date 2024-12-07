@@ -1,5 +1,4 @@
 use another_html_builder::{AttributeValue, Body, Buffer};
-use human_number::ScaledValue;
 
 use crate::component::helper::format_datetime;
 use crate::component::icon::{Icon, IconKind};
@@ -27,17 +26,37 @@ fn render_state_icon<'a, W: std::fmt::Write>(
     }
 }
 
+fn render_state_tooltip_content<'a, W: std::fmt::Write>(
+    buf: Buffer<W, Body<'a>>,
+    state: ValueState,
+    formatter: &human_number::Formatter<'_>,
+) -> Buffer<W, Body<'a>> {
+    match state {
+        ValueState::Normal => buf,
+        ValueState::Low { min } => buf
+            .node("span")
+            .attr(("class", "tooltip-content"))
+            .content(|buf| buf.text("Should be above ").raw(formatter.format(min))),
+        ValueState::High { max } => buf
+            .node("span")
+            .attr(("class", "tooltip-content"))
+            .content(|buf| buf.text("Should be below ").raw(formatter.format(max))),
+    }
+}
+
 fn render_row<'a, W: std::fmt::Write>(
     buf: Buffer<W, Body<'a>>,
     icon: IconKind,
     name: &str,
-    value: Option<(u64, ScaledValue<'a>, ValueState)>,
+    formatter: &human_number::Formatter<'_>,
+    value: Option<f64>,
+    range: (Option<f64>, Option<f64>),
 ) -> Buffer<W, Body<'a>> {
-    let classname = match value {
-        Some((_, _, ValueState::High { .. })) | Some((_, _, ValueState::Low { .. })) => {
-            "flex-row mx-md my-sm text-error"
-        }
-        _ => "flex-row mx-md my-sm",
+    let state = ValueState::new(value, range);
+    let classname = if state.is_normal() {
+        "flex-row mx-md my-sm"
+    } else {
+        "flex-row mx-md my-sm text-error"
     };
     buf.node("div")
         .attr(("class", classname))
@@ -50,10 +69,16 @@ fn render_row<'a, W: std::fmt::Write>(
                 .content(|buf| buf.text(name));
 
             match value {
-                Some((_ts, value, state)) => {
-                    let buf = render_state_icon(buf, state);
-                    buf.node("label").content(|buf| buf.raw(value))
-                }
+                Some(value) => buf
+                    .node("div")
+                    .cond_attr(!state.is_normal(), ("class", "tooltip"))
+                    .content(|buf| {
+                        let buf = render_state_icon(buf, state);
+                        let buf = buf
+                            .node("label")
+                            .content(|buf| buf.raw(formatter.format(value)));
+                        render_state_tooltip_content(buf, state, formatter)
+                    }),
                 None => buf.node("label").content(|buf| buf.text("-")),
             }
         })
@@ -90,30 +115,48 @@ pub enum ValueState {
     High { max: f64 },
 }
 
+impl ValueState {
+    fn new(value: Option<f64>, range: (Option<f64>, Option<f64>)) -> Self {
+        if let Some(value) = value {
+            match range {
+                (Some(min), _) if value < min => ValueState::Low { min },
+                (_, Some(max)) if value > max => ValueState::High { max },
+                _ => ValueState::Normal,
+            }
+        } else {
+            ValueState::Normal
+        }
+    }
+
+    fn is_normal(&self) -> bool {
+        matches!(self, ValueState::Normal)
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct TimedValue {
     pub timestamp: u64,
     pub value: f64,
-    pub state: ValueState,
 }
 
-impl From<(u64, f64, ValueState)> for TimedValue {
-    fn from((timestamp, value, state): (u64, f64, ValueState)) -> Self {
-        Self {
-            timestamp,
-            value,
-            state,
-        }
+impl From<(u64, f64)> for TimedValue {
+    fn from((timestamp, value): (u64, f64)) -> Self {
+        Self { timestamp, value }
     }
 }
 
 #[derive(Debug)]
 pub struct Values {
     pub temperature: Option<TimedValue>,
+    pub temperature_range: (Option<f64>, Option<f64>),
     pub brightness: Option<TimedValue>,
+    pub brightness_range: (Option<f64>, Option<f64>),
     pub moisture: Option<TimedValue>,
+    pub moisture_range: (Option<f64>, Option<f64>),
     pub conductivity: Option<TimedValue>,
+    pub conductivity_range: (Option<f64>, Option<f64>),
     pub battery: Option<TimedValue>,
+    pub battery_range: (Option<f64>, Option<f64>),
 }
 
 impl Values {
@@ -191,61 +234,41 @@ impl<'a> Card<'a> {
                     buf,
                     IconKind::TemperatureHot,
                     "temperature",
-                    self.values.temperature.as_ref().map(|item| {
-                        (
-                            item.timestamp,
-                            fmt::TEMPERATURE.format(item.value),
-                            item.state,
-                        )
-                    }),
+                    &fmt::TEMPERATURE,
+                    self.values.temperature.map(|item| item.value),
+                    self.values.temperature_range,
                 );
                 let buf = render_row(
                     buf,
                     IconKind::Water,
                     "moisture",
-                    self.values.moisture.as_ref().map(|item| {
-                        (
-                            item.timestamp,
-                            fmt::PERCENTAGE.format(item.value),
-                            item.state,
-                        )
-                    }),
+                    &fmt::PERCENTAGE,
+                    self.values.moisture.as_ref().map(|item| item.value),
+                    self.values.moisture_range,
                 );
                 let buf = render_row(
                     buf,
                     IconKind::Sun,
                     "brightness",
-                    self.values.brightness.as_ref().map(|item| {
-                        (
-                            item.timestamp,
-                            fmt::BRIGHTNESS.format(item.value),
-                            item.state,
-                        )
-                    }),
+                    &fmt::BRIGHTNESS,
+                    self.values.brightness.as_ref().map(|item| item.value),
+                    self.values.brightness_range,
                 );
                 let buf = render_row(
                     buf,
                     IconKind::Dashboard,
                     "conductivity",
-                    self.values.conductivity.as_ref().map(|item| {
-                        (
-                            item.timestamp,
-                            fmt::CONDUCTIVITY.format(item.value),
-                            item.state,
-                        )
-                    }),
+                    &fmt::CONDUCTIVITY,
+                    self.values.conductivity.as_ref().map(|item| item.value),
+                    self.values.conductivity_range,
                 );
                 let buf = render_row(
                     buf,
                     IconKind::Battery,
                     "battery",
-                    self.values.battery.as_ref().map(|item| {
-                        (
-                            item.timestamp,
-                            fmt::PERCENTAGE.format(item.value),
-                            item.state,
-                        )
-                    }),
+                    &fmt::PERCENTAGE,
+                    self.values.battery.as_ref().map(|item| item.value),
+                    self.values.battery_range,
                 );
                 let buf = render_date_row(
                     buf,
