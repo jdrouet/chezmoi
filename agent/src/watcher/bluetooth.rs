@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use anyhow::Context;
 use bluer::{Adapter, AdapterEvent, Address, DeviceEvent, DeviceProperty, DiscoveryFilter};
 use futures::stream::SelectAll;
 use futures::{pin_mut, StreamExt};
@@ -31,12 +32,20 @@ impl Watcher {
         ctx: &crate::sensor::Context,
         sender: &broadcast::Sender<WatcherEvent>,
     ) -> anyhow::Result<()> {
-        self.adapter.set_powered(true).await?;
+        self.adapter
+            .set_powered(true)
+            .await
+            .context("powering bluetooth adapter")?;
         self.adapter
             .set_discovery_filter(DiscoveryFilter::default())
-            .await?;
+            .await
+            .context("setting discovery filter")?;
 
-        let device_events = self.adapter.discover_devices().await?;
+        let device_events = self
+            .adapter
+            .discover_devices()
+            .await
+            .context("discovering devices")?;
         pin_mut!(device_events);
 
         let mut all_change_events = SelectAll::new();
