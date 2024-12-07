@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use anyhow::Context;
 use bluer::{Adapter, AdapterEvent, Address, DeviceEvent, DeviceProperty, DiscoveryFilter};
 use futures::stream::SelectAll;
+use futures::Stream;
 use futures::{pin_mut, StreamExt};
 use tokio::sync::broadcast;
 
@@ -27,25 +28,12 @@ impl Watcher {
         }
     }
 
-    pub async fn execute(
+    async fn listen(
         &self,
         ctx: &crate::sensor::Context,
+        device_events: impl Stream<Item = AdapterEvent>,
         sender: &broadcast::Sender<WatcherEvent>,
     ) -> anyhow::Result<()> {
-        self.adapter
-            .set_powered(true)
-            .await
-            .context("powering bluetooth adapter")?;
-        self.adapter
-            .set_discovery_filter(DiscoveryFilter::default())
-            .await
-            .context("setting discovery filter")?;
-
-        let device_events = self
-            .adapter
-            .discover_devices()
-            .await
-            .context("discovering devices")?;
         pin_mut!(device_events);
 
         let mut all_change_events = SelectAll::new();
@@ -83,6 +71,41 @@ impl Watcher {
         }
 
         Ok(())
+    }
+
+    pub async fn execute(
+        &self,
+        ctx: &crate::sensor::Context,
+        sender: &broadcast::Sender<WatcherEvent>,
+    ) -> anyhow::Result<()> {
+        if !self.adapter.is_powered().await? {
+            self.adapter
+                .set_powered(true)
+                .await
+                .context("powering bluetooth adapter")?;
+        }
+
+        self.adapter
+            .set_discovery_filter(DiscoveryFilter::default())
+            .await
+            .context("setting discovery filter")?;
+
+        match self.adapter.discover_devices().await {
+            Ok(events) => self.listen(ctx, events, sender).await,
+            Err(bluer::Error {
+                kind: bluer::ErrorKind::InProgress,
+                message: _,
+            }) => {
+                tracing::debug!("discovery already in progress, listening to existing");
+                let events = self
+                    .adapter
+                    .events()
+                    .await
+                    .context("listening device events")?;
+                self.listen(ctx, events, sender).await
+            }
+            other => other.map(|_| ()).context("discovering device events"),
+        }
     }
 
     #[tracing::instrument(name = "bluetooth_watcher", skip_all, fields(adapter = %self.adapter.name()))]
