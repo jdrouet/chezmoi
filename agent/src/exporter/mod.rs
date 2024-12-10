@@ -5,6 +5,9 @@ use tokio::sync::mpsc;
 
 use crate::collector::prelude::OneOrMany;
 
+pub mod prelude;
+pub mod trace;
+
 #[derive(Debug)]
 enum FlushOrigin {
     Timer,
@@ -12,21 +15,21 @@ enum FlushOrigin {
 }
 
 #[derive(Debug)]
-pub struct Exporter {
+pub struct Exporter<T> {
     flush_interval: Duration,
     flush_capacity: usize,
+    target: T,
 }
 
-impl Default for Exporter {
-    fn default() -> Self {
+impl<T: prelude::Target> Exporter<T> {
+    pub fn new(target: T) -> Self {
         Self {
             flush_interval: Duration::new(30, 0),
             flush_capacity: 50,
+            target,
         }
     }
-}
 
-impl Exporter {
     pub fn with_flush_interval(mut self, flush_interval: Duration) -> Self {
         self.flush_interval = flush_interval;
         self
@@ -48,10 +51,12 @@ impl Exporter {
     }
 }
 
-impl Exporter {
+impl<T: prelude::Target> Exporter<T> {
     #[tracing::instrument(name = "flush", skip_all, fields(count = values.len(), reason = ?reason))]
     async fn flush(&self, reason: FlushOrigin, values: Vec<Metric>) {
-        tracing::debug!("received {} metrics", values.len());
+        if let Err(err) = self.target.flush(values).await {
+            tracing::warn!(message = "unable to forward metrics", error = %err);
+        }
     }
 
     #[tracing::instrument(name = "collector", skip_all)]

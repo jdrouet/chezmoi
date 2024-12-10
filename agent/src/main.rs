@@ -1,4 +1,5 @@
 use chezmoi_agent::collector::prelude::{Collector, Context};
+use chezmoi_agent::exporter::trace::Trace;
 use chezmoi_agent::{collector, exporter};
 use tokio::sync::mpsc;
 
@@ -35,7 +36,7 @@ async fn main() -> anyhow::Result<()> {
         })
     }));
 
-    exporter::Exporter::default()
+    exporter::Exporter::new(Trace)
         .with_flush_capacity(20)
         .run(receiver)
         .await;
