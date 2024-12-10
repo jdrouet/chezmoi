@@ -1,0 +1,18 @@
+[package]
+name = "chezmoi-agent"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chezmoi-entity = { path = "../entity" }
+
+anyhow = { version = "1.0" }
+tokio = { version = "1.42", features = [
+    "macros",
+    "rt-multi-thread",
+    "sync",
+    "time",
+] }
+tracing = { version = "0.1" }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+async-trait = "0.1.83"
