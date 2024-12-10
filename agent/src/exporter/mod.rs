@@ -1,11 +1,12 @@
 use std::time::Duration;
 
 use chezmoi_entity::metric::Metric;
-use tokio::sync::mpsc;
+use tokio::sync::mpsc::Receiver;
 
 use crate::collector::prelude::OneOrMany;
 
 pub mod prelude;
+pub mod queue;
 pub mod trace;
 
 #[derive(Debug)]
@@ -60,7 +61,7 @@ impl<T: prelude::Target> Exporter<T> {
     }
 
     #[tracing::instrument(name = "collector", skip_all)]
-    pub async fn run(&self, mut receiver: mpsc::Receiver<OneOrMany<Metric>>) {
+    pub async fn run(&self, mut receiver: Receiver<OneOrMany<Metric>>) {
         let mut flush_ticker = tokio::time::interval(self.flush_interval);
         let mut buffer: Vec<Metric> = Vec::with_capacity(self.flush_capacity);
         while !receiver.is_closed() {
