@@ -1,5 +1,5 @@
 use chezmoi_agent::collector::prelude::{Collector, Context};
-use chezmoi_agent::exporter::trace::Trace;
+use chezmoi_agent::exporter::prelude::Exporter;
 use chezmoi_agent::{collector, exporter};
 use tokio::sync::mpsc;
 
@@ -36,10 +36,7 @@ async fn main() -> anyhow::Result<()> {
         })
     }));
 
-    exporter::Exporter::new(Trace)
-        .with_flush_capacity(20)
-        .run(receiver)
-        .await;
+    exporter::trace::Trace.run(receiver).await;
 
     while let Some(job) = jobs.pop() {
         if let Err(err) = job.await {
