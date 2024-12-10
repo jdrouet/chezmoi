@@ -24,17 +24,27 @@ async fn main() -> anyhow::Result<()> {
 
     let ctx = Context::new(sender);
 
-    let mut jobs = Vec::with_capacity(1);
+    let mut collectors = Vec::with_capacity(1);
+    collectors.push(collector::internal::Config::default().build());
 
-    let internal_ctx = ctx.clone();
-    jobs.push(tokio::spawn(async move {
-        let mut col = collector::internal::Config::default().build();
-        col.run(internal_ctx).await
+    let mut jobs = Vec::from_iter(collectors.into_iter().map(|item| {
+        let internal_ctx = ctx.clone();
+        tokio::spawn(async move {
+            let mut item = item;
+            item.run(internal_ctx).await
+        })
     }));
 
     exporter::Exporter::default()
         .with_flush_capacity(20)
         .run(receiver)
         .await;
+
+    while let Some(job) = jobs.pop() {
+        if let Err(err) = job.await {
+            tracing::error!(message = "unable to wait for job", error = %err);
+        }
+    }
+
     Ok(())
 }
