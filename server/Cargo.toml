@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 chezmoi-cache = { path = "../cache" }
-chezmoi-entity = { path = "../entity" }
+chezmoi-entity = { path = "../entity", features = ["serde"] }
 chezmoi-storage = { path = "../storage" }
 
 anyhow = { workspace = true }

@@ -249,6 +249,7 @@ name = "chezmoi-entity"
 version = "0.1.0"
 dependencies = [
  "indexmap",
+ "serde",
 ]
 
 [[package]]
@@ -890,6 +891,7 @@ checksum = "62f822373a4fe84d4bb149bf54e584a7f4abec90e072ed49cda0edea5b95471f"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.2",
+ "serde",
 ]
 
 [[package]]

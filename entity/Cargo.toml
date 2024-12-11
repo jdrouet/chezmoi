@@ -3,5 +3,10 @@ name = "chezmoi-entity"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = []
+serde = ["dep:serde", "indexmap/serde"]
+
 [dependencies]
 indexmap = { workspace = true }
+serde = { version = "1.0", optional = true }

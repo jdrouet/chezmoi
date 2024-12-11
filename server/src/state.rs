@@ -7,6 +7,7 @@ use tokio::task::JoinHandle;
 
 #[derive(Clone, Debug)]
 pub struct StorageWriter {
+    #[allow(unused)]
     pub handler: Arc<JoinHandle<()>>,
     pub sender: tokio::sync::mpsc::Sender<Vec<Metric>>,
 }

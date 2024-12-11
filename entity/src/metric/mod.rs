@@ -6,6 +6,7 @@ use indexmap::IndexMap;
 use crate::CowStr;
 
 #[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Metric {
     pub timestamp: u64,
     pub header: Header<'static>,
@@ -24,6 +25,7 @@ impl Metric {
 }
 
 #[derive(Debug, Hash, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Header<'a> {
     pub name: CowStr<'a>,
     pub tags: MetricTags<'a>,
@@ -66,6 +68,8 @@ impl<'a> Header<'a> {
 }
 
 #[derive(Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
 pub struct MetricTags<'a>(IndexMap<CowStr<'a>, CowStr<'a>>);
 
 impl<'a> std::fmt::Debug for MetricTags<'a> {
