@@ -12,3 +12,5 @@ sqlx = { version = "0.8", features = [
     "sqlite",
     "uuid",
 ] }
+tokio = { workspace = true, features = ["sync"] }
+tracing = { workspace = true }

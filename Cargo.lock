@@ -191,6 +191,8 @@ version = "0.1.0"
 dependencies = [
  "chezmoi-entity",
  "sqlx",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
