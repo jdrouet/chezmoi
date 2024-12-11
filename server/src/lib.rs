@@ -1,5 +1,6 @@
 use axum::Extension;
 use tokio::net::TcpListener;
+use tower_http::trace::TraceLayer;
 
 mod router;
 mod state;
@@ -37,10 +38,13 @@ impl Server {
     pub async fn run(&self) -> anyhow::Result<()> {
         let storage = chezmoi_storage::client::Config::default();
         let storage = storage.build().await?;
+        storage.upgrade().await?;
 
         tracing::debug!("binding socket to {}", self.address);
         let listener = TcpListener::bind(self.address).await?;
-        let app = router::create().layer(Extension(state::StorageWriter::new(storage)));
+        let app = router::create()
+            .layer(Extension(state::StorageWriter::new(storage)))
+            .layer(TraceLayer::new_for_http());
         tracing::info!("listening on {}", self.address);
         axum::serve(listener, app).await?;
         Ok(())

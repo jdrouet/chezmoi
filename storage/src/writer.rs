@@ -22,6 +22,14 @@ impl Writer {
     }
 
     async fn handle_metrics(&self, metrics: Vec<Metric>) {
-        tracing::debug!(message = "received metrics", count = metrics.len());
+        tracing::trace!(message = "received metrics", count = metrics.len());
+        match crate::metric::create(self.client.as_ref(), metrics.iter()).await {
+            Ok(count) => {
+                tracing::debug!(message = "persisted metrics", count = count);
+            }
+            Err(err) => {
+                tracing::error!(message = "unable to persist metrics", error = %err);
+            }
+        }
     }
 }

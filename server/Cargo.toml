@@ -11,5 +11,6 @@ chezmoi-storage = { path = "../storage" }
 anyhow = { workspace = true }
 axum = { version = "0.7" }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "sync"] }
+tower-http = { version = "0.6", default-features = false, features = ["trace"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
