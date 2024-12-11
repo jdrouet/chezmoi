@@ -10,40 +10,28 @@ enum FlushOrigin {
     Capacity,
 }
 
+pub const fn default_capacity() -> usize {
+    50
+}
+
+pub const fn default_interval() -> u64 {
+    30
+}
+
 #[derive(Debug)]
 pub struct BatchExporter<H> {
-    interval: Duration,
     capacity: usize,
+    interval: Duration,
     handler: H,
 }
 
 impl<H: super::prelude::Handler> BatchExporter<H> {
-    pub fn new(handler: H) -> Self {
+    pub fn new(capacity: usize, interval: u64, handler: H) -> Self {
         Self {
-            interval: Duration::new(30, 0),
-            capacity: 50,
+            capacity,
+            interval: Duration::new(interval, 0),
             handler,
         }
-    }
-
-    pub fn with_interval(mut self, interval: Duration) -> Self {
-        self.interval = interval;
-        self
-    }
-
-    pub fn set_interval(&mut self, interval: Duration) -> &mut Self {
-        self.interval = interval;
-        self
-    }
-
-    pub fn with_capacity(mut self, capacity: usize) -> Self {
-        self.capacity = capacity;
-        self
-    }
-
-    pub fn set_capacity(&mut self, capacity: usize) -> &mut Self {
-        self.capacity = capacity;
-        self
     }
 }
 

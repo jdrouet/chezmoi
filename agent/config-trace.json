@@ -1,0 +1,12 @@
+{
+  "channel_size": 200,
+  "collectors": [
+    {
+      "type": "internal",
+      "interval": 5
+    }
+  ],
+  "exporter": {
+    "type": "trace"
+  }
+}

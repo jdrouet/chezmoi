@@ -1,0 +1,13 @@
+{
+  "channel_size": 200,
+  "collectors": [
+    {
+      "type": "internal",
+      "interval": 5
+    }
+  ],
+  "exporter": {
+    "type": "http",
+    "address": "http://localhost:3000/api/metrics"
+  }
+}

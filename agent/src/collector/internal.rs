@@ -4,8 +4,13 @@ use chezmoi_entity::metric::Metric;
 
 use crate::collector::prelude::Context;
 
-#[derive(Debug)]
+pub const fn default_interval() -> u64 {
+    10
+}
+
+#[derive(Debug, serde::Deserialize)]
 pub struct Config {
+    #[serde(default = "default_interval")]
     interval: u64,
 }
 
@@ -29,7 +34,7 @@ pub struct Collector {
 
 impl super::prelude::Collector for Collector {
     #[tracing::instrument(name = "internal", skip_all)]
-    async fn run(&mut self, ctx: Context) -> anyhow::Result<()> {
+    async fn run(self, ctx: Context) -> anyhow::Result<()> {
         let mut ticker = tokio::time::interval(self.interval);
         while !ctx.is_closing() {
             ticker.tick().await;

@@ -2,6 +2,14 @@ use chezmoi_cache::Cache;
 use chezmoi_entity::metric::Metric;
 use chezmoi_entity::OneOrMany;
 
+pub const fn default_size() -> usize {
+    100
+}
+
+pub const fn default_ttl() -> u64 {
+    5 * 60
+}
+
 pub struct CacheLayer<H> {
     cache: Cache,
     handler: H,

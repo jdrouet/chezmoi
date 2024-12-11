@@ -1,37 +1,29 @@
-use chezmoi_entity::metric::Metric;
-use chezmoi_entity::OneOrMany;
-use tokio::sync::mpsc::Sender;
-use tokio::task::JoinHandle;
-
 pub mod internal;
 
 pub mod prelude;
 
-#[derive(Debug)]
-pub struct Manager {
-    context: prelude::Context,
-    inner: Vec<JoinHandle<anyhow::Result<()>>>,
+#[derive(Debug, serde::Deserialize)]
+#[serde(tag = "type", rename_all = "kebab-case")]
+pub enum Config {
+    Internal(internal::Config),
 }
 
-impl Manager {
-    pub fn new(sender: Sender<OneOrMany<Metric>>) -> Self {
-        Self {
-            context: prelude::Context::new(sender),
-            inner: Vec::new(),
+impl Config {
+    pub fn build(&self) -> Collector {
+        match self {
+            Self::Internal(inner) => Collector::Internal(inner.build()),
         }
     }
+}
 
-    pub fn start<C: prelude::Collector + 'static>(&mut self, mut collector: C) {
-        let ctx = self.context.clone();
-        self.inner
-            .push(tokio::spawn(async move { collector.run(ctx).await }));
-    }
+pub enum Collector {
+    Internal(internal::Collector),
+}
 
-    pub async fn wait(&mut self) {
-        while let Some(job) = self.inner.pop() {
-            if let Err(err) = job.await {
-                tracing::error!(message = "unable to wait for job", error = %err);
-            }
+impl prelude::Collector for Collector {
+    async fn run(self, ctx: prelude::Context) -> anyhow::Result<()> {
+        match self {
+            Self::Internal(inner) => inner.run(ctx).await,
         }
     }
 }

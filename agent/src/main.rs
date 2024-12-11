@@ -1,7 +1,3 @@
-use chezmoi_agent::exporter::prelude::Exporter;
-use chezmoi_agent::{collector, exporter};
-use tokio::sync::mpsc;
-
 fn enable_tracing() {
     use tracing_subscriber::prelude::*;
     use tracing_subscriber::EnvFilter;
@@ -20,28 +16,13 @@ fn enable_tracing() {
 async fn main() -> anyhow::Result<()> {
     enable_tracing();
 
-    let (sender, receiver) = mpsc::channel(200);
+    tracing::debug!("loading configuration");
+    let path = std::env::var("CONFIG_PATH")?;
+    let agent = chezmoi_agent::Config::from_path(&path)?;
+    let agent = agent.build();
 
-    let mut collectors = collector::Manager::new(sender);
-    collectors.start(collector::internal::Config::default().build());
-
-    // exporter::direct::DirectExporter::new(exporter::cache::CacheLayer::new(
-    //     20,
-    //     60 * 5,
-    //     exporter::trace::TractHandler::default(),
-    // ))
-    // .run(receiver)
-    // .await;
-
-    exporter::batch::BatchExporter::new(exporter::cache::CacheLayer::new(
-        20,
-        60,
-        exporter::http::HttpHandler::new("http://localhost:3000/api/metrics"),
-    ))
-    .run(receiver)
-    .await;
-
-    collectors.wait().await;
+    tracing::info!("starting agent");
+    agent.run().await;
 
     Ok(())
 }

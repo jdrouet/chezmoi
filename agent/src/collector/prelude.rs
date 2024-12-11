@@ -31,7 +31,12 @@ impl Context {
     }
 }
 
+pub trait CollectorConfig {
+    type Output: Collector;
+
+    fn build(&self) -> Self::Output;
+}
+
 pub trait Collector: Send + Sized + Sync {
-    fn run(&mut self, ctx: Context)
-        -> impl std::future::Future<Output = anyhow::Result<()>> + Send;
+    fn run(self, ctx: Context) -> impl std::future::Future<Output = anyhow::Result<()>> + Send;
 }

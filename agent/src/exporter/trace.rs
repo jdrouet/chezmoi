@@ -2,15 +2,15 @@ use chezmoi_entity::metric::Metric;
 use chezmoi_entity::OneOrMany;
 
 #[derive(Debug, Default)]
-pub struct TractHandler;
+pub struct TraceHandler;
 
-impl TractHandler {
+impl TraceHandler {
     fn handle(&mut self, item: Metric) {
         tracing::debug!(message = "received metric", metric = ?item);
     }
 }
 
-impl super::prelude::Handler for TractHandler {
+impl super::prelude::Handler for TraceHandler {
     #[tracing::instrument(name = "trace", skip_all)]
     async fn handle(&mut self, item: OneOrMany<Metric>) {
         tracing::debug!(message = "received metrics", count = item.len());

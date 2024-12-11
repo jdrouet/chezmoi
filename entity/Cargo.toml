@@ -9,4 +9,4 @@ serde = ["dep:serde", "indexmap/serde"]
 
 [dependencies]
 indexmap = { workspace = true }
-serde = { version = "1.0", optional = true, features = ["derive"] }
+serde = { workspace = true, optional = true, features = ["derive"] }
