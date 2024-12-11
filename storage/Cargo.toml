@@ -1,0 +1,14 @@
+[package]
+name = "chezmoi-storage"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chezmoi-entity = { path = "../entity" }
+sqlx = { version = "0.8", features = [
+    "chrono",
+    "json",
+    "runtime-tokio",
+    "sqlite",
+    "uuid",
+] }
