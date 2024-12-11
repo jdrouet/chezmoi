@@ -29,7 +29,7 @@ pub enum Config {
 }
 
 impl Config {
-    pub fn build(&self) -> Exporter {
+    pub fn build(&self, receiver: Receiver<OneOrMany<Metric>>) -> Exporter {
         match self {
             Self::Http {
                 address,
@@ -38,6 +38,7 @@ impl Config {
                 cache_size,
                 cache_ttl,
             } => Exporter::Http(batch::BatchExporter::new(
+                receiver,
                 *batch_capacity,
                 *batch_interval,
                 cache::CacheLayer::new(
@@ -46,7 +47,9 @@ impl Config {
                     http::HttpHandler::new(address.clone()),
                 ),
             )),
-            Self::Trace => Exporter::Trace(direct::DirectExporter::new(trace::TraceHandler)),
+            Self::Trace => {
+                Exporter::Trace(direct::DirectExporter::new(receiver, trace::TraceHandler))
+            }
         }
     }
 }
@@ -57,10 +60,10 @@ pub enum Exporter {
 }
 
 impl prelude::Exporter for Exporter {
-    async fn run(self, receiver: Receiver<OneOrMany<Metric>>) {
+    async fn run(self) {
         match self {
-            Self::Http(inner) => inner.run(receiver).await,
-            Self::Trace(inner) => inner.run(receiver).await,
+            Self::Http(inner) => inner.run().await,
+            Self::Trace(inner) => inner.run().await,
         }
     }
 }

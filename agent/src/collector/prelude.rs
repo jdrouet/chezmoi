@@ -1,42 +1,26 @@
-use chezmoi_entity::metric::Metric;
 use chezmoi_entity::OneOrMany;
 use tokio::sync::mpsc;
 
-#[derive(Clone, Debug)]
-pub struct Context {
-    sender: mpsc::Sender<OneOrMany<Metric>>,
+pub(crate) trait SenderExt<T> {
+    async fn send_one(&self, item: T);
+    #[allow(unused)]
+    async fn send_many(&self, item: Vec<T>);
 }
 
-impl Context {
-    pub fn new(sender: mpsc::Sender<OneOrMany<Metric>>) -> Self {
-        Self { sender }
+impl<T> SenderExt<T> for mpsc::Sender<OneOrMany<T>> {
+    async fn send_one(&self, item: T) {
+        if let Err(err) = self.send(OneOrMany::One(item)).await {
+            tracing::error!(message = "unable to send events", error = %err);
+        }
     }
 
-    #[inline(always)]
-    pub fn is_closing(&self) -> bool {
-        self.sender.is_closed()
-    }
-
-    pub fn queue_size(&self) -> usize {
-        self.sender.max_capacity() - self.sender.capacity()
-    }
-
-    pub async fn send<T>(&self, value: T)
-    where
-        T: Into<OneOrMany<Metric>>,
-    {
-        if let Err(err) = self.sender.send(value.into()).await {
-            tracing::error!(message = "unable to forward metrics", error = %err);
+    async fn send_many(&self, list: Vec<T>) {
+        if let Err(err) = self.send(OneOrMany::Many(list)).await {
+            tracing::error!(message = "unable to send events", error = %err);
         }
     }
 }
 
-pub trait CollectorConfig {
-    type Output: Collector;
-
-    fn build(&self) -> Self::Output;
-}
-
 pub trait Collector: Send + Sized + Sync {
-    fn run(self, ctx: Context) -> impl std::future::Future<Output = anyhow::Result<()>> + Send;
+    fn run(self) -> impl std::future::Future<Output = anyhow::Result<()>> + Send;
 }

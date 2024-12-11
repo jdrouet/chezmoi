@@ -1,3 +1,5 @@
+use crate::BuildContext;
+
 pub mod internal;
 
 pub mod prelude;
@@ -9,9 +11,9 @@ pub enum Config {
 }
 
 impl Config {
-    pub fn build(&self) -> Collector {
+    pub fn build(&self, ctx: &BuildContext) -> Collector {
         match self {
-            Self::Internal(inner) => Collector::Internal(inner.build()),
+            Self::Internal(inner) => Collector::Internal(inner.build(ctx)),
         }
     }
 }
@@ -20,10 +22,10 @@ pub enum Collector {
     Internal(internal::Collector),
 }
 
-impl prelude::Collector for Collector {
-    async fn run(self, ctx: prelude::Context) -> anyhow::Result<()> {
+impl crate::prelude::Worker for Collector {
+    async fn run(self) -> anyhow::Result<()> {
         match self {
-            Self::Internal(inner) => inner.run(ctx).await,
+            Self::Internal(inner) => inner.run().await,
         }
     }
 }

@@ -19,7 +19,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::debug!("loading configuration");
     let path = std::env::var("CONFIG_PATH")?;
     let agent = chezmoi_agent::Config::from_path(&path)?;
-    let agent = agent.build();
+    let agent = agent.build().await?;
 
     tracing::info!("starting agent");
     agent.run().await;

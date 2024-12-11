@@ -23,14 +23,21 @@ pub struct BatchExporter<H> {
     capacity: usize,
     interval: Duration,
     handler: H,
+    receiver: Receiver<OneOrMany<Metric>>,
 }
 
 impl<H: super::prelude::Handler> BatchExporter<H> {
-    pub fn new(capacity: usize, interval: u64, handler: H) -> Self {
+    pub fn new(
+        receiver: Receiver<OneOrMany<Metric>>,
+        capacity: usize,
+        interval: u64,
+        handler: H,
+    ) -> Self {
         Self {
             capacity,
             interval: Duration::new(interval, 0),
             handler,
+            receiver,
         }
     }
 }
@@ -44,10 +51,10 @@ impl<H: super::prelude::Handler> BatchExporter<H> {
 
 impl<H: super::prelude::Handler + Send> super::prelude::Exporter for BatchExporter<H> {
     #[tracing::instrument(name = "batch", skip_all)]
-    async fn run(mut self, mut receiver: Receiver<OneOrMany<Metric>>) {
+    async fn run(mut self) {
         let mut flush_ticker = tokio::time::interval(self.interval);
         let mut buffer: Vec<Metric> = Vec::with_capacity(self.capacity);
-        while !receiver.is_closed() {
+        while !self.receiver.is_closed() {
             tokio::select! {
                 _ = flush_ticker.tick() => {
                     if !buffer.is_empty() {
@@ -56,7 +63,7 @@ impl<H: super::prelude::Handler + Send> super::prelude::Exporter for BatchExport
                         self.flush(FlushOrigin::Timer, new_buffer).await;
                     }
                 },
-                Some(next) = receiver.recv() => {
+                Some(next) = self.receiver.recv() => {
                     match next {
                         OneOrMany::One(value) => buffer.push(value),
                         OneOrMany::Many(values) => buffer.extend(values.into_iter()),

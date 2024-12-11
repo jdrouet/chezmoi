@@ -1,8 +1,9 @@
 use std::time::Duration;
 
-use chezmoi_entity::metric::Metric;
+use chezmoi_entity::{metric::Metric, OneOrMany};
+use tokio::sync::mpsc;
 
-use crate::collector::prelude::Context;
+use super::prelude::SenderExt;
 
 pub const fn default_interval() -> u64 {
     10
@@ -21,29 +22,32 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn build(&self) -> Collector {
+    pub fn build(&self, ctx: &crate::BuildContext) -> Collector {
         Collector {
             interval: Duration::new(self.interval, 0),
+            sender: ctx.sender.clone(),
         }
     }
 }
 
 pub struct Collector {
     interval: Duration,
+    sender: mpsc::Sender<OneOrMany<Metric>>,
 }
 
-impl super::prelude::Collector for Collector {
+impl crate::prelude::Worker for Collector {
     #[tracing::instrument(name = "internal", skip_all)]
-    async fn run(self, ctx: Context) -> anyhow::Result<()> {
+    async fn run(self) -> anyhow::Result<()> {
         let mut ticker = tokio::time::interval(self.interval);
-        while !ctx.is_closing() {
+        while !self.sender.is_closed() {
             ticker.tick().await;
-            ctx.send(Metric {
-                timestamp: chezmoi_entity::now(),
-                header: chezmoi_entity::metric::MetricHeader::new("internal.queue.size"),
-                value: ctx.queue_size() as f64,
-            })
-            .await;
+            self.sender
+                .send_one(Metric {
+                    timestamp: chezmoi_entity::now(),
+                    header: chezmoi_entity::metric::MetricHeader::new("internal.queue.size"),
+                    value: 0.0,
+                })
+                .await;
         }
         Ok(())
     }
