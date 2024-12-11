@@ -29,7 +29,10 @@ impl Metric {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MetricHeader<'a> {
     pub name: CowStr<'a>,
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "MetricTags::is_empty"))]
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "MetricTags::is_empty")
+    )]
     pub tags: MetricTags<'a>,
 }
 

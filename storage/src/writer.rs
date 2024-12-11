@@ -23,6 +23,9 @@ impl Writer {
 
     async fn handle_metrics(&self, metrics: Vec<Metric>) {
         tracing::trace!(message = "received metrics", count = metrics.len());
+        if metrics.is_empty() {
+            return;
+        }
         match crate::metric::create(self.client.as_ref(), metrics.iter()).await {
             Ok(count) => {
                 tracing::debug!(message = "persisted metrics", count = count);

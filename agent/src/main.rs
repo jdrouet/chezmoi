@@ -25,10 +25,18 @@ async fn main() -> anyhow::Result<()> {
     let mut collectors = collector::CollectorManager::new(sender);
     collectors.start(collector::internal::Config::default().build());
 
-    exporter::direct::DirectExporter::new(exporter::cache::CacheLayer::new(
+    // exporter::direct::DirectExporter::new(exporter::cache::CacheLayer::new(
+    //     20,
+    //     60 * 5,
+    //     exporter::trace::TractHandler::default(),
+    // ))
+    // .run(receiver)
+    // .await;
+
+    exporter::batch::BatchExporter::new(exporter::cache::CacheLayer::new(
         20,
-        60 * 5,
-        exporter::trace::TractHandler::default(),
+        60,
+        exporter::http::HttpHandler::new("http://localhost:3000/api/metrics"),
     ))
     .run(receiver)
     .await;

@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 chezmoi-cache = { path = "../cache" }
-chezmoi-entity = { path = "../entity" }
+chezmoi-entity = { path = "../entity", features = ["serde"] }
 
 anyhow = { workspace = true }
 tokio = { workspace = true, features = [
@@ -16,3 +16,4 @@ tokio = { workspace = true, features = [
 ] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
+reqwest = { version = "0.12.9", default-features = false, features = ["json"] }
