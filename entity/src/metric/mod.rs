@@ -9,6 +9,7 @@ use crate::CowStr;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Metric {
     pub timestamp: u64,
+    #[cfg_attr(feature = "serde", serde(flatten))]
     pub header: Header<'static>,
     pub value: f64,
 }
@@ -28,6 +29,7 @@ impl Metric {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Header<'a> {
     pub name: CowStr<'a>,
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "MetricTags::is_empty"))]
     pub tags: MetricTags<'a>,
 }
 
@@ -104,5 +106,10 @@ impl<'a> MetricTags<'a> {
     {
         self.0.insert(name.into(), value.into());
         self
+    }
+
+    #[inline(always)]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 }
