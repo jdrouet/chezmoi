@@ -1,18 +1,15 @@
 [package]
-name = "chezmoi-agent"
+name = "chezmoi-server"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 chezmoi-cache = { path = "../cache" }
 chezmoi-entity = { path = "../entity" }
+chezmoi-storage = { path = "../storage" }
 
 anyhow = { workspace = true }
-tokio = { workspace = true, features = [
-    "macros",
-    "rt-multi-thread",
-    "sync",
-    "time",
-] }
+axum = { version = "0.7" }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "sync"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
