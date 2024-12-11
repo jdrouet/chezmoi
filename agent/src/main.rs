@@ -36,7 +36,13 @@ async fn main() -> anyhow::Result<()> {
         })
     }));
 
-    exporter::trace::Trace.run(receiver).await;
+    exporter::direct::DirectExporter::new(exporter::cache::CacheLayer::new(
+        20,
+        60 * 5,
+        exporter::trace::TractHandler::default(),
+    ))
+    .run(receiver)
+    .await;
 
     while let Some(job) = jobs.pop() {
         if let Err(err) = job.await {

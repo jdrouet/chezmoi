@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+chezmoi-cache = { path = "../cache" }
 chezmoi-entity = { path = "../entity" }
 
 anyhow = { version = "1.0" }

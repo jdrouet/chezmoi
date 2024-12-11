@@ -1,23 +1,23 @@
 use chezmoi_entity::metric::Metric;
-use tokio::sync::mpsc::Receiver;
 
 use crate::collector::prelude::OneOrMany;
 
-pub struct Trace;
+#[derive(Debug, Default)]
+pub struct TractHandler;
 
-impl Trace {
-    fn handle(&self, item: Metric) {
+impl TractHandler {
+    fn handle(&mut self, item: Metric) {
         tracing::debug!(message = "received metric", metric = ?item);
     }
 }
 
-impl super::prelude::Exporter for Trace {
-    async fn run(self, mut receiver: Receiver<OneOrMany<Metric>>) {
-        while let Some(item) = receiver.recv().await {
-            match item {
-                OneOrMany::One(item) => self.handle(item),
-                OneOrMany::Many(items) => items.into_iter().for_each(|item| self.handle(item)),
-            }
+impl super::direct::DirectHandler for TractHandler {
+    #[tracing::instrument(name = "trace", skip_all)]
+    async fn handle(&mut self, item: OneOrMany<Metric>) {
+        tracing::debug!(message = "received metrics", count = item.len());
+        match item {
+            OneOrMany::One(item) => self.handle(item),
+            OneOrMany::Many(items) => items.into_iter().for_each(|item| self.handle(item)),
         }
     }
 }

@@ -19,6 +19,22 @@ impl<T> From<Vec<T>> for OneOrMany<T> {
     }
 }
 
+impl<T> OneOrMany<T> {
+    pub fn len(&self) -> usize {
+        match self {
+            Self::One(_) => 1,
+            Self::Many(inner) => inner.len(),
+        }
+    }
+
+    pub fn into_vec(self) -> Vec<T> {
+        match self {
+            Self::One(item) => vec![item],
+            Self::Many(inner) => inner,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Context {
     sender: mpsc::Sender<OneOrMany<Metric>>,
