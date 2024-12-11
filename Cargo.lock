@@ -77,6 +77,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "chezmoi-cache"
+version = "0.1.0"
+dependencies = [
+ "chezmoi-entity",
+ "indexmap",
+]
+
+[[package]]
 name = "chezmoi-entity"
 version = "0.1.0"
 dependencies = [

@@ -7,7 +7,7 @@ use tokio::sync::mpsc::Receiver;
 use crate::collector::prelude::OneOrMany;
 
 pub trait BatchHandler {
-    fn handle(&self, values: Vec<Metric>) -> impl Future<Output = ()> + Send;
+    fn handle(&mut self, values: Vec<Metric>) -> impl Future<Output = ()> + Send;
 }
 
 #[derive(Debug)]
@@ -55,12 +55,14 @@ impl<H: BatchHandler> BatchExporter<H> {
 
 impl<H: BatchHandler> BatchExporter<H> {
     #[tracing::instrument(name = "flush", skip_all, fields(count = values.len(), reason = ?reason))]
-    async fn flush(&self, reason: FlushOrigin, values: Vec<Metric>) {
+    async fn flush(&mut self, reason: FlushOrigin, values: Vec<Metric>) {
         self.handler.handle(values).await;
     }
+}
 
+impl<H: BatchHandler + Send> super::prelude::Exporter for BatchExporter<H> {
     #[tracing::instrument(name = "collector", skip_all)]
-    pub async fn run(&self, mut receiver: Receiver<OneOrMany<Metric>>) {
+    async fn run(mut self, mut receiver: Receiver<OneOrMany<Metric>>) {
         let mut flush_ticker = tokio::time::interval(self.flush_interval);
         let mut buffer: Vec<Metric> = Vec::with_capacity(self.flush_capacity);
         while !receiver.is_closed() {

@@ -23,7 +23,7 @@ impl Queue {
 }
 
 impl super::prelude::Exporter for Queue {
-    async fn run(&self, mut receiver: mpsc::Receiver<OneOrMany<Metric>>) {
+    async fn run(self, mut receiver: mpsc::Receiver<OneOrMany<Metric>>) {
         while let Some(batch) = receiver.recv().await {
             match batch {
                 OneOrMany::One(item) => self.forward(vec![item]).await,
@@ -45,7 +45,7 @@ impl BatchQueueHandler {
 }
 
 impl BatchHandler for BatchQueueHandler {
-    async fn handle(&self, values: Vec<Metric>) {
+    async fn handle(&mut self, values: Vec<Metric>) {
         if let Err(err) = self.sender.send(values).await {
             tracing::error!(message = "unable to forward metrics", error = %err);
         }
