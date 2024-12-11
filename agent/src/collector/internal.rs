@@ -35,7 +35,7 @@ impl super::prelude::Collector for Collector {
             ticker.tick().await;
             ctx.send(Metric {
                 timestamp: chezmoi_entity::now(),
-                header: chezmoi_entity::metric::Header::new("internal.queue.size"),
+                header: chezmoi_entity::metric::MetricHeader::new("internal.queue.size"),
                 value: ctx.queue_size() as f64,
             })
             .await;

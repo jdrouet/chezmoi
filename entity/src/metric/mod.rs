@@ -10,13 +10,13 @@ use crate::CowStr;
 pub struct Metric {
     pub timestamp: u64,
     #[cfg_attr(feature = "serde", serde(flatten))]
-    pub header: Header<'static>,
+    pub header: MetricHeader<'static>,
     pub value: f64,
 }
 
 impl Metric {
     #[inline(always)]
-    pub const fn new(timestamp: u64, header: Header<'static>, value: f64) -> Self {
+    pub const fn new(timestamp: u64, header: MetricHeader<'static>, value: f64) -> Self {
         Self {
             timestamp,
             header,
@@ -27,13 +27,13 @@ impl Metric {
 
 #[derive(Debug, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Header<'a> {
+pub struct MetricHeader<'a> {
     pub name: CowStr<'a>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "MetricTags::is_empty"))]
     pub tags: MetricTags<'a>,
 }
 
-impl<'a> Header<'a> {
+impl<'a> MetricHeader<'a> {
     pub fn new<N>(name: N) -> Self
     where
         N: Into<CowStr<'a>>,

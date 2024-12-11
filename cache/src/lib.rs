@@ -80,25 +80,25 @@ impl Cache {
 
 #[cfg(test)]
 mod tests {
-    use chezmoi_entity::metric::{Header, Metric};
+    use chezmoi_entity::metric::{Metric, MetricHeader};
 
     #[test]
     fn should_filter_with_ttl() {
         let mut cache = super::Cache::new(5, 3);
         assert!(cache
-            .handle(Metric::new(0, Header::new("foo"), 0.0))
+            .handle(Metric::new(0, MetricHeader::new("foo"), 0.0))
             .is_some());
         assert!(cache
-            .handle(Metric::new(1, Header::new("foo"), 0.0))
+            .handle(Metric::new(1, MetricHeader::new("foo"), 0.0))
             .is_none());
         assert!(cache
-            .handle(Metric::new(2, Header::new("foo"), 0.0))
+            .handle(Metric::new(2, MetricHeader::new("foo"), 0.0))
             .is_none());
         assert!(cache
-            .handle(Metric::new(3, Header::new("foo"), 0.0))
+            .handle(Metric::new(3, MetricHeader::new("foo"), 0.0))
             .is_none());
         assert!(cache
-            .handle(Metric::new(4, Header::new("foo"), 0.0))
+            .handle(Metric::new(4, MetricHeader::new("foo"), 0.0))
             .is_some());
     }
 
@@ -106,10 +106,10 @@ mod tests {
     fn should_let_older_pass() {
         let mut cache = super::Cache::new(5, 3);
         assert!(cache
-            .handle(Metric::new(5, Header::new("foo"), 0.0))
+            .handle(Metric::new(5, MetricHeader::new("foo"), 0.0))
             .is_some());
         assert!(cache
-            .handle(Metric::new(1, Header::new("foo"), 0.0))
+            .handle(Metric::new(1, MetricHeader::new("foo"), 0.0))
             .is_some());
     }
 
@@ -117,10 +117,10 @@ mod tests {
     fn should_let_pass_with_different_value() {
         let mut cache = super::Cache::new(5, 3);
         assert!(cache
-            .handle(Metric::new(0, Header::new("foo"), 0.0))
+            .handle(Metric::new(0, MetricHeader::new("foo"), 0.0))
             .is_some());
         assert!(cache
-            .handle(Metric::new(1, Header::new("foo"), 0.1))
+            .handle(Metric::new(1, MetricHeader::new("foo"), 0.1))
             .is_some());
     }
 
@@ -128,11 +128,13 @@ mod tests {
     fn should_vacuum_by_size() {
         let mut cache = super::Cache::new(5, 3);
         for c in ["a", "b", "c", "d", "e", "f", "g", "h"] {
-            assert!(cache.handle(Metric::new(0, Header::new(c), 0.0)).is_some());
+            assert!(cache
+                .handle(Metric::new(0, MetricHeader::new(c), 0.0))
+                .is_some());
         }
         cache.vacuum(1);
         assert!(cache
-            .handle(Metric::new(1, Header::new("a"), 0.0))
+            .handle(Metric::new(1, MetricHeader::new("a"), 0.0))
             .is_some());
     }
 
@@ -140,29 +142,29 @@ mod tests {
     fn should_vacuum_by_ttl() {
         let mut cache = super::Cache::new(5, 3);
         assert!(cache
-            .handle(Metric::new(0, Header::new("a"), 0.0))
+            .handle(Metric::new(0, MetricHeader::new("a"), 0.0))
             .is_some());
         assert!(cache
-            .handle(Metric::new(2, Header::new("b"), 0.0))
+            .handle(Metric::new(2, MetricHeader::new("b"), 0.0))
             .is_some());
         assert!(cache
-            .handle(Metric::new(4, Header::new("c"), 0.0))
+            .handle(Metric::new(4, MetricHeader::new("c"), 0.0))
             .is_some());
         assert!(cache
-            .handle(Metric::new(6, Header::new("d"), 0.0))
+            .handle(Metric::new(6, MetricHeader::new("d"), 0.0))
             .is_some());
         cache.vacuum(7);
         assert!(cache
-            .handle(Metric::new(8, Header::new("a"), 0.0))
+            .handle(Metric::new(8, MetricHeader::new("a"), 0.0))
             .is_some());
         assert!(cache
-            .handle(Metric::new(8, Header::new("b"), 0.0))
+            .handle(Metric::new(8, MetricHeader::new("b"), 0.0))
             .is_some());
         assert!(cache
-            .handle(Metric::new(8, Header::new("c"), 0.0))
+            .handle(Metric::new(8, MetricHeader::new("c"), 0.0))
             .is_some());
         assert!(cache
-            .handle(Metric::new(8, Header::new("d"), 0.0))
+            .handle(Metric::new(8, MetricHeader::new("d"), 0.0))
             .is_none());
     }
 }
