@@ -1,4 +1,3 @@
-use chezmoi_agent::collector::prelude::{Collector, Context};
 use chezmoi_agent::exporter::prelude::Exporter;
 use chezmoi_agent::{collector, exporter};
 use tokio::sync::mpsc;
@@ -23,18 +22,8 @@ async fn main() -> anyhow::Result<()> {
 
     let (sender, receiver) = mpsc::channel(200);
 
-    let ctx = Context::new(sender);
-
-    let mut collectors = Vec::with_capacity(1);
-    collectors.push(collector::internal::Config::default().build());
-
-    let mut jobs = Vec::from_iter(collectors.into_iter().map(|item| {
-        let internal_ctx = ctx.clone();
-        tokio::spawn(async move {
-            let mut item = item;
-            item.run(internal_ctx).await
-        })
-    }));
+    let mut collectors = collector::CollectorManager::new(sender);
+    collectors.start(collector::internal::Config::default().build());
 
     exporter::direct::DirectExporter::new(exporter::cache::CacheLayer::new(
         20,
@@ -44,11 +33,7 @@ async fn main() -> anyhow::Result<()> {
     .run(receiver)
     .await;
 
-    while let Some(job) = jobs.pop() {
-        if let Err(err) = job.await {
-            tracing::error!(message = "unable to wait for job", error = %err);
-        }
-    }
+    collectors.wait().await;
 
     Ok(())
 }
