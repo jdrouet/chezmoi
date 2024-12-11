@@ -7,13 +7,12 @@ edition = "2021"
 chezmoi-cache = { path = "../cache" }
 chezmoi-entity = { path = "../entity" }
 
-anyhow = { version = "1.0" }
-tokio = { version = "1.42", features = [
+anyhow = { workspace = true }
+tokio = { workspace = true, features = [
     "macros",
     "rt-multi-thread",
     "sync",
     "time",
 ] }
-tracing = { version = "0.1" }
+tracing = { workspace = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-async-trait = "0.1.83"
