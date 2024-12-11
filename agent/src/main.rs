@@ -22,7 +22,7 @@ async fn main() -> anyhow::Result<()> {
 
     let (sender, receiver) = mpsc::channel(200);
 
-    let mut collectors = collector::CollectorManager::new(sender);
+    let mut collectors = collector::Manager::new(sender);
     collectors.start(collector::internal::Config::default().build());
 
     // exporter::direct::DirectExporter::new(exporter::cache::CacheLayer::new(

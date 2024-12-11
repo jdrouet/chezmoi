@@ -1,7 +1,5 @@
 use chezmoi_entity::metric::Metric;
-use chezmoi_entity::CowStr;
-
-use super::batch::BatchHandler;
+use chezmoi_entity::{CowStr, OneOrMany};
 
 static USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
 
@@ -23,9 +21,13 @@ impl HttpHandler {
     }
 }
 
-impl BatchHandler for HttpHandler {
+impl super::prelude::Handler for HttpHandler {
     #[tracing::instrument(name = "http", skip_all)]
-    async fn handle(&mut self, values: Vec<Metric>) {
+    async fn handle(&mut self, values: OneOrMany<Metric>) {
+        if values.is_empty() {
+            return;
+        }
+        let values = values.into_vec();
         match self
             .client
             .post(self.address.as_ref())

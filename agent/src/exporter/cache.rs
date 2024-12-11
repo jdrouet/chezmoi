@@ -1,9 +1,6 @@
 use chezmoi_cache::Cache;
 use chezmoi_entity::metric::Metric;
-
-use super::batch::BatchHandler;
-use super::direct::DirectHandler;
-use crate::collector::prelude::OneOrMany;
+use chezmoi_entity::OneOrMany;
 
 pub struct CacheLayer<H> {
     cache: Cache,
@@ -19,17 +16,7 @@ impl<H> CacheLayer<H> {
     }
 }
 
-impl<H: BatchHandler + Send> BatchHandler for CacheLayer<H> {
-    #[tracing::instrument(name = "cache", skip_all)]
-    async fn handle(&mut self, values: Vec<Metric>) {
-        let values: Vec<_> = self.cache.handle_iter(values.into_iter()).collect();
-        if !values.is_empty() {
-            self.handler.handle(values).await;
-        }
-    }
-}
-
-impl<H: DirectHandler + Send> DirectHandler for CacheLayer<H> {
+impl<H: super::prelude::Handler + Send> super::prelude::Handler for CacheLayer<H> {
     #[tracing::instrument(name = "cache", skip_all)]
     async fn handle(&mut self, values: OneOrMany<Metric>) {
         match values {

@@ -1,5 +1,5 @@
 use chezmoi_entity::metric::Metric;
-use prelude::OneOrMany;
+use chezmoi_entity::OneOrMany;
 use tokio::sync::mpsc::Sender;
 use tokio::task::JoinHandle;
 
@@ -8,12 +8,12 @@ pub mod internal;
 pub mod prelude;
 
 #[derive(Debug)]
-pub struct CollectorManager {
+pub struct Manager {
     context: prelude::Context,
     inner: Vec<JoinHandle<anyhow::Result<()>>>,
 }
 
-impl CollectorManager {
+impl Manager {
     pub fn new(sender: Sender<OneOrMany<Metric>>) -> Self {
         Self {
             context: prelude::Context::new(sender),

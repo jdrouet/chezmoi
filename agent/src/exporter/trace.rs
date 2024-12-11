@@ -1,6 +1,5 @@
 use chezmoi_entity::metric::Metric;
-
-use crate::collector::prelude::OneOrMany;
+use chezmoi_entity::OneOrMany;
 
 #[derive(Debug, Default)]
 pub struct TractHandler;
@@ -11,7 +10,7 @@ impl TractHandler {
     }
 }
 
-impl super::direct::DirectHandler for TractHandler {
+impl super::prelude::Handler for TractHandler {
     #[tracing::instrument(name = "trace", skip_all)]
     async fn handle(&mut self, item: OneOrMany<Metric>) {
         tracing::debug!(message = "received metrics", count = item.len());
