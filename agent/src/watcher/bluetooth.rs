@@ -54,13 +54,14 @@ impl Config {
 
 #[derive(Debug)]
 pub struct Watcher {
-    adapter: Adapter,
+    pub adapter: Adapter,
     follow: HashSet<Address>,
     sender: broadcast::Sender<WatcherEvent>,
 }
 
 impl Watcher {
     async fn listen(&self, device_events: impl Stream<Item = AdapterEvent>) -> anyhow::Result<()> {
+        tracing::debug!("listening for bluetooth events");
         pin_mut!(device_events);
 
         let mut all_change_events = SelectAll::new();
@@ -70,6 +71,7 @@ impl Watcher {
                 Some(device_event) = device_events.next() => {
                     match device_event {
                         AdapterEvent::DeviceAdded(addr) => {
+                            tracing::debug!(message = "device added", address = %addr);
                             if let Err(err) = self.sender.send(WatcherEvent::DeviceAdded(addr)) {
                                 tracing::error!(message = "unable to forward added device", address = %addr, error = %err);
                             }
@@ -81,6 +83,7 @@ impl Watcher {
                             }
                         }
                         AdapterEvent::DeviceRemoved(addr) => {
+                            tracing::debug!(message = "device removed", address = %addr);
                             if let Err(err) = self.sender.send(WatcherEvent::DeviceRemoved(addr)) {
                                 tracing::error!(message = "unable to forward removed device", address = %addr, error = %err);
                             }
@@ -89,6 +92,7 @@ impl Watcher {
                     }
                 }
                 Some((addr, DeviceEvent::PropertyChanged(property))) = all_change_events.next() => {
+                    tracing::debug!(message = "device changed", address = %addr);
                     if let Err(err) = self.sender.send(WatcherEvent::DeviceChanged(addr, property)) {
                         tracing::error!(message = "unable to forward changed device", address = %addr, error = %err);
                     }
@@ -133,7 +137,7 @@ impl Watcher {
 }
 
 impl crate::prelude::Worker for Watcher {
-    #[tracing::instrument(name = "bluetooth_watcher", skip_all, fields(adapter = %self.adapter.name()))]
+    #[tracing::instrument(name = "bluetooth-watcher", skip_all, fields(adapter = %self.adapter.name()))]
     async fn run(self) -> anyhow::Result<()> {
         self.execute().await
     }
@@ -144,4 +148,14 @@ pub enum WatcherEvent {
     DeviceAdded(Address),
     DeviceRemoved(Address),
     DeviceChanged(Address, DeviceProperty),
+}
+
+impl WatcherEvent {
+    pub fn address(&self) -> Address {
+        match self {
+            Self::DeviceAdded(addr) | Self::DeviceChanged(addr, _) | Self::DeviceRemoved(addr) => {
+                *addr
+            }
+        }
+    }
 }

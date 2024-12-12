@@ -1,12 +1,22 @@
 {
-  "channel_size": 200,
-  "collectors": [
-    {
-      "type": "internal",
-      "interval": 5
+    "channel_size": 200,
+    "collectors": [
+        {
+            "type": "internal",
+            "interval": 5
+        },
+        {
+            "type": "atc-sensor",
+            "interval": 20,
+            "devices": [
+                "A4:C1:38:E1:6F:B2",
+                "A4:C1:38:45:51:3E",
+                "A4:C1:38:1C:02:76",
+                "A4:C1:38:4E:92:06"
+            ]
+        }
+    ],
+    "exporter": {
+        "type": "trace"
     }
-  ],
-  "exporter": {
-    "type": "trace"
-  }
 }
