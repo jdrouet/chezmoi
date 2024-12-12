@@ -29,6 +29,32 @@ pub enum Config {
 }
 
 impl Config {
+    pub fn from_env() -> anyhow::Result<Self> {
+        match std::env::var("AGENT_EXPORTER_TYPE").as_deref() {
+            Ok("http") => Ok(Self::Http {
+                address: std::env::var("AGENT_EXPORTER_ADDRESS")
+                    .unwrap_or_else(|_| String::from("http://localhost:3000/api/metrics")),
+                batch_capacity: crate::from_env_or(
+                    "AGENT_EXPORTER_BATCH_CAPACITY",
+                    crate::exporter::batch::default_capacity,
+                )?,
+                batch_interval: crate::from_env_or(
+                    "AGENT_EXPORTER_BATCH_INTERVAL",
+                    crate::exporter::batch::default_interval,
+                )?,
+                cache_size: crate::from_env_or(
+                    "AGENT_EXPORTER_CACHE_SIZE",
+                    crate::exporter::cache::default_size,
+                )?,
+                cache_ttl: crate::from_env_or(
+                    "AGENT_EXPORTER_CACHE_TTL",
+                    crate::exporter::cache::default_ttl,
+                )?,
+            }),
+            _ => Ok(Self::Trace),
+        }
+    }
+
     pub fn build(&self, receiver: Receiver<OneOrMany<Metric>>) -> Exporter {
         match self {
             Self::Http {

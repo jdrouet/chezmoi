@@ -22,6 +22,11 @@ impl Default for Config {
 }
 
 impl Config {
+    pub fn from_env() -> anyhow::Result<Self> {
+        let interval = crate::from_env_or("AGENT_COLLECTOR_INTERNAL_INTERVAL", default_interval)?;
+        Ok(Self { interval })
+    }
+
     pub fn build(&self, ctx: &crate::BuildContext) -> Collector {
         Collector {
             interval: Duration::new(self.interval, 0),

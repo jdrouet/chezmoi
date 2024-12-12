@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{path::Path, str::FromStr};
 
 use chezmoi_entity::{metric::Metric, OneOrMany};
 use tokio::sync::mpsc;
@@ -7,6 +7,19 @@ pub mod collector;
 pub mod exporter;
 pub mod prelude;
 pub mod watcher;
+
+fn from_env_or<T, F>(name: &str, default_value: F) -> anyhow::Result<T>
+where
+    F: FnOnce() -> T,
+    T: FromStr,
+    anyhow::Error: From<<T as FromStr>::Err>,
+{
+    if let Ok(value) = std::env::var(name) {
+        Ok(T::from_str(value.as_str())?)
+    } else {
+        Ok(default_value())
+    }
+}
 
 const fn default_channel_size() -> usize {
     200
@@ -24,9 +37,25 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_path<P: AsRef<Path>>(path: P) -> std::io::Result<Self> {
+    pub fn from_path_or_env() -> anyhow::Result<Self> {
+        if let Ok(path) = std::env::var("CONFIG_PATH") {
+            return Self::from_path(&path);
+        }
+        Self::from_env()
+    }
+
+    pub fn from_env() -> anyhow::Result<Self> {
+        Ok(Self {
+            channel_size: from_env_or("AGENT_CHANNEL_SIZE", default_channel_size)?,
+            watcher: watcher::Config::from_env()?,
+            collectors: collector::Config::from_env()?,
+            exporter: exporter::Config::from_env()?,
+        })
+    }
+
+    pub fn from_path<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
         let f = std::fs::OpenOptions::new().read(true).open(path)?;
-        serde_json::from_reader(f).map_err(std::io::Error::other)
+        serde_json::from_reader(f).map_err(anyhow::Error::from)
     }
 
     pub async fn build(&self) -> anyhow::Result<Agent> {

@@ -73,6 +73,16 @@ pub struct Config {
 }
 
 impl Config {
+    pub fn from_env() -> anyhow::Result<Self> {
+        let interval = crate::from_env_or("AGENT_COLLECTOR_ATC_SENSOR_INTERVAL", default_interval)?;
+        let devices = std::env::var("AGENT_COLLECTOR_ATC_SENSOR_DEVICES")
+            .unwrap_or_default()
+            .split(',')
+            .map(String::from)
+            .collect();
+        Ok(Self { interval, devices })
+    }
+
     pub fn build(&self, ctx: &crate::BuildContext) -> Collector {
         Collector {
             adapter: ctx.bluetooth.clone(),

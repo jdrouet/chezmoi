@@ -9,6 +9,12 @@ pub struct Config {
 }
 
 impl Config {
+    pub fn from_env() -> anyhow::Result<Self> {
+        Ok(Self {
+            bluetooth: bluetooth::Config::from_env()?,
+        })
+    }
+
     pub async fn build(&self, _config: &super::Config) -> anyhow::Result<(Watcher, Receiver)> {
         let (bluetooth, bluetooth_receiver) = self.bluetooth.build(std::iter::empty()).await?;
         Ok((
