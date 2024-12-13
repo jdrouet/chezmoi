@@ -77,6 +77,12 @@ impl<'a> MetricHeader<'a> {
 #[cfg_attr(feature = "serde", serde(transparent))]
 pub struct MetricTags<'a>(IndexMap<CowStr<'a>, CowStr<'a>>);
 
+impl<'a> AsRef<IndexMap<CowStr<'a>, CowStr<'a>>> for MetricTags<'a> {
+    fn as_ref(&self) -> &IndexMap<CowStr<'a>, CowStr<'a>> {
+        &self.0
+    }
+}
+
 impl std::fmt::Debug for MetricTags<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.fmt(f)
