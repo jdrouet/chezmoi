@@ -10,7 +10,9 @@ chezmoi-storage = { path = "../storage" }
 
 anyhow = { workspace = true }
 axum = { version = "0.7" }
+serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "sync"] }
 tower-http = { version = "0.6", default-features = false, features = ["trace"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
+serde_qs = { version = "0.13", features = ["axum", "tracing"] }

@@ -43,7 +43,7 @@ impl Server {
         tracing::debug!("binding socket to {}", self.address);
         let listener = TcpListener::bind(self.address).await?;
         let app = router::create()
-            .layer(Extension(state::StorageReader::new(storage.clone())))
+            .layer(Extension(storage.clone()))
             .layer(Extension(state::StorageWriter::new(storage)))
             .layer(TraceLayer::new_for_http());
         tracing::info!("listening on {}", self.address);

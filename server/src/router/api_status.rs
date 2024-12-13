@@ -1,9 +1,8 @@
 use axum::http::StatusCode;
 use axum::Extension;
+use chezmoi_storage::client::Client;
 
-use crate::state::StorageReader;
-
-pub async fn handle(Extension(reader): Extension<StorageReader>) -> StatusCode {
+pub async fn handle(Extension(reader): Extension<Client>) -> StatusCode {
     match reader.ping().await {
         Ok(_) => StatusCode::NO_CONTENT,
         Err(err) => {
