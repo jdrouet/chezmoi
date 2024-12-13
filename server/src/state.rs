@@ -25,3 +25,24 @@ impl StorageWriter {
         }
     }
 }
+
+#[derive(Clone, Debug)]
+pub struct StorageReader {
+    client: Client,
+}
+
+impl AsRef<Client> for StorageReader {
+    fn as_ref(&self) -> &Client {
+        &self.client
+    }
+}
+
+impl StorageReader {
+    pub fn new(client: Client) -> Self {
+        Self { client }
+    }
+
+    pub async fn ping(&self) -> Result<(), chezmoi_storage::sqlx::Error> {
+        self.client.ping().await
+    }
+}
