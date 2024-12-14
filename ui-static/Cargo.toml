@@ -1,0 +1,8 @@
+[package]
+name = "chezmoi-ui-static"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+another-html-builder = "0.2"
+human-number = "0.1"

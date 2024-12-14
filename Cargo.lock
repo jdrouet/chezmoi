@@ -60,6 +60,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "another-html-builder"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d4f180816a27fde124e99c29b1e18143ea66659d65c0570714e6ac9c91eb11ed"
+
+[[package]]
 name = "anyhow"
 version = "1.0.94"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -318,6 +324,14 @@ dependencies = [
  "sqlx",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "chezmoi-ui-static"
+version = "0.1.0"
+dependencies = [
+ "another-html-builder",
+ "human-number",
 ]
 
 [[package]]
@@ -866,6 +880,12 @@ name = "httpdate"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
+
+[[package]]
+name = "human-number"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0b15a2f2c357a1bb9f9d96dbcb08de33cb33f8f0886f546d8ead4660286d6e1"
 
 [[package]]
 name = "hyper"

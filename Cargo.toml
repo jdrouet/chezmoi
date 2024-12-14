@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["agent", "cache", "entity", "server", "storage"]
+members = ["agent", "cache", "entity", "server", "storage", "ui-static"]
 
 [workspace.package]
 authors = ["Jeremie Drouet <jeremie.drouet@gmail.com>"]
