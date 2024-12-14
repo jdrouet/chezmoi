@@ -2,6 +2,7 @@ use crate::BuildContext;
 
 pub mod atc_sensor;
 pub mod internal;
+pub mod system;
 
 pub mod prelude;
 
@@ -14,6 +15,7 @@ const fn default_false() -> bool {
 pub enum Config {
     AtcSensor(atc_sensor::Config),
     Internal(internal::Config),
+    System(system::Config),
 }
 
 impl Config {
@@ -25,6 +27,9 @@ impl Config {
         if crate::from_env_or("AGENT_COLLECTOR_INTERNAL_ENABLED", default_false)? {
             result.push(Config::Internal(internal::Config::from_env()?));
         }
+        if crate::from_env_or("AGENT_COLLECTOR_SYSTEM_ENABLED", default_false)? {
+            result.push(Config::Internal(internal::Config::from_env()?));
+        }
         Ok(result)
     }
 
@@ -32,6 +37,7 @@ impl Config {
         match self {
             Self::AtcSensor(inner) => Collector::AtcSensor(inner.build(ctx)),
             Self::Internal(inner) => Collector::Internal(inner.build(ctx)),
+            Self::System(inner) => Collector::System(inner.build(ctx)),
         }
     }
 }
@@ -39,6 +45,7 @@ impl Config {
 pub enum Collector {
     AtcSensor(atc_sensor::Collector),
     Internal(internal::Collector),
+    System(system::Collector),
 }
 
 impl crate::prelude::Worker for Collector {
@@ -46,6 +53,7 @@ impl crate::prelude::Worker for Collector {
         match self {
             Self::AtcSensor(inner) => inner.run().await,
             Self::Internal(inner) => inner.run().await,
+            Self::System(inner) => inner.run().await,
         }
     }
 }
