@@ -1,11 +1,18 @@
+mod component;
+mod view;
+
 use yew::prelude::*;
+
+use crate::component::header::Header;
+use crate::view::dashboard::Dashboard;
 
 #[function_component]
 fn App() -> Html {
     html! {
-        <main>
-            <p>{"Hello World"}</p>
-        </main>
+        <>
+            <Header />
+            <Dashboard />
+        </>
     }
 }
 

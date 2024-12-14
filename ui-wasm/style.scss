@@ -1,5 +1,155 @@
+$screen-xs: 0;
+$screen-sm: 576px;
+$screen-md: 768px;
+$screen-lg: 992px;
+$screen-xl: 1200px;
+$screen-xxl: 1400px;
+
+@mixin screen-above($size) {
+    @media screen and (min-width: $size) {
+        @content;
+    }
+}
+
+:root {
+    --bg-color-default: white;
+    --bg-color-back: #fafafa;
+    --border-color: #cacaca;
+    --size-sm: 4px;
+    --size-md: 8px;
+}
 html,
-body {
+body,
+p {
     margin: 0;
     padding: 0;
 }
+body {
+    background-color: var(--bg-color-back);
+    font-family:
+        system-ui,
+        -apple-system,
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+}
+header {
+    display: flex;
+    background-color: var(--bg-color-default);
+    flex-direction: row;
+    margin: 0;
+    border-bottom: 1px solid var(--border-color);
+    justify-content: space-between;
+    height: 48px;
+    align-items: center;
+}
+.container {
+    box-sizing: border-box;
+    max-width: $screen-xl;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+.flex-row {
+    display: flex;
+    flex-direction: row;
+}
+.padx-md {
+    padding-left: var(--size-md);
+    padding-right: var(--size-md);
+}
+.pad-md {
+    padding: var(--size-md);
+}
+.space-between {
+    justify-content: space-between;
+}
+.text-lg {
+    font-size: 1.25rem;
+}
+.text-bold {
+    font-weight: bold;
+}
+.text-nodeco {
+    text-decoration: none;
+}
+
+.card {
+    background-color: var(--bg-color-default);
+    border: 1px solid var(--border-color);
+    border-radius: var(--size-sm);
+}
+.card-title {
+    margin: var(--size-sm) var(--size-md);
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--size-md);
+    grid-auto-flow: dense;
+}
+
+.rowspan-2 {
+    grid-row-end: span 2;
+}
+
+.rowspan-3 {
+    grid-row-end: span 2;
+}
+
+@include screen-above($screen-sm) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .colspan-2,
+    .colspan-3,
+    .colspan-all {
+        grid-column-end: span 2;
+    }
+}
+
+@include screen-above($screen-md) {
+    .dashboard-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .colspan-2 {
+        grid-column-end: span 2;
+    }
+
+    .colspan-3,
+    .colspan-all {
+        grid-column-end: span 3;
+    }
+}
+
+@include screen-above($screen-lg) {
+    .dashboard-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .colspan-2 {
+        grid-column-end: span 2;
+    }
+
+    .colspan-3 {
+        grid-column-end: span 2;
+    }
+
+    .colspan-all {
+        grid-column-end: span 4;
+    }
+}
+/*
+.colspan-2 {
+    grid-column-end: span 2;
+}
+.colspan-3 {
+    grid-column-end: span 3;
+}
+.colspan-all {
+    grid-column-end: span 4;
+} */
