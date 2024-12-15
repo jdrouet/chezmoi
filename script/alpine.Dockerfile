@@ -1,6 +1,7 @@
-FROM alpine AS base
+ARG BASE_IMAGE=alpine
+FROM $BASE_IMAGE AS builder
 
-RUN apk add --no-cache rust cargo dbus-dev
+RUN apk add --no-cache rust cargo dbus-dev alpine-sdk
 
 WORKDIR /code
 
@@ -11,20 +12,17 @@ COPY entity /code/entity
 COPY server /code/server
 COPY storage /code/storage
 
-FROM base AS builder
+RUN cargo build --locked --release
 
-RUN cargo build --release
-
-FROM base AS builder-agent-apk
-
-RUN apk update && apk add --no-cache alpine-sdk
-RUN abuild-keygen --append -n && cp /root/.abuild/*.rsa.pub /etc/apk/keys/
+RUN apk update \
+    && abuild-keygen --append -n \
+    && cp /root/.abuild/*.rsa.pub /etc/apk/keys/
 RUN mv /code/agent/APKBUILD /code/APKBUILD \
-    && abuild -F -r -P /code/target
+    && abuild -F -r -P /code/target/
 
 FROM scratch AS output
 
-COPY --from=builder-agent-apk /root/target/*/*.apk /target/
-COPY --from=builder-agent-apk /root/target/*/*.apk /target/
-COPY --from=builder /code/target/release/chezmoi-agent /target/chezmoi-agent
-COPY --from=builder /code/target/release/chezmoi-server /target/chezmoi-server
+ARG TARGET_ARCH
+COPY --from=builder /code/target/release/chezmoi-agent /target/$TARGET_ARCH/
+COPY --from=builder /code/target/release/chezmoi-server /target/$TARGET_ARCH/
+COPY --from=builder /code/target/*/*.apk /target/$TARGET_ARCH/
