@@ -2,6 +2,33 @@
 name = "chezmoi-server"
 version = "0.1.0"
 edition = "2021"
+authors.workspace = true
+license-file.workspace = true
+
+[package.metadata.deb]
+name = "chezmoi-server"
+license-file = ["LICENSE", "3"]
+depends = ["libdbus-1-3", "$auto"]
+section = "utility"
+maintainer-scripts = "script/debian/"
+conf-files = ["/etc/default/chezmoi-server"]
+assets = [
+    [
+        "target/release/chezmoi-server",
+        "usr/bin/",
+        "755",
+    ],
+    [
+        "script/systemd/chezmoi.service",
+        "lib/systemd/system/chezmoi-server.service",
+        "644",
+    ],
+    [
+        "script/systemd/chezmoi.default",
+        "etc/default/chezmoi-server",
+        "600",
+    ],
+]
 
 [dependencies]
 chezmoi-cache = { path = "../cache" }

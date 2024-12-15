@@ -18,6 +18,15 @@ impl Default for Config {
 }
 
 impl Config {
+    pub fn from_env() -> Self {
+        Self {
+            url: std::env::var("DATABASE_URL")
+                .ok()
+                .map(CowStr::Owned)
+                .unwrap_or(CowStr::Borrowed(":memory:")),
+        }
+    }
+
     pub fn new(url: impl Into<CowStr<'static>>) -> Self {
         Self { url: url.into() }
     }

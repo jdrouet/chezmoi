@@ -2,6 +2,10 @@
 resolver = "2"
 members = ["agent", "cache", "entity", "server", "storage"]
 
+[workspace.package]
+authors = ["Jeremie Drouet <jeremie.drouet@gmail.com>"]
+license-file = "LICENSE"
+
 [workspace.dependencies]
 anyhow = { version = "1.0" }
 indexmap = { version = "2.7" }

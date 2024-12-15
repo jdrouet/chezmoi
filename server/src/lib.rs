@@ -1,9 +1,24 @@
+use std::str::FromStr;
+
 use axum::Extension;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 
 mod router;
 mod state;
+
+fn from_env_or<T, F>(name: &str, default_value: F) -> anyhow::Result<T>
+where
+    F: FnOnce() -> T,
+    T: FromStr,
+    anyhow::Error: From<<T as FromStr>::Err>,
+{
+    if let Ok(value) = std::env::var(name) {
+        Ok(T::from_str(value.as_str())?)
+    } else {
+        Ok(default_value())
+    }
+}
 
 #[derive(Debug)]
 pub struct Config {
@@ -21,6 +36,15 @@ impl Default for Config {
 }
 
 impl Config {
+    pub fn from_env() -> anyhow::Result<Self> {
+        Ok(Self {
+            host: from_env_or("HOST", || {
+                std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1))
+            })?,
+            port: from_env_or("PORT", || 3000)?,
+        })
+    }
+
     pub fn build(&self) -> Server {
         Server {
             address: std::net::SocketAddr::from((self.host, self.port)),
@@ -36,7 +60,7 @@ pub struct Server {
 impl Server {
     #[tracing::instrument(name = "server", skip_all)]
     pub async fn run(&self) -> anyhow::Result<()> {
-        let storage = chezmoi_storage::client::Config::default();
+        let storage = chezmoi_storage::client::Config::from_env();
         let storage = storage.build().await?;
         storage.upgrade().await?;
 

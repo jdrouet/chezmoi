@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+# Add chezmoi:chezmoi chezmoi & chezmoi
+id --user chezmoi-server >/dev/null 2>&1 || \
+  useradd --system --shell /sbin/nologin --home-dir /var/lib/chezmoi-server --user-group \
+    --comment "Chezmoi server home automation" chezmoi-server
+
+# Create default Chezmoi data directory
+mkdir -p /var/lib/chezmoi-server
+
+# Make chezmoi-server:chezmoi-server the owner of the Chezmoi data directory
+chown -R chezmoi-server:chezmoi-server /var/lib/chezmoi-server
+
+#DEBHELPER#

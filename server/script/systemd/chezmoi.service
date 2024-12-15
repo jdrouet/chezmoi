@@ -1,0 +1,16 @@
+[Unit]
+Description=Chezmoi Server
+Documentation=https://github.com/jdrouet/chezmoi
+After=network-online.target
+Requires=network-online.target
+
+[Service]
+User=chezmoi-server
+Group=chezmoi-server
+ExecStart=/usr/bin/chezmoi-server
+Restart=always
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+EnvironmentFile=-/etc/default/chezmoi-server
+
+[Install]
+WantedBy=multi-user.target
