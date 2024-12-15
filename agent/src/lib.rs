@@ -1,6 +1,8 @@
-use std::{path::Path, str::FromStr};
+use std::path::Path;
+use std::str::FromStr;
 
-use chezmoi_entity::{metric::Metric, OneOrMany};
+use chezmoi_entity::metric::Metric;
+use chezmoi_entity::OneOrMany;
 use tokio::sync::mpsc;
 
 pub mod collector;

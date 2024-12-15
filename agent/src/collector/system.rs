@@ -93,7 +93,11 @@ impl crate::prelude::Worker for Collector {
                     Metric::new(
                         timestamp,
                         header_swap_ratio.clone(),
-                        used_swap * 100.0 / total_swap,
+                        if total_swap == 0.0 {
+                            0.0
+                        } else {
+                            used_swap * 100.0 / total_swap
+                        },
                     ),
                 ])
                 .await;

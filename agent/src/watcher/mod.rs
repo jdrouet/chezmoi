@@ -1,4 +1,5 @@
-use tokio::{sync::broadcast, task::JoinHandle};
+use tokio::sync::broadcast;
+use tokio::task::JoinHandle;
 
 pub mod bluetooth;
 

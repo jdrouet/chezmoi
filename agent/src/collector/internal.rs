@@ -1,6 +1,7 @@
 use std::time::Duration;
 
-use chezmoi_entity::{metric::Metric, OneOrMany};
+use chezmoi_entity::metric::Metric;
+use chezmoi_entity::OneOrMany;
 use tokio::sync::mpsc;
 
 use super::prelude::SenderExt;

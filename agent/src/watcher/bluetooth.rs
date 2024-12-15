@@ -3,8 +3,7 @@ use std::collections::HashSet;
 use anyhow::Context;
 use bluer::{Adapter, AdapterEvent, Address, DeviceEvent, DeviceProperty, DiscoveryFilter};
 use futures::stream::SelectAll;
-use futures::Stream;
-use futures::{pin_mut, StreamExt};
+use futures::{pin_mut, Stream, StreamExt};
 use tokio::sync::broadcast;
 
 const fn default_channel_size() -> usize {

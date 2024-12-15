@@ -1,0 +1,23 @@
+{
+  "channel-size": 200,
+  "collectors": [
+    {
+      "type": "atc-sensor",
+      "devices": [
+        "A4:C1:38:E1:6F:B2",
+        "A4:C1:38:45:51:3E",
+        "A4:C1:38:1C:02:76",
+        "A4:C1:38:4E:92:06"
+      ]
+    },
+    {
+      "type": "internal"
+    },
+    {
+      "type": "system"
+    }
+  ],
+  "exporter": {
+    "type": "trace"
+  }
+}

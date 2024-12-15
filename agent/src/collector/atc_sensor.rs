@@ -1,17 +1,13 @@
-use std::{
-    collections::{HashMap, HashSet},
-    str::FromStr,
-    time::Duration,
-};
+use std::collections::{HashMap, HashSet};
+use std::str::FromStr;
+use std::time::Duration;
 
-use crate::watcher::bluetooth::WatcherEvent;
-use chezmoi_entity::{
-    metric::{Metric, MetricHeader},
-    now, OneOrMany,
-};
+use chezmoi_entity::metric::{Metric, MetricHeader};
+use chezmoi_entity::{now, OneOrMany};
 use tokio::sync::{broadcast, mpsc};
 
 use super::prelude::SenderExt;
+use crate::watcher::bluetooth::WatcherEvent;
 
 pub const DEVICE_TEMPERATURE: &str = "atc-thermometer.temperature";
 pub const DEVICE_HUMIDITY: &str = "atc-thermometer.humidity";

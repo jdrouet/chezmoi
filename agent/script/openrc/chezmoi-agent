@@ -1,0 +1,17 @@
+#!/sbin/openrc-run
+
+depend() {
+    need net
+}
+
+export CONFIG_PATH=/etc/chezmoi-agent/config.json
+
+name="chezmoi-agent"
+description="Agent for the chezmoi suite"
+command="/usr/bin/chezmoi-agent"
+# it doesn't go to background itself
+command_background=true
+pidfile="/run/${RC_SVCNAME}.pid"
+# logs
+output_log="/var/log/${RC_SVCNAME}.log"
+error_log="/var/log/${RC_SVCNAME}.err"

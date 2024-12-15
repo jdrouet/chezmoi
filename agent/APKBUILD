@@ -11,9 +11,9 @@ depends="dbus"
 makedepends="rust cargo dbus-dev"
 
 prepare() {
-        default_prepare
+    default_prepare
 
-        cargo fetch --locked
+    cargo fetch --locked
 }
 
 build() {
@@ -26,5 +26,7 @@ check() {
 
 package() {
     install -Dm 755 "target/release/$pkgname" -t "$pkgdir/usr/bin"
+    install -Dm 755 agent/script/openrc/chezmoi-agent -t "$pkgdir/etc/init.d"
+    install -Dm 755 agent/script/config.json -t "$pkgdir/etc/chezmoi-agent"
     install -Dm 644 readme.md -t "$pkgdir/usr/share/doc/$pkgname"
 }
