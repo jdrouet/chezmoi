@@ -1,0 +1,30 @@
+# Contributor: Jeremie Drouet <jeremie.drouet@gmail.com>
+# Maintainer: Jeremie Drouet <jeremie.drouet@gmail.com>
+pkgname=chezmoi-agent
+pkgver=0.1.0
+pkgrel=0
+pkgdesc="Agent for gathering metrics and sending them to the Chezmoi server"
+url="https://github.com/jdrouet/chezmoi"
+arch="all"
+license="AGPL"
+depends="dbus"
+makedepends="rust cargo dbus-dev"
+
+prepare() {
+        default_prepare
+
+        cargo fetch --locked
+}
+
+build() {
+    cargo build --frozen --release --package chezmoi-agent
+}
+
+check() {
+    cargo test --frozen --package chezmoi-agent
+}
+
+package() {
+    install -Dm 755 "target/release/$pkgname" -t "$pkgdir/usr/bin"
+    install -Dm 644 readme.md -t "$pkgdir/usr/share/doc/$pkgname"
+}
