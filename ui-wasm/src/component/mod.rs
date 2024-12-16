@@ -1,4 +1,4 @@
+pub mod atc_sensor_card;
 pub mod formatted_number;
 pub mod header;
-pub mod single_value_card;
-pub mod temperature_card;
+pub mod value_cell;
