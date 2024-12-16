@@ -85,7 +85,13 @@ impl Config {
             devices: HashSet::from_iter(
                 self.devices
                     .iter()
-                    .filter_map(|value| bluer::Address::from_str(value.as_str()).ok()),
+                    .filter_map(|value| match bluer::Address::from_str(value.as_str()) {
+                        Ok(v) => Some(v),
+                        Err(err) => {
+                            tracing::warn!(message = "unable to parse devices address, skipping", address = %value, error = %err);
+                            None
+                        }
+                    }),
             ),
             interval: Duration::new(self.interval, 0),
             receiver: ctx.watcher.bluetooth.resubscribe(),
@@ -110,7 +116,7 @@ impl Collector {
         for addr in self.devices.iter().filter(|d| {
             self.history
                 .get(*d)
-                .map_or(false, |last| last + self.interval.as_secs() <= ts)
+                .map_or(true, |last| last + self.interval.as_secs() <= ts)
         }) {
             if let Err(err) = self.handle(*addr).await {
                 tracing::warn!(message = "unable to handle bluetooth event", error = %err);
@@ -118,6 +124,7 @@ impl Collector {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     async fn handle(&self, addr: bluer::Address) -> anyhow::Result<()> {
         let device = self.adapter.device(addr)?;
         let timestamp = now();
@@ -147,6 +154,8 @@ impl Collector {
                     },
                 ])
                 .await;
+        } else {
+            tracing::debug!("unable to read service data");
         }
         Ok(())
     }

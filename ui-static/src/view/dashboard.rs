@@ -6,40 +6,53 @@ use crate::component::prelude::Component;
 use crate::component::{header, page};
 
 #[derive(Debug)]
-pub struct SectionProps<'a> {
+pub struct Section<'a> {
     pub title: &'a str,
     pub cards: Vec<Card<'a>>,
 }
 
-#[derive(Debug, Default)]
-pub struct DashboardProps<'a> {
-    pub sections: Vec<SectionProps<'a>>,
+impl<'a> Section<'a> {
+    pub fn new(title: &'a str, cards: Vec<Card<'a>>) -> Self {
+        Self { title, cards }
+    }
 }
 
-#[derive(Debug, Default)]
-pub struct DashboardView;
-
-impl DashboardView {
-    fn render_section<'a, W>(
-        &self,
-        buf: Buffer<W, Body<'a>>,
-        props: &SectionProps,
-    ) -> Buffer<W, Body<'a>>
+impl Section<'_> {
+    fn render<'a, W>(&self, buf: Buffer<W, Body<'a>>) -> Buffer<W, Body<'a>>
     where
         W: WriterExt,
     {
         buf.node("h4")
-            .content(|buf| buf.text(props.title))
+            .content(|buf| buf.text(self.title))
             .node("section")
             .attr(("class", "dashboard-grid"))
-            .content(|buf| props.cards.iter().fold(buf, |buf, card| card.render(buf)))
+            .content(|buf| self.cards.iter().fold(buf, |buf, card| card.render(buf)))
     }
+}
 
-    fn render_body<'a, W>(
-        &self,
-        buf: Buffer<W, Body<'a>>,
-        props: &DashboardProps,
-    ) -> Buffer<W, Body<'a>>
+#[derive(Debug)]
+pub struct DashboardView<'a> {
+    pub base_url: &'a str,
+    pub sections: Vec<Section<'a>>,
+}
+
+impl<'a> Default for DashboardView<'a> {
+    fn default() -> Self {
+        Self {
+            base_url: "",
+            sections: Vec::new(),
+        }
+    }
+}
+
+impl<'a> DashboardView<'a> {
+    pub fn new(base_url: &'static str, sections: Vec<Section<'a>>) -> Self {
+        Self { base_url, sections }
+    }
+}
+
+impl DashboardView<'_> {
+    fn render_body<'a, W>(&self, buf: Buffer<W, Body<'a>>) -> Buffer<W, Body<'a>>
     where
         W: WriterExt,
     {
@@ -47,18 +60,17 @@ impl DashboardView {
         buf.node("main")
             .attr(("class", "container pad-md"))
             .content(|buf| {
-                props
-                    .sections
+                self.sections
                     .iter()
-                    .fold(buf, |buf, section| self.render_section(buf, section))
+                    .fold(buf, |buf, section| section.render(buf))
             })
     }
 
-    pub fn render<'a>(&self, props: &DashboardProps<'a>) -> String {
+    pub fn render<'a>(&self) -> String {
         page::html(another_html_builder::Buffer::default(), |buf| {
-            page::head(buf, "Dashboard")
+            page::head(buf, "Dashboard", self.base_url)
                 .node("body")
-                .content(|buf| self.render_body(buf, props))
+                .content(|buf| self.render_body(buf))
         })
         .into_inner()
     }

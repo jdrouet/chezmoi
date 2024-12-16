@@ -1,0 +1,10 @@
+{
+  "dashboard": {
+    "sections": [
+      {
+        "title": "Temperature",
+        "cards": []
+      }
+    ]
+  }
+}

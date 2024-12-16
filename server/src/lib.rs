@@ -4,6 +4,7 @@ use axum::Extension;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 
+mod entity;
 mod router;
 mod state;
 

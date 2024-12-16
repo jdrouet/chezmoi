@@ -2,7 +2,7 @@ use axum::{Extension, Json};
 use chezmoi_entity::metric::{Metric, MetricHeader};
 use serde_qs::axum::QsQuery;
 
-use super::api_error::ApiError;
+use crate::router::api_error::ApiError;
 
 #[derive(Debug, serde::Deserialize)]
 pub struct Payload {

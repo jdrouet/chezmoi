@@ -5,6 +5,7 @@ depend() {
 }
 
 export CONFIG_PATH=/etc/chezmoi-agent/config.json
+export RUST_LOG=chezmoi_agent=debug
 
 name="chezmoi-agent"
 description="Agent for the chezmoi suite"

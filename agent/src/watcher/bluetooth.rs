@@ -82,7 +82,7 @@ impl Watcher {
                 Some(device_event) = device_events.next() => {
                     match device_event {
                         AdapterEvent::DeviceAdded(addr) => {
-                            tracing::debug!(message = "device added", address = %addr);
+                            tracing::trace!(message = "device added", address = %addr);
                             if let Err(err) = self.sender.send(WatcherEvent::DeviceAdded(addr)) {
                                 tracing::error!(message = "unable to forward added device", address = %addr, error = %err);
                             }
@@ -94,7 +94,7 @@ impl Watcher {
                             }
                         }
                         AdapterEvent::DeviceRemoved(addr) => {
-                            tracing::debug!(message = "device removed", address = %addr);
+                            tracing::trace!(message = "device removed", address = %addr);
                             if let Err(err) = self.sender.send(WatcherEvent::DeviceRemoved(addr)) {
                                 tracing::error!(message = "unable to forward removed device", address = %addr, error = %err);
                             }
@@ -103,7 +103,7 @@ impl Watcher {
                     }
                 }
                 Some((addr, DeviceEvent::PropertyChanged(property))) = all_change_events.next() => {
-                    tracing::debug!(message = "device changed", address = %addr);
+                    tracing::trace!(message = "device changed", address = %addr);
                     if let Err(err) = self.sender.send(WatcherEvent::DeviceChanged(addr, property)) {
                         tracing::error!(message = "unable to forward changed device", address = %addr, error = %err);
                     }

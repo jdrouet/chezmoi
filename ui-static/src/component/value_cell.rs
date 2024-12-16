@@ -2,6 +2,7 @@ use another_html_builder::prelude::WriterExt;
 use another_html_builder::{Body, Buffer};
 use human_number::Formatter;
 
+use super::range::Range;
 use crate::helper::classes::Cn;
 
 #[allow(unused)]
@@ -29,12 +30,6 @@ impl Status {
 }
 
 #[derive(Debug)]
-pub struct Definition {
-    pub min: Option<f64>,
-    pub max: Option<f64>,
-}
-
-#[derive(Debug)]
 pub struct Value {
     pub value: f64,
     pub timestamp: u64,
@@ -44,7 +39,7 @@ pub struct Value {
 pub struct ValueCell<'a> {
     pub label: &'a str,
     pub formatter: &'a Formatter<'static>,
-    pub definition: &'a Definition,
+    pub definition: &'a Range,
     pub value: Option<&'a Value>,
 }
 

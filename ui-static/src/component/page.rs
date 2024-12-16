@@ -1,5 +1,14 @@
+use another_html_builder::attribute::AttributeValue;
 use another_html_builder::prelude::WriterExt;
 use another_html_builder::{Body, Buffer};
+
+struct Concat<'a>(&'a str, &'a str);
+
+impl AttributeValue for Concat<'_> {
+    fn render(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}{}", self.0, self.1)
+    }
+}
 
 pub fn html<'a, W, F>(buf: Buffer<W, Body<'a>>, children: F) -> Buffer<W, Body<'a>>
 where
@@ -12,7 +21,7 @@ where
         .content(children)
 }
 
-pub fn head<'a, W>(buf: Buffer<W, Body<'a>>, title: &str) -> Buffer<W, Body<'a>>
+pub fn head<'a, W>(buf: Buffer<W, Body<'a>>, title: &str, base_url: &str) -> Buffer<W, Body<'a>>
 where
     W: WriterExt,
 {
@@ -31,7 +40,7 @@ where
             .close()
             .node("link")
             .attr(("rel", "stylesheet"))
-            .attr(("href", "assets/style.css"))
+            .attr(("href", Concat(base_url, "assets/style.css")))
             .close()
     })
 }

@@ -1,4 +1,5 @@
 HOST=0.0.0.0
 PORT=3000
+CONFIG_PATH=/etc/chezmoi-server/config.json
 DATABASE_URL=/var/lib/chezmoi-server/chezmoi.db
 RUST_LOG=chezmoi_server=debug,tower_http=debug,axum::rejection=trace

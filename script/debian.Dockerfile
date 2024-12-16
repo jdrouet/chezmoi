@@ -11,6 +11,7 @@ COPY cache /code/cache
 COPY entity /code/entity
 COPY server /code/server
 COPY storage /code/storage
+COPY ui-static /code/ui-static
 COPY LICENSE /code/agent/
 COPY LICENSE /code/server/
 

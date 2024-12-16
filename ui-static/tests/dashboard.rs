@@ -1,5 +1,6 @@
 use chezmoi_ui_static::component::card::atc_sensor::AtcSensorCard;
 use chezmoi_ui_static::component::card::Card;
+use chezmoi_ui_static::component::range::Range;
 use chezmoi_ui_static::component::value_cell;
 use chezmoi_ui_static::view::dashboard;
 
@@ -7,12 +8,14 @@ mod helper;
 
 #[test]
 fn simple() {
-    let props = dashboard::DashboardProps {
-        sections: vec![dashboard::SectionProps {
+    let view = dashboard::DashboardView {
+        base_url: "",
+        sections: vec![dashboard::Section {
             title: "Home",
             cards: vec![Card::AtcSensor(AtcSensorCard {
-                title: "Living room",
-                temperature_definition: value_cell::Definition {
+                name: Some("Living room"),
+                address: "00:00:00:00:00".into(),
+                temperature_definition: Range {
                     min: Some(19.0),
                     max: Some(22.0),
                 },
@@ -20,7 +23,7 @@ fn simple() {
                     value: 18.5,
                     timestamp: 0,
                 }),
-                humidity_definition: value_cell::Definition {
+                humidity_definition: Range {
                     min: Some(40.0),
                     max: Some(70.0),
                 },
@@ -28,7 +31,7 @@ fn simple() {
                     value: 82.5,
                     timestamp: 0,
                 }),
-                battery_definition: value_cell::Definition {
+                battery_definition: Range {
                     min: Some(10.0),
                     max: None,
                 },
@@ -39,6 +42,6 @@ fn simple() {
             })],
         }],
     };
-    let view = dashboard::DashboardView::default().render(&props);
+    let view = view.render();
     helper::write("dashboard-simple.html", view);
 }
