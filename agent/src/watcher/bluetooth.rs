@@ -42,7 +42,7 @@ impl Default for Config {
 impl Config {
     pub async fn build(
         &self,
-        follow: impl Iterator<Item = bluer::Address>,
+        follow: HashSet<bluer::Address>,
     ) -> anyhow::Result<(Watcher, broadcast::Receiver<WatcherEvent>)> {
         let (sender, receiver) = broadcast::channel(self.channel_size);
 
@@ -55,7 +55,7 @@ impl Config {
         Ok((
             Watcher {
                 adapter,
-                follow: HashSet::from_iter(follow),
+                follow,
                 sender,
             },
             receiver,
@@ -124,7 +124,10 @@ impl Watcher {
         }
 
         self.adapter
-            .set_discovery_filter(DiscoveryFilter::default())
+            .set_discovery_filter(DiscoveryFilter {
+                transport: bluer::DiscoveryTransport::Le,
+                ..Default::default()
+            })
             .await
             .context("setting discovery filter")?;
 
@@ -150,6 +153,7 @@ impl Watcher {
 impl crate::prelude::Worker for Watcher {
     #[tracing::instrument(name = "bluetooth-watcher", skip_all, fields(adapter = %self.adapter.name()))]
     async fn run(self) -> anyhow::Result<()> {
+        tracing::info!(message = "watching for events", devices = ?self.follow);
         self.execute().await
     }
 }

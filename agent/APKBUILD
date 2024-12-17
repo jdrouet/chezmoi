@@ -2,7 +2,7 @@
 # Maintainer: Jeremie Drouet <jeremie.drouet@gmail.com>
 pkgname=chezmoi-agent
 pkgver=0.1.0
-pkgrel=1
+pkgrel=7
 pkgdesc="Agent for gathering metrics and sending them to the Chezmoi server"
 url="https://github.com/jdrouet/chezmoi"
 arch="all"

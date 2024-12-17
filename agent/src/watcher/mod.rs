@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use tokio::sync::broadcast;
 use tokio::task::JoinHandle;
 
@@ -16,8 +18,15 @@ impl Config {
         })
     }
 
-    pub async fn build(&self, _config: &super::Config) -> anyhow::Result<(Watcher, Receiver)> {
-        let (bluetooth, bluetooth_receiver) = self.bluetooth.build(std::iter::empty()).await?;
+    pub async fn build(&self, config: &super::Config) -> anyhow::Result<(Watcher, Receiver)> {
+        let mut bluetooth_followed = HashSet::new();
+        config.collectors.iter().for_each(|col| match col {
+            crate::collector::Config::AtcSensor(sensor) => {
+                bluetooth_followed.extend(sensor.devices.iter().copied());
+            }
+            _ => {}
+        });
+        let (bluetooth, bluetooth_receiver) = self.bluetooth.build(bluetooth_followed).await?;
         Ok((
             Watcher { bluetooth },
             Receiver {

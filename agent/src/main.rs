@@ -12,7 +12,7 @@ fn enable_tracing() {
     }
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
     enable_tracing();
 

@@ -12,6 +12,7 @@ chezmoi-entity = { path = "../entity", features = ["serde"] }
 anyhow = { workspace = true }
 bluer = { version = "0.17", features = [
     "bluetoothd",
+    "serde",
 ], default-features = false }
 futures = { version = "0.3" }
 serde = { workspace = true, features = ["derive"] }

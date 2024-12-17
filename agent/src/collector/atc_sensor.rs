@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 use std::time::Duration;
 
+use bluer::{DeviceProperty, Uuid};
 use chezmoi_entity::metric::{Metric, MetricHeader};
 use chezmoi_entity::{now, OneOrMany};
 use tokio::sync::{broadcast, mpsc};
@@ -41,13 +42,14 @@ fn read_f32(data: &[u8], index: usize) -> Option<f32> {
 }
 
 struct Payload {
-    pub temperature: f32,
-    pub humidity: u8,
-    pub battery: u8,
+    temperature: f32,
+    humidity: u8,
+    battery: u8,
 }
 
 impl Payload {
     fn read(data: &[u8]) -> Option<Self> {
+        tracing::trace!(message = "parsing service data", content = ?data, len = data.len());
         Some(Self {
             temperature: read_temperature(data)?,
             humidity: read_humidity(data)?,
@@ -63,9 +65,9 @@ pub const fn default_interval() -> u64 {
 #[derive(Debug, Default, serde::Deserialize)]
 pub struct Config {
     #[serde(default = "default_interval")]
-    interval: u64,
+    pub interval: u64,
     #[serde(default)]
-    devices: HashSet<String>,
+    pub devices: HashSet<bluer::Address>,
 }
 
 impl Config {
@@ -74,7 +76,13 @@ impl Config {
         let devices = std::env::var("AGENT_COLLECTOR_ATC_SENSOR_DEVICES")
             .unwrap_or_default()
             .split(',')
-            .map(String::from)
+            .filter_map(|value| match bluer::Address::from_str(value) {
+                Ok(v) => Some(v),
+                Err(err) => {
+                    tracing::warn!(message = "unable to parse devices address, skipping", address = %value, error = %err);
+                    None
+                }
+            })
             .collect();
         Ok(Self { interval, devices })
     }
@@ -82,17 +90,7 @@ impl Config {
     pub fn build(&self, ctx: &crate::BuildContext) -> Collector {
         Collector {
             adapter: ctx.bluetooth.clone(),
-            devices: HashSet::from_iter(
-                self.devices
-                    .iter()
-                    .filter_map(|value| match bluer::Address::from_str(value.as_str()) {
-                        Ok(v) => Some(v),
-                        Err(err) => {
-                            tracing::warn!(message = "unable to parse devices address, skipping", address = %value, error = %err);
-                            None
-                        }
-                    }),
-            ),
+            devices: self.devices.clone(),
             interval: Duration::new(self.interval, 0),
             receiver: ctx.watcher.bluetooth.resubscribe(),
             sender: ctx.sender.clone(),
@@ -111,27 +109,33 @@ pub struct Collector {
 }
 
 impl Collector {
+    #[tracing::instrument(skip(self))]
     async fn collect(&self) {
         let ts = now();
-        for addr in self.devices.iter().filter(|d| {
-            self.history
-                .get(*d)
-                .map_or(true, |last| last + self.interval.as_secs() <= ts)
-        }) {
-            if let Err(err) = self.handle(*addr).await {
+        let available = match self.adapter.device_addresses().await {
+            Ok(inner) => inner,
+            Err(err) => {
+                tracing::warn!(message = "unable to list known addresses", error = %err);
+                return;
+            }
+        };
+        for addr in available
+            .iter()
+            .filter(|d| self.devices.contains(d))
+            .filter(|d| {
+                self.history
+                    .get(*d)
+                    .map_or(true, |last| last + self.interval.as_secs() <= ts)
+            })
+        {
+            if let Err(err) = self.handle(*addr, now()).await {
                 tracing::warn!(message = "unable to handle bluetooth event", error = %err);
             }
         }
     }
 
-    #[tracing::instrument(skip(self))]
-    async fn handle(&self, addr: bluer::Address) -> anyhow::Result<()> {
-        let device = self.adapter.device(addr)?;
-        let timestamp = now();
-        let data = device.service_data().await?;
-        if let Some(data) =
-            data.and_then(|inner| inner.get(&SERVICE_ID).and_then(|data| Payload::read(&data)))
-        {
+    async fn read_data(&self, addr: bluer::Address, timestamp: u64, data: &[u8]) {
+        if let Some(data) = Payload::read(data) {
             self.sender
                 .send_many(vec![
                     Metric {
@@ -155,15 +159,43 @@ impl Collector {
                 ])
                 .await;
         } else {
-            tracing::debug!("unable to read service data");
+            tracing::warn!("invalid service data content");
         }
-        Ok(())
+    }
+
+    async fn read_service_data(
+        &self,
+        addr: bluer::Address,
+        timestamp: u64,
+        data: HashMap<Uuid, Vec<u8>>,
+    ) -> bool {
+        if let Some(data) = data.get(&SERVICE_ID) {
+            self.read_data(addr, timestamp, data).await;
+            true
+        } else {
+            tracing::debug!("expected service data not found");
+            false
+        }
+    }
+
+    #[tracing::instrument(skip(self, timestamp))]
+    async fn handle(&self, addr: bluer::Address, timestamp: u64) -> anyhow::Result<bool> {
+        let device = self.adapter.device(addr)?;
+        let data = device.service_data().await?;
+        if let Some(data) = data {
+            self.read_service_data(addr, timestamp, data).await;
+            Ok(true)
+        } else {
+            tracing::warn!("no service data provided");
+            Ok(false)
+        }
     }
 }
 
 impl crate::prelude::Worker for Collector {
     #[tracing::instrument(name = "atc-sensor", skip_all)]
     async fn run(mut self) -> anyhow::Result<()> {
+        tracing::info!(message = "starting", devices = ?self.devices);
         let mut interval = tokio::time::interval(self.interval);
         loop {
             tokio::select! {
@@ -173,14 +205,22 @@ impl crate::prelude::Worker for Collector {
                 }
                 res = self.receiver.recv() => {
                     match res {
-                        Ok(event) if self.devices.contains(&event.address()) => {
-                            match self.handle(event.address()).await {
-                                Ok(()) => {
-                                    self.history.insert(event.address(), now());
+                        Ok(WatcherEvent::DeviceAdded(addr)) if self.devices.contains(&addr) => {
+                            let ts = now();
+                            match self.handle(addr, ts).await {
+                                Ok(true) => {
+                                    self.history.insert(addr, ts);
                                 }
+                                Ok(false) => {},
                                 Err(err) => {
                                     tracing::warn!(message = "unable to handle bluetooth event", error = %err);
                                 }
+                            }
+                        }
+                        Ok(WatcherEvent::DeviceChanged(addr, DeviceProperty::ServiceData(data))) if self.devices.contains(&addr) => {
+                            let ts = now();
+                            if self.read_service_data(addr, ts, data).await {
+                                self.history.insert(addr, ts);
                             }
                         }
                         Ok(_) => {}
