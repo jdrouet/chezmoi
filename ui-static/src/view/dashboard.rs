@@ -30,19 +30,10 @@ impl Section<'_> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct DashboardView<'a> {
     pub base_url: &'a str,
     pub sections: Vec<Section<'a>>,
-}
-
-impl<'a> Default for DashboardView<'a> {
-    fn default() -> Self {
-        Self {
-            base_url: "",
-            sections: Vec::new(),
-        }
-    }
 }
 
 impl<'a> DashboardView<'a> {
@@ -66,7 +57,7 @@ impl DashboardView<'_> {
             })
     }
 
-    pub fn render<'a>(&self) -> String {
+    pub fn render(&self) -> String {
         page::html(another_html_builder::Buffer::default(), |buf| {
             page::head(buf, "Dashboard", self.base_url)
                 .node("body")

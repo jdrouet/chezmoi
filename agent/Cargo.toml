@@ -5,6 +5,12 @@ edition = "2021"
 authors.workspace = true
 license-file.workspace = true
 
+[features]
+default = []
+bluetooth = ["dep:bluer"]
+collector-atc-sensor = ["bluetooth", "watcher-bluetooth"]
+watcher-bluetooth = ["bluetooth"]
+
 [dependencies]
 chezmoi-cache = { path = "../cache" }
 chezmoi-entity = { path = "../entity", features = ["serde"] }
@@ -13,7 +19,7 @@ anyhow = { workspace = true }
 bluer = { workspace = true, features = [
     "bluetoothd",
     "serde",
-], default-features = false }
+], default-features = false, optional = true }
 futures = { version = "0.3" }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { version = "1.0", features = ["indexmap"] }

@@ -10,7 +10,7 @@ impl AttributeValue for Concat<'_> {
     }
 }
 
-pub fn html<'a, W, F>(buf: Buffer<W, Body<'a>>, children: F) -> Buffer<W, Body<'a>>
+pub fn html<W, F>(buf: Buffer<W, Body<'_>>, children: F) -> Buffer<W, Body<'_>>
 where
     F: FnOnce(Buffer<W, Body>) -> Buffer<W, Body>,
     W: WriterExt,
@@ -45,7 +45,7 @@ where
     })
 }
 
-pub fn body<'a, W, F>(buf: Buffer<W, Body<'a>>, children: F) -> Buffer<W, Body<'a>>
+pub fn body<W, F>(buf: Buffer<W, Body<'_>>, children: F) -> Buffer<W, Body<'_>>
 where
     F: FnOnce(Buffer<W, Body>) -> Buffer<W, Body>,
     W: WriterExt,
@@ -54,7 +54,7 @@ where
 }
 
 #[inline(always)]
-pub fn empty<'a, W>(buf: Buffer<W, Body<'a>>) -> Buffer<W, Body<'a>>
+pub fn empty<W>(buf: Buffer<W, Body<'_>>) -> Buffer<W, Body<'_>>
 where
     W: WriterExt,
 {

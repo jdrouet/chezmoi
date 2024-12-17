@@ -65,6 +65,7 @@ impl Config {
         let (sender, receiver) = mpsc::channel(self.channel_size);
 
         let ctx = BuildContext {
+            #[cfg(feature = "watcher-bluetooth")]
             bluetooth: watcher.bluetooth.adapter.clone(),
             sender,
             watcher: wreceiver,
@@ -81,6 +82,7 @@ impl Config {
 }
 
 pub struct BuildContext {
+    #[cfg(feature = "watcher-bluetooth")]
     bluetooth: bluer::Adapter,
     sender: mpsc::Sender<OneOrMany<Metric>>,
     #[allow(unused)]

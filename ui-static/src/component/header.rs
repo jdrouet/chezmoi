@@ -7,7 +7,7 @@
 use another_html_builder::prelude::WriterExt;
 use another_html_builder::{Body, Buffer};
 
-pub fn render<'a, W>(buf: Buffer<W, Body<'a>>) -> Buffer<W, Body<'a>>
+pub fn render<W>(buf: Buffer<W, Body<'_>>) -> Buffer<W, Body<'_>>
 where
     W: WriterExt,
 {

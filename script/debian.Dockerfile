@@ -15,7 +15,7 @@ COPY ui-static /code/ui-static
 COPY LICENSE /code/agent/
 COPY LICENSE /code/server/
 
-RUN cargo build --release \
+RUN cargo build --release --features collector-atc-sensor \
     && cargo deb -p chezmoi-agent \
     && cargo deb -p chezmoi-server
 

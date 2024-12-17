@@ -13,7 +13,7 @@ COPY server /code/server
 COPY storage /code/storage
 COPY ui-static /code/ui-static
 
-RUN cargo build --locked --release
+RUN cargo build --locked --release --features collector-atc-sensor
 
 RUN apk update \
     && abuild-keygen --append -n \

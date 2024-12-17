@@ -1,5 +1,6 @@
 use crate::BuildContext;
 
+#[cfg(feature = "collector-atc-sensor")]
 pub mod atc_sensor;
 pub mod internal;
 pub mod system;
@@ -13,6 +14,7 @@ const fn default_false() -> bool {
 #[derive(Debug, serde::Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum Config {
+    #[cfg(feature = "collector-atc-sensor")]
     AtcSensor(atc_sensor::Config),
     Internal(internal::Config),
     System(system::Config),
@@ -21,6 +23,7 @@ pub enum Config {
 impl Config {
     pub fn from_env() -> anyhow::Result<Vec<Self>> {
         let mut result = Vec::new();
+        #[cfg(feature = "collector-atc-sensor")]
         if crate::from_env_or("AGENT_COLLECTOR_ATC_SENSOR_ENABLED", default_false)? {
             result.push(Config::AtcSensor(atc_sensor::Config::from_env()?));
         }
@@ -35,6 +38,7 @@ impl Config {
 
     pub fn build(&self, ctx: &BuildContext) -> Collector {
         match self {
+            #[cfg(feature = "collector-atc-sensor")]
             Self::AtcSensor(inner) => Collector::AtcSensor(inner.build(ctx)),
             Self::Internal(inner) => Collector::Internal(inner.build(ctx)),
             Self::System(inner) => Collector::System(inner.build(ctx)),
@@ -43,6 +47,7 @@ impl Config {
 }
 
 pub enum Collector {
+    #[cfg(feature = "collector-atc-sensor")]
     AtcSensor(atc_sensor::Collector),
     Internal(internal::Collector),
     System(system::Collector),
@@ -51,6 +56,7 @@ pub enum Collector {
 impl crate::prelude::Worker for Collector {
     async fn run(self) -> anyhow::Result<()> {
         match self {
+            #[cfg(feature = "collector-atc-sensor")]
             Self::AtcSensor(inner) => inner.run().await,
             Self::Internal(inner) => inner.run().await,
             Self::System(inner) => inner.run().await,

@@ -15,7 +15,7 @@ pub struct SectionConfig {
 }
 
 impl SectionConfig {
-    fn latest_filters<'a>(&'a self) -> impl Iterator<Item = MetricHeader<'static>> + 'a {
+    fn latest_filters(&self) -> impl Iterator<Item = MetricHeader<'static>> + '_ {
         self.cards.iter().flat_map(|c| c.latest_filters())
     }
 

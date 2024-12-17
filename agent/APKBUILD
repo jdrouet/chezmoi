@@ -17,7 +17,10 @@ prepare() {
 }
 
 build() {
-    cargo build --frozen --release --package chezmoi-agent
+    cargo build \
+        --frozen --release \
+        --package chezmoi-agent \
+        --features collector-atc-sensor
 }
 
 check() {
