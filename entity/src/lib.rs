@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+pub mod address;
 pub mod metric;
 
 pub type CowStr<'a> = Cow<'a, str>;

@@ -1,4 +1,4 @@
-use chezmoi_entity::metric::Metric;
+use chezmoi_entity::metric::{Metric, MetricHeader};
 use chezmoi_ui_static::component::card::Card;
 
 pub mod atc_sensor;
@@ -10,6 +10,12 @@ pub enum CardConfig {
 }
 
 impl CardConfig {
+    pub fn latest_filters(&self) -> impl Iterator<Item = MetricHeader<'static>> {
+        match self {
+            Self::AtcSensor(inner) => inner.latest_filters(),
+        }
+    }
+
     pub fn build<'a>(&'a self, metrics: &[Metric]) -> Card<'a> {
         match self {
             Self::AtcSensor(inner) => Card::AtcSensor(inner.build(metrics)),
@@ -19,8 +25,8 @@ impl CardConfig {
 
 #[derive(Clone, Copy, Debug, Default, serde::Deserialize)]
 pub struct Range {
-    min: Option<f64>,
-    max: Option<f64>,
+    pub min: Option<f64>,
+    pub max: Option<f64>,
 }
 
 impl From<Range> for chezmoi_ui_static::component::range::Range {

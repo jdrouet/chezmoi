@@ -8,6 +8,7 @@ license-file = "LICENSE"
 
 [workspace.dependencies]
 anyhow = { version = "1.0" }
+bluer = { version = "0.17", default-features = false }
 indexmap = { version = "2.7" }
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1.42" }

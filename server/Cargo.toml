@@ -49,5 +49,4 @@ tower-http = { version = "0.6", default-features = false, features = ["trace"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 serde_qs = { version = "0.13", features = ["axum", "tracing"] }
-serde_json = "1.0.133"
-bluer = { version = "0.17.3", default-features = false, features = ["serde"] }
+serde_json = "1.0"

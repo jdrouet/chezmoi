@@ -5,8 +5,10 @@ edition = "2021"
 
 [features]
 default = []
+bluetooth = ["dep:bluer"]
 serde = ["dep:serde", "indexmap/serde"]
 
 [dependencies]
+bluer = { workspace = true, default-features = false, optional = true }
 indexmap = { workspace = true }
 serde = { workspace = true, optional = true, features = ["derive"] }
