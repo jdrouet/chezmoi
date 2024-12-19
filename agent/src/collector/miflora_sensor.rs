@@ -2,27 +2,68 @@ use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 use std::time::Duration;
 
-use bluer::{DeviceProperty, Uuid};
 use chezmoi_entity::address::Address;
 use chezmoi_entity::metric::{Metric, MetricHeader};
 use chezmoi_entity::{now, OneOrMany};
 use tokio::sync::{broadcast, mpsc};
 
-use super::prelude::SenderExt;
+use crate::collector::prelude::SenderExt;
 use crate::watcher::bluetooth::WatcherEvent;
 
-pub const DEVICE_TEMPERATURE: &str = "atc-thermometer.temperature";
-pub const DEVICE_HUMIDITY: &str = "atc-thermometer.humidity";
-pub const DEVICE_BATTERY: &str = "atc-thermometer.battery";
+pub const DEVICE_BATTERY: &str = "miflora.battery";
+pub const DEVICE_TEMPERATURE: &str = "miflora.temperature";
+pub const DEVICE_BRIGHTNESS: &str = "miflora.brightness";
+pub const DEVICE_CONDUCTIVITY: &str = "miflora.conductivity";
+pub const DEVICE_MOISTURE: &str = "miflora.moisture";
 
+/// default interval between historical fetch
+///
+/// defaults to 24h
 pub const fn default_interval() -> u64 {
-    60
+    60 * 60 * 24
+}
+
+#[derive(Clone, Debug)]
+pub struct PollingModeParsingError(pub String);
+
+impl std::fmt::Display for PollingModeParsingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "unknown polling mode provided {:?}, expected \"history\" or \"realtime\"",
+            self.0
+        )
+    }
+}
+
+impl std::error::Error for PollingModeParsingError {}
+
+#[derive(Clone, Copy, Debug, Default, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PollingMode {
+    #[default]
+    History,
+    Realtime,
+}
+
+impl FromStr for PollingMode {
+    type Err = PollingModeParsingError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "history" => Ok(Self::History),
+            "realtime" => Ok(Self::Realtime),
+            other => Err(PollingModeParsingError(other.to_string())),
+        }
+    }
 }
 
 #[derive(Debug, Default, serde::Deserialize)]
 pub struct Config {
     #[serde(default = "default_interval")]
     pub interval: u64,
+    #[serde(default)]
+    pub mode: PollingMode,
     #[serde(default)]
     pub devices: HashSet<Address>,
 }
@@ -42,7 +83,12 @@ impl Config {
                 }
             })
             .collect();
-        Ok(Self { interval, devices })
+        let mode = crate::from_env_or("AGENT_COLLECTOR_MIFLORA_SENSOR_MODE", PollingMode::default)?;
+        Ok(Self {
+            interval,
+            mode,
+            devices,
+        })
     }
 
     pub fn build(&self, ctx: &crate::BuildContext) -> Collector {
@@ -50,6 +96,7 @@ impl Config {
             adapter: ctx.bluetooth.clone(),
             devices: self.devices.iter().map(|v| bluer::Address(v.0)).collect(),
             interval: Duration::new(self.interval, 0),
+            mode: self.mode,
             receiver: ctx.watcher.bluetooth.resubscribe(),
             sender: ctx.sender.clone(),
             history: HashMap::with_capacity(self.devices.len()),
@@ -61,6 +108,7 @@ pub struct Collector {
     adapter: bluer::Adapter,
     devices: HashSet<bluer::Address>,
     interval: Duration,
+    mode: PollingMode,
     receiver: broadcast::Receiver<WatcherEvent>,
     sender: mpsc::Sender<OneOrMany<Metric>>,
     history: HashMap<bluer::Address, u64>,
@@ -92,61 +140,94 @@ impl Collector {
         }
     }
 
-    async fn read_data(&self, addr: bluer::Address, timestamp: u64, data: &[u8]) {
-        if let Some(data) = Payload::read(data) {
-            self.sender
-                .send_many(vec![
-                    Metric {
-                        timestamp,
-                        header: MetricHeader::new(DEVICE_TEMPERATURE)
-                            .with_tag("address", addr.to_string()),
-                        value: data.temperature as f64,
-                    },
-                    Metric {
-                        timestamp,
-                        header: MetricHeader::new(DEVICE_HUMIDITY)
-                            .with_tag("address", addr.to_string()),
-                        value: data.humidity as f64,
-                    },
-                    Metric {
-                        timestamp,
-                        header: MetricHeader::new(DEVICE_BATTERY)
-                            .with_tag("address", addr.to_string()),
-                        value: data.battery as f64,
-                    },
-                ])
-                .await;
-        } else {
-            tracing::warn!("invalid service data content");
-        }
-    }
-
-    async fn read_service_data(
-        &self,
-        addr: bluer::Address,
-        timestamp: u64,
-        data: HashMap<Uuid, Vec<u8>>,
-    ) -> bool {
-        if let Some(data) = data.get(&SERVICE_ID) {
-            self.read_data(addr, timestamp, data).await;
-            true
-        } else {
-            tracing::debug!("expected service data not found");
-            false
-        }
-    }
-
     #[tracing::instrument(skip(self, timestamp))]
-    async fn handle(&self, addr: bluer::Address, timestamp: u64) -> anyhow::Result<bool> {
-        let device = self.adapter.device(addr)?;
-        let data = device.service_data().await?;
-        if let Some(data) = data {
-            self.read_service_data(addr, timestamp, data).await;
-            Ok(true)
-        } else {
-            tracing::warn!("no service data provided");
-            Ok(false)
+    async fn handle(&self, addr: bluer::Address, timestamp: u64) -> anyhow::Result<()> {
+        let device = bluer_miflora::Miflora::try_from_adapter(&self.adapter, addr).await?;
+        device.connect().await?;
+        let system = device.read_system().await?;
+
+        match self.mode {
+            PollingMode::History => {
+                let history = device.read_historical_values().await?;
+
+                let mut metrics = Vec::with_capacity(history.len() * 4 + 1);
+                metrics.push(Metric::new(
+                    timestamp,
+                    MetricHeader::new(DEVICE_BATTERY).with_tag("address", addr.to_string()),
+                    system.battery() as f64,
+                ));
+                metrics.extend(history.iter().flat_map(|m| {
+                    [
+                        Metric::new(
+                            m.timestamp(),
+                            MetricHeader::new(DEVICE_TEMPERATURE)
+                                .with_tag("address", addr.to_string()),
+                            m.temperature() as f64,
+                        ),
+                        Metric::new(
+                            m.timestamp(),
+                            MetricHeader::new(DEVICE_BRIGHTNESS)
+                                .with_tag("address", addr.to_string()),
+                            m.brightness() as f64,
+                        ),
+                        Metric::new(
+                            m.timestamp(),
+                            MetricHeader::new(DEVICE_CONDUCTIVITY)
+                                .with_tag("address", addr.to_string()),
+                            m.conductivity() as f64,
+                        ),
+                        Metric::new(
+                            m.timestamp(),
+                            MetricHeader::new(DEVICE_MOISTURE)
+                                .with_tag("address", addr.to_string()),
+                            m.moisture() as f64,
+                        ),
+                    ]
+                    .into_iter()
+                }));
+                self.sender.send_many(metrics).await;
+
+                device.clear_historical_entries().await?;
+            }
+            PollingMode::Realtime => {
+                let realtime = device.read_realtime_values().await?;
+                self.sender
+                    .send_many(vec![
+                        Metric::new(
+                            timestamp,
+                            MetricHeader::new(DEVICE_BATTERY).with_tag("address", addr.to_string()),
+                            system.battery() as f64,
+                        ),
+                        Metric::new(
+                            timestamp,
+                            MetricHeader::new(DEVICE_TEMPERATURE)
+                                .with_tag("address", addr.to_string()),
+                            realtime.temperature() as f64,
+                        ),
+                        Metric::new(
+                            timestamp,
+                            MetricHeader::new(DEVICE_BRIGHTNESS)
+                                .with_tag("address", addr.to_string()),
+                            realtime.brightness() as f64,
+                        ),
+                        Metric::new(
+                            timestamp,
+                            MetricHeader::new(DEVICE_CONDUCTIVITY)
+                                .with_tag("address", addr.to_string()),
+                            realtime.conductivity() as f64,
+                        ),
+                        Metric::new(
+                            timestamp,
+                            MetricHeader::new(DEVICE_MOISTURE)
+                                .with_tag("address", addr.to_string()),
+                            realtime.moisture() as f64,
+                        ),
+                    ])
+                    .await;
+            }
         }
+        device.disconnect().await?;
+        Ok(())
     }
 }
 
@@ -163,22 +244,9 @@ impl crate::prelude::Worker for Collector {
                 }
                 res = self.receiver.recv() => {
                     match res {
-                        Ok(WatcherEvent::DeviceAdded(addr)) if self.devices.contains(&addr) => {
-                            let ts = now();
-                            match self.handle(addr, ts).await {
-                                Ok(true) => {
-                                    self.history.insert(addr, ts);
-                                }
-                                Ok(false) => {},
-                                Err(err) => {
-                                    tracing::warn!(message = "unable to handle bluetooth event", error = %err);
-                                }
-                            }
-                        }
-                        Ok(WatcherEvent::DeviceChanged(addr, DeviceProperty::ServiceData(data))) if self.devices.contains(&addr) => {
-                            let ts = now();
-                            if self.read_service_data(addr, ts, data).await {
-                                self.history.insert(addr, ts);
+                        Ok(WatcherEvent::DeviceAdded(addr)) | Ok(WatcherEvent::DeviceChanged(addr, _)) if self.devices.contains(&addr) => {
+                            if let Err(err) = self.handle(addr, now()).await {
+                                tracing::warn!(message = "unable to handle sensor", address = %addr, error = %err);
                             }
                         }
                         Ok(_) => {}
