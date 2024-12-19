@@ -99,7 +99,6 @@ impl Config {
             mode: self.mode,
             receiver: ctx.watcher.bluetooth.resubscribe(),
             sender: ctx.sender.clone(),
-            history: HashMap::with_capacity(self.devices.len()),
         }
     }
 }
@@ -111,37 +110,33 @@ pub struct Collector {
     mode: PollingMode,
     receiver: broadcast::Receiver<WatcherEvent>,
     sender: mpsc::Sender<OneOrMany<Metric>>,
-    history: HashMap<bluer::Address, u64>,
 }
 
 impl Collector {
     #[tracing::instrument(skip(self))]
-    async fn collect(&self) {
-        let ts = now();
-        let available = match self.adapter.device_addresses().await {
-            Ok(inner) => inner,
-            Err(err) => {
-                tracing::warn!(message = "unable to list known addresses", error = %err);
-                return;
-            }
-        };
-        for addr in available
-            .iter()
-            .filter(|d| self.devices.contains(d))
-            .filter(|d| {
-                self.history
-                    .get(*d)
-                    .map_or(true, |last| last + self.interval.as_secs() <= ts)
-            })
-        {
-            if let Err(err) = self.handle(*addr, now()).await {
-                tracing::warn!(message = "unable to handle bluetooth event", error = %err);
+    async fn collect(&self, history: &mut HashMap<bluer::Address, u64>) {
+        for addr in self.devices.iter() {
+            if let Err(err) = self.handle(history, *addr, now()).await {
+                tracing::warn!(message = "unable to handle sensor", address = %addr, error = %err);
             }
         }
     }
 
     #[tracing::instrument(skip(self, timestamp))]
-    async fn handle(&self, addr: bluer::Address, timestamp: u64) -> anyhow::Result<()> {
+    async fn handle(
+        &self,
+        history: &mut HashMap<bluer::Address, u64>,
+        addr: bluer::Address,
+        timestamp: u64,
+    ) -> anyhow::Result<()> {
+        if history
+            .get(&addr)
+            .map_or(false, |value| value + self.interval.as_secs() > timestamp)
+        {
+            tracing::trace!(message = "the device has already been handled recently", address = %addr);
+            return Ok(());
+        }
+
         let device = bluer_miflora::Miflora::try_from_adapter(&self.adapter, addr).await?;
         device.connect().await?;
         let system = device.read_system().await?;
@@ -227,6 +222,7 @@ impl Collector {
             }
         }
         device.disconnect().await?;
+        history.insert(addr, timestamp);
         Ok(())
     }
 }
@@ -236,16 +232,17 @@ impl crate::prelude::Worker for Collector {
     async fn run(mut self) -> anyhow::Result<()> {
         tracing::info!(message = "starting", devices = ?self.devices);
         let mut interval = tokio::time::interval(self.interval);
+        let mut history = HashMap::with_capacity(self.devices.len());
         loop {
             tokio::select! {
                 _ = interval.tick() => {
-                    self.collect().await;
+                    self.collect(&mut history).await;
                     interval.reset();
                 }
                 res = self.receiver.recv() => {
                     match res {
                         Ok(WatcherEvent::DeviceAdded(addr)) | Ok(WatcherEvent::DeviceChanged(addr, _)) if self.devices.contains(&addr) => {
-                            if let Err(err) = self.handle(addr, now()).await {
+                            if let Err(err) = self.handle(&mut history, addr, now()).await {
                                 tracing::warn!(message = "unable to handle sensor", address = %addr, error = %err);
                             }
                         }
