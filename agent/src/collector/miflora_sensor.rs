@@ -113,7 +113,7 @@ pub struct Collector {
 }
 
 impl Collector {
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(skip(self, history))]
     async fn collect(&self, history: &mut HashMap<bluer::Address, u64>) {
         for addr in self.devices.iter() {
             if let Err(err) = self.handle(history, *addr, now()).await {
@@ -122,7 +122,7 @@ impl Collector {
         }
     }
 
-    #[tracing::instrument(skip(self, timestamp))]
+    #[tracing::instrument(skip(self, history, timestamp))]
     async fn handle(
         &self,
         history: &mut HashMap<bluer::Address, u64>,
@@ -228,7 +228,7 @@ impl Collector {
 }
 
 impl crate::prelude::Worker for Collector {
-    #[tracing::instrument(name = "atc-sensor", skip_all)]
+    #[tracing::instrument(name = "miflora-sensor", skip_all)]
     async fn run(mut self) -> anyhow::Result<()> {
         tracing::info!(message = "starting", devices = ?self.devices);
         let mut interval = tokio::time::interval(self.interval);
