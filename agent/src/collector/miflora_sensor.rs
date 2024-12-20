@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 use std::time::Duration;
 
+use anyhow::Context;
 use chezmoi_entity::address::Address;
 use chezmoi_entity::metric::{Metric, MetricHeader};
 use chezmoi_entity::{now, OneOrMany};
@@ -103,6 +104,78 @@ impl Config {
     }
 }
 
+const ERROR_DELAY: u64 = 60;
+
+fn error_delay(count: usize) -> u64 {
+    count.max(10) * ERROR_DELAY
+}
+
+enum LastState {
+    Success { timestamp: u64 },
+    Error { count: usize, timestamp: u64 },
+}
+
+impl LastState {
+    fn should_handle(&self, ttl: u64, now: u64) -> bool {
+        match self {
+            Self::Success { timestamp } => *timestamp + ttl < now,
+            Self::Error { count, timestamp } => *timestamp + error_delay(count) < now,
+        }
+    }
+}
+
+pub struct Context {
+    inner: HashMap<bluer::Address>,
+}
+
+impl Context {
+    fn new(devices: impl Iterator<Item = bluer::Address>) -> Self {
+        Self {
+            inner: HashMap::from_iter(devices.map(|addr| {
+                (
+                    addr,
+                    LastState::Error {
+                        count: 0,
+                        timestamp: 0,
+                    },
+                )
+            })),
+        }
+    }
+
+    fn should_handle(&self, ttl: u64, addr: &bluer::Address, now: u64) -> bool {
+        let Some(state) = self.inner.get(addr) else {
+            tracing::trace!(message = "unable to find device in context", address = %addr);
+            return true;
+        };
+
+        return state.should_handle(ttl, now);
+    }
+
+    fn on_success(&mut self, addr: &bluer::Address, now: u64) {
+        self.inner.insert(*addr, now);
+    }
+
+    fn on_error(&mut self, addr: &bluer::Address, now: u64) {
+        self.inner
+            .entry(*addr)
+            .and_modify(|v| {
+                let count = match v {
+                    LastState::Success { .. } => 1,
+                    LastState::Error { count, timestamp } => count + 1,
+                };
+                *v = LastState::Error {
+                    count,
+                    timestamp: now,
+                };
+            })
+            .or_insert(LastState::Error {
+                count: 1,
+                timestamp: now,
+            });
+    }
+}
+
 pub struct Collector {
     adapter: bluer::Adapter,
     devices: HashSet<bluer::Address>,
@@ -113,37 +186,50 @@ pub struct Collector {
 }
 
 impl Collector {
-    #[tracing::instrument(skip(self, history))]
-    async fn collect(&self, history: &mut HashMap<bluer::Address, u64>) {
+    #[tracing::instrument(skip(self, ctx))]
+    async fn collect(&self, ctx: &mut Context) {
         for addr in self.devices.iter() {
-            if let Err(err) = self.handle(history, *addr, now()).await {
-                tracing::warn!(message = "unable to handle sensor", address = %addr, error = %err);
+            self.try_handle(history, *addr, now()).await;
+        }
+    }
+
+    #[tracing::instrument(skip(self, ctx, timestamp))]
+    async fn try_handle(&self, ctx: &mut Context, addr: bluer::Address, timestamp: u64) {
+        if !ctx.should_handle(self.interval.as_secs(), &addr, timestamp) {
+            tracing::trace!(message = "the device has already been handled recently");
+            return;
+        }
+
+        match self.handle(history, &addr, timestamp).await {
+            Ok(_) => {
+                tracing::trace!("device handled successfully");
+                ctx.on_success(&addr, timestamp);
+            }
+            Err(err) => {
+                ctx.on_error(&addr, timestamp);
+                tracing::warn!(message = "unable to handle sensor", error = %err);
             }
         }
     }
 
-    #[tracing::instrument(skip(self, history, timestamp))]
     async fn handle(
         &self,
-        history: &mut HashMap<bluer::Address, u64>,
+        ctx: &mut Context,
         addr: bluer::Address,
         timestamp: u64,
     ) -> anyhow::Result<()> {
-        if history
-            .get(&addr)
-            .map_or(false, |value| value + self.interval.as_secs() > timestamp)
-        {
-            tracing::trace!(message = "the device has already been handled recently", address = %addr);
-            return Ok(());
-        }
-
-        let device = bluer_miflora::Miflora::try_from_adapter(&self.adapter, addr).await?;
-        device.connect().await?;
-        let system = device.read_system().await?;
+        let device = bluer_miflora::Miflora::try_from_adapter(&self.adapter, addr)
+            .await
+            .context("getting device from adapter")?;
+        device.connect().await.context("connecting")?;
+        let system = device.read_system().await.context("reading system")?;
 
         match self.mode {
             PollingMode::History => {
-                let history = device.read_historical_values().await?;
+                let history = device
+                    .read_historical_values()
+                    .await
+                    .context("reading historical values")?;
 
                 let mut metrics = Vec::with_capacity(history.len() * 4 + 1);
                 metrics.push(Metric::new(
@@ -182,10 +268,16 @@ impl Collector {
                 }));
                 self.sender.send_many(metrics).await;
 
-                device.clear_historical_entries().await?;
+                device
+                    .clear_historical_entries()
+                    .await
+                    .context("clearing historical values")?;
             }
             PollingMode::Realtime => {
-                let realtime = device.read_realtime_values().await?;
+                let realtime = device
+                    .read_realtime_values()
+                    .await
+                    .context("reading realtime values")?;
                 self.sender
                     .send_many(vec![
                         Metric::new(
@@ -221,8 +313,7 @@ impl Collector {
                     .await;
             }
         }
-        device.disconnect().await?;
-        history.insert(addr, timestamp);
+        device.disconnect().await.context("disconnecting")?;
         Ok(())
     }
 }
@@ -232,19 +323,17 @@ impl crate::prelude::Worker for Collector {
     async fn run(mut self) -> anyhow::Result<()> {
         tracing::info!(message = "starting", devices = ?self.devices);
         let mut interval = tokio::time::interval(self.interval);
-        let mut history = HashMap::with_capacity(self.devices.len());
+        let mut ctx = Context::new(self.devices.iter().copied());
         loop {
             tokio::select! {
                 _ = interval.tick() => {
-                    self.collect(&mut history).await;
+                    self.collect(&mut ctx).await;
                     interval.reset();
                 }
                 res = self.receiver.recv() => {
                     match res {
                         Ok(WatcherEvent::DeviceAdded(addr)) | Ok(WatcherEvent::DeviceChanged(addr, _)) if self.devices.contains(&addr) => {
-                            if let Err(err) = self.handle(&mut history, addr, now()).await {
-                                tracing::warn!(message = "unable to handle sensor", address = %addr, error = %err);
-                            }
+                            self.try_handle(&mut history, addr, now()).await;
                         }
                         Ok(_) => {}
                         Err(broadcast::error::RecvError::Closed) => return Ok(()),
