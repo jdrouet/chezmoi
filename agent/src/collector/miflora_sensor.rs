@@ -107,35 +107,37 @@ impl Config {
 const ERROR_DELAY: u64 = 60;
 
 fn error_delay(count: usize) -> u64 {
-    count.max(10) * ERROR_DELAY
+    (count as u64).max(10) * ERROR_DELAY
 }
 
-enum LastState {
-    Success { timestamp: u64 },
-    Error { count: usize, timestamp: u64 },
+struct LastState {
+    error_count: usize,
+    timestamp: u64,
 }
 
 impl LastState {
     fn should_handle(&self, ttl: u64, now: u64) -> bool {
-        match self {
-            Self::Success { timestamp } => *timestamp + ttl < now,
-            Self::Error { count, timestamp } => *timestamp + error_delay(count) < now,
-        }
+        let delay = if self.error_count > 0 {
+            error_delay(self.error_count)
+        } else {
+            ttl
+        };
+        self.timestamp * delay < now
     }
 }
 
-pub struct Context {
-    inner: HashMap<bluer::Address>,
+pub struct LocalContext {
+    inner: HashMap<bluer::Address, LastState>,
 }
 
-impl Context {
+impl LocalContext {
     fn new(devices: impl Iterator<Item = bluer::Address>) -> Self {
         Self {
             inner: HashMap::from_iter(devices.map(|addr| {
                 (
                     addr,
-                    LastState::Error {
-                        count: 0,
+                    LastState {
+                        error_count: 0,
                         timestamp: 0,
                     },
                 )
@@ -152,25 +154,25 @@ impl Context {
         return state.should_handle(ttl, now);
     }
 
-    fn on_success(&mut self, addr: &bluer::Address, now: u64) {
-        self.inner.insert(*addr, now);
+    fn on_success(&mut self, addr: bluer::Address, now: u64) {
+        self.inner.insert(
+            addr,
+            LastState {
+                error_count: 0,
+                timestamp: now,
+            },
+        );
     }
 
-    fn on_error(&mut self, addr: &bluer::Address, now: u64) {
+    fn on_error(&mut self, addr: bluer::Address, now: u64) {
         self.inner
-            .entry(*addr)
+            .entry(addr)
             .and_modify(|v| {
-                let count = match v {
-                    LastState::Success { .. } => 1,
-                    LastState::Error { count, timestamp } => count + 1,
-                };
-                *v = LastState::Error {
-                    count,
-                    timestamp: now,
-                };
+                v.error_count += 1;
+                v.timestamp = now;
             })
-            .or_insert(LastState::Error {
-                count: 1,
+            .or_insert(LastState {
+                error_count: 1,
                 timestamp: now,
             });
     }
@@ -187,37 +189,32 @@ pub struct Collector {
 
 impl Collector {
     #[tracing::instrument(skip(self, ctx))]
-    async fn collect(&self, ctx: &mut Context) {
+    async fn collect(&self, ctx: &mut LocalContext) {
         for addr in self.devices.iter() {
-            self.try_handle(history, *addr, now()).await;
+            self.try_handle(ctx, *addr, now()).await;
         }
     }
 
     #[tracing::instrument(skip(self, ctx, timestamp))]
-    async fn try_handle(&self, ctx: &mut Context, addr: bluer::Address, timestamp: u64) {
+    async fn try_handle(&self, ctx: &mut LocalContext, addr: bluer::Address, timestamp: u64) {
         if !ctx.should_handle(self.interval.as_secs(), &addr, timestamp) {
             tracing::trace!(message = "the device has already been handled recently");
             return;
         }
 
-        match self.handle(history, &addr, timestamp).await {
+        match self.handle(addr, timestamp).await {
             Ok(_) => {
                 tracing::trace!("device handled successfully");
-                ctx.on_success(&addr, timestamp);
+                ctx.on_success(addr, timestamp);
             }
             Err(err) => {
-                ctx.on_error(&addr, timestamp);
+                ctx.on_error(addr, timestamp);
                 tracing::warn!(message = "unable to handle sensor", error = %err);
             }
         }
     }
 
-    async fn handle(
-        &self,
-        ctx: &mut Context,
-        addr: bluer::Address,
-        timestamp: u64,
-    ) -> anyhow::Result<()> {
+    async fn handle(&self, addr: bluer::Address, timestamp: u64) -> anyhow::Result<()> {
         let device = bluer_miflora::Miflora::try_from_adapter(&self.adapter, addr)
             .await
             .context("getting device from adapter")?;
@@ -323,7 +320,7 @@ impl crate::prelude::Worker for Collector {
     async fn run(mut self) -> anyhow::Result<()> {
         tracing::info!(message = "starting", devices = ?self.devices);
         let mut interval = tokio::time::interval(self.interval);
-        let mut ctx = Context::new(self.devices.iter().copied());
+        let mut ctx = LocalContext::new(self.devices.iter().copied());
         loop {
             tokio::select! {
                 _ = interval.tick() => {
@@ -333,7 +330,7 @@ impl crate::prelude::Worker for Collector {
                 res = self.receiver.recv() => {
                     match res {
                         Ok(WatcherEvent::DeviceAdded(addr)) | Ok(WatcherEvent::DeviceChanged(addr, _)) if self.devices.contains(&addr) => {
-                            self.try_handle(&mut history, addr, now()).await;
+                            self.try_handle(&mut ctx, addr, now()).await;
                         }
                         Ok(_) => {}
                         Err(broadcast::error::RecvError::Closed) => return Ok(()),
