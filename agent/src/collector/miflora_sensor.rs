@@ -209,7 +209,7 @@ impl Collector {
             }
             Err(err) => {
                 ctx.on_error(addr, timestamp);
-                tracing::warn!(message = "unable to handle sensor", error = %err);
+                tracing::warn!(message = "unable to handle sensor", error = %err, source = ?err.source());
             }
         }
     }
