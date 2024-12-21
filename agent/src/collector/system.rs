@@ -23,13 +23,12 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn build(&self, ctx: &crate::BuildContext) -> Collector {
+    pub fn build(&self, _ctx: &crate::BuildContext) -> Collector {
         let refresh_kind =
             sysinfo::RefreshKind::nothing().with_memory(sysinfo::MemoryRefreshKind::everything());
         Collector {
             interval: Duration::new(self.interval, 0),
             refresh_kind,
-            sender: ctx.sender.clone(),
             system: sysinfo::System::new_with_specifics(refresh_kind),
         }
     }
@@ -37,14 +36,13 @@ impl Config {
 
 pub struct Collector {
     interval: Duration,
-    sender: mpsc::Sender<OneOrMany<Metric>>,
     system: sysinfo::System,
     refresh_kind: sysinfo::RefreshKind,
 }
 
-impl crate::prelude::Worker for Collector {
+impl Collector {
     #[tracing::instrument(name = "system", skip_all)]
-    async fn run(mut self) -> anyhow::Result<()> {
+    pub async fn run(mut self, sender: mpsc::Sender<OneOrMany<Metric>>) -> anyhow::Result<()> {
         let mut ticker = tokio::time::interval(self.interval);
         let hostname = sysinfo::System::host_name()
             .or_else(|| std::env::var("HOST").ok())
@@ -64,7 +62,7 @@ impl crate::prelude::Worker for Collector {
         let header_swap_ratio = chezmoi_entity::metric::MetricHeader::new("system.swap.ratio")
             .with_tag("host", hostname.clone());
 
-        while !self.sender.is_closed() {
+        while !sender.is_closed() {
             ticker.tick().await;
             self.system.refresh_specifics(self.refresh_kind);
             let timestamp = chezmoi_entity::now();
@@ -74,7 +72,7 @@ impl crate::prelude::Worker for Collector {
             let total_swap = self.system.total_swap() as f64;
             let used_swap = self.system.used_swap() as f64;
 
-            self.sender
+            sender
                 .send_many(vec![
                     Metric::new(timestamp, header_memory_total.clone(), total_memory),
                     Metric::new(timestamp, header_memory_used.clone(), used_memory),

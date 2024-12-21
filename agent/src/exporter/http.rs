@@ -37,14 +37,13 @@ impl Config {
         })
     }
 
-    pub fn build(&self, receiver: mpsc::Receiver<OneOrMany<Metric>>) -> Exporter {
+    pub fn build(&self) -> Exporter {
         Exporter {
             address: self.address.clone(),
             client: reqwest::Client::builder()
                 .user_agent(USER_AGENT)
                 .build()
                 .unwrap(),
-            receiver,
 
             capacity: self.capacity,
             interval: self.interval,
@@ -55,7 +54,6 @@ impl Config {
 pub struct Exporter {
     address: String,
     client: reqwest::Client,
-    receiver: mpsc::Receiver<OneOrMany<Metric>>,
 
     capacity: usize,
     interval: u64,
@@ -63,7 +61,7 @@ pub struct Exporter {
 
 impl Exporter {
     #[tracing::instrument(name = "handle", skip(self, values))]
-    async fn handle(&mut self, origin: FlushOrigin, values: Vec<Metric>) {
+    async fn handle(&self, origin: FlushOrigin, values: Vec<Metric>) {
         if values.is_empty() {
             return;
         }
@@ -99,11 +97,11 @@ impl Exporter {
     }
 
     #[tracing::instrument(name = "http", skip_all)]
-    pub async fn run(mut self) {
+    pub async fn run(self, mut receiver: mpsc::Receiver<OneOrMany<Metric>>) {
         let mut flush_ticker = tokio::time::interval(std::time::Duration::new(self.interval, 0));
         let mut buffer: Vec<Metric> = Vec::with_capacity(self.capacity);
 
-        while !self.receiver.is_closed() {
+        while !receiver.is_closed() {
             tokio::select! {
                 _ = flush_ticker.tick() => {
                     if !buffer.is_empty() {
@@ -112,7 +110,7 @@ impl Exporter {
                         self.handle(FlushOrigin::Timer, new_buffer).await;
                     }
                 },
-                Some(next) = self.receiver.recv() => {
+                Some(next) = receiver.recv() => {
                     match next {
                         OneOrMany::One(value) => buffer.push(value),
                         OneOrMany::Many(values) => buffer.extend(values.into_iter()),

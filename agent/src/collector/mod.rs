@@ -1,3 +1,6 @@
+use chezmoi_entity::{metric::Metric, OneOrMany};
+use tokio::sync::mpsc;
+
 use crate::BuildContext;
 
 #[cfg(feature = "collector-atc-sensor")]
@@ -42,15 +45,15 @@ pub enum Collector {
     System(system::Collector),
 }
 
-impl crate::prelude::Worker for Collector {
-    async fn run(self) -> anyhow::Result<()> {
+impl Collector {
+    pub async fn run(self, sender: mpsc::Sender<OneOrMany<Metric>>) -> anyhow::Result<()> {
         match self {
             #[cfg(feature = "collector-atc-sensor")]
-            Self::AtcSensor(inner) => inner.run().await,
-            Self::Internal(inner) => inner.run().await,
+            Self::AtcSensor(inner) => inner.run(sender).await,
+            Self::Internal(inner) => inner.run(sender).await,
             #[cfg(feature = "collector-miflora-sensor")]
-            Self::MifloraSensor(inner) => inner.run().await,
-            Self::System(inner) => inner.run().await,
+            Self::MifloraSensor(inner) => inner.run(sender).await,
+            Self::System(inner) => inner.run(sender).await,
         }
     }
 }

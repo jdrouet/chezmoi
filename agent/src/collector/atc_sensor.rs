@@ -76,7 +76,6 @@ impl Config {
             devices: self.devices.clone(),
             interval: Duration::new(self.interval, 0),
             receiver: ctx.watcher.bluetooth.resubscribe(),
-            sender: ctx.sender.clone(),
             history: HashMap::with_capacity(self.devices.len()),
         }
     }
@@ -87,13 +86,12 @@ pub struct Collector {
     devices: HashSet<bluer::Address>,
     interval: Duration,
     receiver: broadcast::Receiver<WatcherEvent>,
-    sender: mpsc::Sender<OneOrMany<Metric>>,
     history: HashMap<bluer::Address, u64>,
 }
 
 impl Collector {
-    #[tracing::instrument(skip(self))]
-    async fn collect(&self) {
+    #[tracing::instrument(skip(self, sender))]
+    async fn collect(&self, sender: &mpsc::Sender<OneOrMany<Metric>>) {
         let ts = now();
         let available = match self.adapter.device_addresses().await {
             Ok(inner) => inner,
@@ -111,15 +109,21 @@ impl Collector {
                     .map_or(true, |last| last + self.interval.as_secs() <= ts)
             })
         {
-            if let Err(err) = self.handle(*addr, now()).await {
+            if let Err(err) = self.handle(*addr, now(), sender).await {
                 tracing::warn!(message = "unable to handle bluetooth event", error = %err);
             }
         }
     }
 
-    async fn read_data(&self, addr: bluer::Address, timestamp: u64, data: &[u8]) {
+    async fn read_data(
+        &self,
+        addr: bluer::Address,
+        timestamp: u64,
+        data: &[u8],
+        sender: &mpsc::Sender<OneOrMany<Metric>>,
+    ) {
         if let Some(data) = Payload::read(data) {
-            self.sender
+            sender
                 .send_many(vec![
                     Metric {
                         timestamp,
@@ -151,9 +155,10 @@ impl Collector {
         addr: bluer::Address,
         timestamp: u64,
         data: HashMap<Uuid, Vec<u8>>,
+        sender: &mpsc::Sender<OneOrMany<Metric>>,
     ) -> bool {
         if let Some(data) = data.get(&SERVICE_ID) {
-            self.read_data(addr, timestamp, data).await;
+            self.read_data(addr, timestamp, data, sender).await;
             true
         } else {
             tracing::debug!("expected service data not found");
@@ -162,11 +167,16 @@ impl Collector {
     }
 
     #[tracing::instrument(skip(self, timestamp))]
-    async fn handle(&self, addr: bluer::Address, timestamp: u64) -> anyhow::Result<bool> {
+    async fn handle(
+        &self,
+        addr: bluer::Address,
+        timestamp: u64,
+        sender: &mpsc::Sender<OneOrMany<Metric>>,
+    ) -> anyhow::Result<bool> {
         let device = self.adapter.device(addr)?;
         let data = device.service_data().await?;
         if let Some(data) = data {
-            self.read_service_data(addr, timestamp, data).await;
+            self.read_service_data(addr, timestamp, data, sender).await;
             Ok(true)
         } else {
             tracing::warn!("no service data provided");
@@ -175,22 +185,22 @@ impl Collector {
     }
 }
 
-impl crate::prelude::Worker for Collector {
+impl Collector {
     #[tracing::instrument(name = "atc-sensor", skip_all)]
-    async fn run(mut self) -> anyhow::Result<()> {
+    pub async fn run(mut self, sender: mpsc::Sender<OneOrMany<Metric>>) -> anyhow::Result<()> {
         tracing::info!(message = "starting", devices = ?self.devices);
         let mut interval = tokio::time::interval(self.interval);
         loop {
             tokio::select! {
                 _ = interval.tick() => {
-                    self.collect().await;
+                    self.collect(&sender).await;
                     interval.reset();
                 }
                 res = self.receiver.recv() => {
                     match res {
                         Ok(WatcherEvent::DeviceAdded(addr)) if self.devices.contains(&addr) => {
                             let ts = now();
-                            match self.handle(addr, ts).await {
+                            match self.handle(addr, ts, &sender).await {
                                 Ok(true) => {
                                     self.history.insert(addr, ts);
                                 }
@@ -202,7 +212,7 @@ impl crate::prelude::Worker for Collector {
                         }
                         Ok(WatcherEvent::DeviceChanged(addr, DeviceProperty::ServiceData(data))) if self.devices.contains(&addr) => {
                             let ts = now();
-                            if self.read_service_data(addr, ts, data).await {
+                            if self.read_service_data(addr, ts, data, &sender).await {
                                 self.history.insert(addr, ts);
                             }
                         }

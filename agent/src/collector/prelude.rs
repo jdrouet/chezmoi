@@ -20,7 +20,3 @@ impl<T> SenderExt<T> for mpsc::Sender<OneOrMany<T>> {
         }
     }
 }
-
-pub trait Collector: Send + Sized + Sync {
-    fn run(self) -> impl std::future::Future<Output = anyhow::Result<()>> + Send;
-}

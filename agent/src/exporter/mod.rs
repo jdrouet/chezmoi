@@ -13,10 +13,10 @@ pub enum Config {
 }
 
 impl Config {
-    pub fn build(&self, receiver: Receiver<OneOrMany<Metric>>) -> Exporter {
+    pub fn build(&self) -> Exporter {
         match self {
-            Self::Http(inner) => Exporter::Http(inner.build(receiver)),
-            Self::Trace(inner) => Exporter::Trace(inner.build(receiver)),
+            Self::Http(inner) => Exporter::Http(inner.build()),
+            Self::Trace(inner) => Exporter::Trace(inner.build()),
         }
     }
 }
@@ -27,10 +27,10 @@ pub enum Exporter {
 }
 
 impl Exporter {
-    pub async fn run(self) {
+    pub async fn run(self, receiver: Receiver<OneOrMany<Metric>>) {
         match self {
-            Self::Http(inner) => inner.run().await,
-            Self::Trace(inner) => inner.run().await,
+            Self::Http(inner) => inner.run(receiver).await,
+            Self::Trace(inner) => inner.run(receiver).await,
         }
     }
 }

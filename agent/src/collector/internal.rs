@@ -23,26 +23,24 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn build(&self, ctx: &crate::BuildContext) -> Collector {
+    pub fn build(&self, _ctx: &crate::BuildContext) -> Collector {
         Collector {
             interval: Duration::new(self.interval, 0),
-            sender: ctx.sender.clone(),
         }
     }
 }
 
 pub struct Collector {
     interval: Duration,
-    sender: mpsc::Sender<OneOrMany<Metric>>,
 }
 
-impl crate::prelude::Worker for Collector {
+impl Collector {
     #[tracing::instrument(name = "internal", skip_all)]
-    async fn run(self) -> anyhow::Result<()> {
+    pub async fn run(self, sender: mpsc::Sender<OneOrMany<Metric>>) -> anyhow::Result<()> {
         let mut ticker = tokio::time::interval(self.interval);
-        while !self.sender.is_closed() {
+        while !sender.is_closed() {
             ticker.tick().await;
-            self.sender
+            sender
                 .send_one(Metric {
                     timestamp: chezmoi_entity::now(),
                     header: chezmoi_entity::metric::MetricHeader::new("internal.queue.size"),

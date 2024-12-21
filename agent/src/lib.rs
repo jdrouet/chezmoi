@@ -1,8 +1,6 @@
 use std::path::Path;
 use std::str::FromStr;
 
-use chezmoi_entity::metric::Metric;
-use chezmoi_entity::OneOrMany;
 use tokio::sync::mpsc;
 
 pub mod collector;
@@ -47,21 +45,20 @@ impl Config {
 
     pub async fn build(&self) -> anyhow::Result<Agent> {
         let (watcher, wreceiver) = self.watcher.build(self).await?;
-        let (sender, receiver) = mpsc::channel(self.channel_size);
 
         let ctx = BuildContext {
             #[cfg(feature = "watcher-bluetooth")]
             bluetooth: watcher.bluetooth.adapter.clone(),
-            sender,
             watcher: wreceiver,
         };
 
         let collectors = self.collectors.iter().map(|c| c.build(&ctx)).collect();
 
         Ok(Agent {
+            channel_size: self.channel_size,
             watcher,
             collectors,
-            exporter: self.exporter.build(receiver),
+            exporter: self.exporter.build(),
         })
     }
 }
@@ -69,12 +66,12 @@ impl Config {
 pub struct BuildContext {
     #[cfg(feature = "watcher-bluetooth")]
     bluetooth: bluer::Adapter,
-    sender: mpsc::Sender<OneOrMany<Metric>>,
     #[allow(unused)]
     watcher: watcher::Receiver,
 }
 
 pub struct Agent {
+    channel_size: usize,
     watcher: watcher::Watcher,
     collectors: Vec<collector::Collector>,
     exporter: exporter::Exporter,
@@ -83,18 +80,17 @@ pub struct Agent {
 impl Agent {
     #[tracing::instrument(name = "run", skip_all)]
     pub async fn run(self) {
-        use crate::prelude::Worker;
+        let (sender, receiver) = mpsc::channel(self.channel_size);
 
         let mut jobs = Vec::new();
         self.watcher.start(&mut jobs);
 
-        jobs.extend(
-            self.collectors
-                .into_iter()
-                .map(|c| tokio::spawn(async move { c.run().await })),
-        );
+        jobs.extend(self.collectors.into_iter().map(|c| {
+            let local_sender = sender.clone();
+            tokio::spawn(async move { c.run(local_sender).await })
+        }));
 
-        self.exporter.run().await;
+        self.exporter.run(receiver).await;
 
         while let Some(job) = jobs.pop() {
             if let Err(err) = job.await {

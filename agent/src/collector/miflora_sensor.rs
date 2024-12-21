@@ -77,7 +77,6 @@ impl Config {
             interval: Duration::new(self.interval, 0),
             mode: self.mode,
             receiver: ctx.watcher.bluetooth.resubscribe(),
-            sender: ctx.sender.clone(),
         }
     }
 }
@@ -162,25 +161,30 @@ pub struct Collector {
     interval: Duration,
     mode: PollingMode,
     receiver: broadcast::Receiver<WatcherEvent>,
-    sender: mpsc::Sender<OneOrMany<Metric>>,
 }
 
 impl Collector {
     #[tracing::instrument(skip(self, ctx))]
-    async fn collect(&self, ctx: &mut LocalContext) {
+    async fn collect(&self, ctx: &mut LocalContext, sender: &mpsc::Sender<OneOrMany<Metric>>) {
         for addr in self.devices.iter() {
-            self.try_handle(ctx, *addr, now()).await;
+            self.try_handle(ctx, *addr, now(), sender).await;
         }
     }
 
     #[tracing::instrument(skip(self, ctx, timestamp))]
-    async fn try_handle(&self, ctx: &mut LocalContext, addr: bluer::Address, timestamp: u64) {
+    async fn try_handle(
+        &self,
+        ctx: &mut LocalContext,
+        addr: bluer::Address,
+        timestamp: u64,
+        sender: &mpsc::Sender<OneOrMany<Metric>>,
+    ) {
         if !ctx.should_handle(self.interval.as_secs(), &addr, timestamp) {
             tracing::trace!(message = "the device has already been handled recently");
             return;
         }
 
-        match self.handle(addr, timestamp).await {
+        match self.handle(addr, timestamp, sender).await {
             Ok(_) => {
                 tracing::trace!("device handled successfully");
                 ctx.on_success(addr, timestamp);
@@ -192,7 +196,12 @@ impl Collector {
         }
     }
 
-    async fn handle(&self, addr: bluer::Address, timestamp: u64) -> anyhow::Result<()> {
+    async fn handle(
+        &self,
+        addr: bluer::Address,
+        timestamp: u64,
+        sender: &mpsc::Sender<OneOrMany<Metric>>,
+    ) -> anyhow::Result<()> {
         let device = bluer_miflora::Miflora::try_from_adapter(&self.adapter, addr)
             .await
             .context("getting device from adapter")?;
@@ -241,7 +250,7 @@ impl Collector {
                     ]
                     .into_iter()
                 }));
-                self.sender.send_many(metrics).await;
+                sender.send_many(metrics).await;
 
                 device
                     .clear_historical_entries()
@@ -253,7 +262,7 @@ impl Collector {
                     .read_realtime_values()
                     .await
                     .context("reading realtime values")?;
-                self.sender
+                sender
                     .send_many(vec![
                         Metric::new(
                             timestamp,
@@ -293,22 +302,22 @@ impl Collector {
     }
 }
 
-impl crate::prelude::Worker for Collector {
+impl Collector {
     #[tracing::instrument(name = "miflora-sensor", skip_all)]
-    async fn run(mut self) -> anyhow::Result<()> {
+    pub async fn run(mut self, sender: mpsc::Sender<OneOrMany<Metric>>) -> anyhow::Result<()> {
         tracing::info!(message = "starting", devices = ?self.devices);
         let mut interval = tokio::time::interval(self.interval);
         let mut ctx = LocalContext::new(self.devices.iter().copied());
         loop {
             tokio::select! {
                 _ = interval.tick() => {
-                    self.collect(&mut ctx).await;
+                    self.collect(&mut ctx, &sender).await;
                     interval.reset();
                 }
                 res = self.receiver.recv() => {
                     match res {
                         Ok(WatcherEvent::DeviceAdded(addr)) | Ok(WatcherEvent::DeviceChanged(addr, _)) if self.devices.contains(&addr) => {
-                            self.try_handle(&mut ctx, addr, now()).await;
+                            self.try_handle(&mut ctx, addr, now(), &sender).await;
                         }
                         Ok(_) => {}
                         Err(broadcast::error::RecvError::Closed) => return Ok(()),

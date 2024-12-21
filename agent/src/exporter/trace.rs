@@ -2,26 +2,25 @@ use chezmoi_entity::metric::Metric;
 use chezmoi_entity::OneOrMany;
 use tokio::sync::mpsc;
 
-#[derive(Debug, serde::Deserialize)]
-pub struct Config {}
+#[derive(Debug, Default, serde::Deserialize)]
+pub struct Config;
 
 impl Config {
-    pub fn build(&self, receiver: mpsc::Receiver<OneOrMany<Metric>>) -> Exporter {
-        Exporter { receiver }
+    pub fn build(&self) -> Exporter {
+        Exporter::default()
     }
 }
 
-pub struct Exporter {
-    receiver: mpsc::Receiver<OneOrMany<Metric>>,
-}
+#[derive(Debug, Default)]
+pub struct Exporter;
 
 impl Exporter {
     fn handle(&self, item: Metric) {
         tracing::debug!(message = "received metric", metric = ?item);
     }
 
-    pub async fn run(mut self) {
-        while let Some(item) = self.receiver.recv().await {
+    pub async fn run(self, mut receiver: mpsc::Receiver<OneOrMany<Metric>>) {
+        while let Some(item) = receiver.recv().await {
             tracing::debug!(message = "received metrics", count = item.len());
             match item {
                 OneOrMany::One(item) => self.handle(item),
