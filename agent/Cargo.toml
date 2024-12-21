@@ -6,7 +6,7 @@ authors.workspace = true
 license-file.workspace = true
 
 [features]
-default = ["collector-miflora-sensor"]
+default = ["collector-atc-sensor", "collector-miflora-sensor"]
 bluetooth = ["dep:bluer"]
 collector-atc-sensor = ["bluetooth", "watcher-bluetooth"]
 collector-miflora-sensor = ["bluetooth", "watcher-bluetooth", "dep:bluer-miflora"]
