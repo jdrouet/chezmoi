@@ -276,7 +276,7 @@ impl Collector {
                         AgentMetric::new(
                             m.timestamp(),
                             AgentMetricHeader::new(AgentMetricName::Temperature, addr),
-                            m.temperature() as f64,
+                            (m.temperature() as f64) * 0.1,
                         ),
                         AgentMetric::new(
                             m.timestamp(),
@@ -286,7 +286,7 @@ impl Collector {
                         AgentMetric::new(
                             m.timestamp(),
                             AgentMetricHeader::new(AgentMetricName::Conductivity, addr),
-                            m.conductivity() as f64,
+                            (m.conductivity() as f64) * 0.0001,
                         ),
                         AgentMetric::new(
                             m.timestamp(),
@@ -318,7 +318,7 @@ impl Collector {
                         AgentMetric::new(
                             timestamp,
                             AgentMetricHeader::new(AgentMetricName::Temperature, addr),
-                            realtime.temperature() as f64,
+                            (realtime.temperature() as f64) * 0.1,
                         ),
                         AgentMetric::new(
                             timestamp,
@@ -328,7 +328,7 @@ impl Collector {
                         AgentMetric::new(
                             timestamp,
                             AgentMetricHeader::new(AgentMetricName::Conductivity, addr),
-                            realtime.conductivity() as f64,
+                            (realtime.conductivity() as f64) * 0.0001,
                         ),
                         AgentMetric::new(
                             timestamp,
