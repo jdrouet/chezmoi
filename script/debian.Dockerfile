@@ -7,7 +7,6 @@ WORKDIR /code
 
 COPY Cargo.lock Cargo.toml LICENSE /code/
 COPY agent /code/agent
-COPY cache /code/cache
 COPY entity /code/entity
 COPY server /code/server
 COPY storage /code/storage
