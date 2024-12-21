@@ -10,7 +10,7 @@ pub mod internal;
 pub mod miflora_sensor;
 pub mod system;
 
-pub mod prelude;
+mod helper;
 
 #[derive(Debug, serde::Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]

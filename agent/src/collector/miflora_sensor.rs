@@ -8,7 +8,8 @@ use chezmoi_entity::metric::{Metric, MetricHeader};
 use chezmoi_entity::{now, OneOrMany};
 use tokio::sync::{broadcast, mpsc};
 
-use crate::collector::prelude::SenderExt;
+use super::helper::CachedSender;
+use crate::helper::cache::Cache;
 use crate::watcher::bluetooth::WatcherEvent;
 
 pub const DEVICE_BATTERY: &str = "miflora.battery";
@@ -164,20 +165,20 @@ pub struct Collector {
 }
 
 impl Collector {
-    #[tracing::instrument(skip(self, ctx))]
-    async fn collect(&self, ctx: &mut LocalContext, sender: &mpsc::Sender<OneOrMany<Metric>>) {
+    #[tracing::instrument(skip(self, ctx, sender))]
+    async fn collect(&self, ctx: &mut LocalContext, sender: &mut CachedSender) {
         for addr in self.devices.iter() {
             self.try_handle(ctx, *addr, now(), sender).await;
         }
     }
 
-    #[tracing::instrument(skip(self, ctx, timestamp))]
+    #[tracing::instrument(skip(self, ctx, timestamp, sender))]
     async fn try_handle(
         &self,
         ctx: &mut LocalContext,
         addr: bluer::Address,
         timestamp: u64,
-        sender: &mpsc::Sender<OneOrMany<Metric>>,
+        sender: &mut CachedSender,
     ) {
         if !ctx.should_handle(self.interval.as_secs(), &addr, timestamp) {
             tracing::trace!(message = "the device has already been handled recently");
@@ -200,7 +201,7 @@ impl Collector {
         &self,
         addr: bluer::Address,
         timestamp: u64,
-        sender: &mpsc::Sender<OneOrMany<Metric>>,
+        sender: &mut CachedSender,
     ) -> anyhow::Result<()> {
         let device = bluer_miflora::Miflora::try_from_adapter(&self.adapter, addr)
             .await
@@ -307,17 +308,21 @@ impl Collector {
     pub async fn run(mut self, sender: mpsc::Sender<OneOrMany<Metric>>) -> anyhow::Result<()> {
         tracing::info!(message = "starting", devices = ?self.devices);
         let mut interval = tokio::time::interval(self.interval);
+        let mut sender = CachedSender::new(
+            Cache::new(self.devices.len() * 5, self.interval.as_secs()),
+            sender,
+        );
         let mut ctx = LocalContext::new(self.devices.iter().copied());
         loop {
             tokio::select! {
                 _ = interval.tick() => {
-                    self.collect(&mut ctx, &sender).await;
+                    self.collect(&mut ctx, &mut sender).await;
                     interval.reset();
                 }
                 res = self.receiver.recv() => {
                     match res {
                         Ok(WatcherEvent::DeviceAdded(addr)) | Ok(WatcherEvent::DeviceChanged(addr, _)) if self.devices.contains(&addr) => {
-                            self.try_handle(&mut ctx, addr, now(), &sender).await;
+                            self.try_handle(&mut ctx, addr, now(), &mut sender).await;
                         }
                         Ok(_) => {}
                         Err(broadcast::error::RecvError::Closed) => return Ok(()),

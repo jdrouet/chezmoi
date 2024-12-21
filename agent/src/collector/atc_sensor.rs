@@ -6,7 +6,8 @@ use chezmoi_entity::metric::{Metric, MetricHeader};
 use chezmoi_entity::{now, OneOrMany};
 use tokio::sync::{broadcast, mpsc};
 
-use super::prelude::SenderExt;
+use super::helper::CachedSender;
+use crate::helper::cache::Cache;
 use crate::watcher::bluetooth::WatcherEvent;
 
 pub const DEVICE_TEMPERATURE: &str = "atc-thermometer.temperature";
@@ -91,7 +92,7 @@ pub struct Collector {
 
 impl Collector {
     #[tracing::instrument(skip(self, sender))]
-    async fn collect(&self, sender: &mpsc::Sender<OneOrMany<Metric>>) {
+    async fn collect(&self, sender: &mut CachedSender) {
         let ts = now();
         let available = match self.adapter.device_addresses().await {
             Ok(inner) => inner,
@@ -120,11 +121,11 @@ impl Collector {
         addr: bluer::Address,
         timestamp: u64,
         data: &[u8],
-        sender: &mpsc::Sender<OneOrMany<Metric>>,
+        sender: &mut CachedSender,
     ) {
         if let Some(data) = Payload::read(data) {
             sender
-                .send_many(vec![
+                .send_many([
                     Metric {
                         timestamp,
                         header: MetricHeader::new(DEVICE_TEMPERATURE)
@@ -155,7 +156,7 @@ impl Collector {
         addr: bluer::Address,
         timestamp: u64,
         data: HashMap<Uuid, Vec<u8>>,
-        sender: &mpsc::Sender<OneOrMany<Metric>>,
+        sender: &mut CachedSender,
     ) -> bool {
         if let Some(data) = data.get(&SERVICE_ID) {
             self.read_data(addr, timestamp, data, sender).await;
@@ -166,12 +167,12 @@ impl Collector {
         }
     }
 
-    #[tracing::instrument(skip(self, timestamp))]
+    #[tracing::instrument(skip(self, timestamp, sender))]
     async fn handle(
         &self,
         addr: bluer::Address,
         timestamp: u64,
-        sender: &mpsc::Sender<OneOrMany<Metric>>,
+        sender: &mut CachedSender,
     ) -> anyhow::Result<bool> {
         let device = self.adapter.device(addr)?;
         let data = device.service_data().await?;
@@ -190,17 +191,21 @@ impl Collector {
     pub async fn run(mut self, sender: mpsc::Sender<OneOrMany<Metric>>) -> anyhow::Result<()> {
         tracing::info!(message = "starting", devices = ?self.devices);
         let mut interval = tokio::time::interval(self.interval);
+        let mut sender = CachedSender::new(
+            Cache::new(self.devices.len() * 3, self.interval.as_secs()),
+            sender,
+        );
         loop {
             tokio::select! {
                 _ = interval.tick() => {
-                    self.collect(&sender).await;
+                    self.collect(&mut sender).await;
                     interval.reset();
                 }
                 res = self.receiver.recv() => {
                     match res {
                         Ok(WatcherEvent::DeviceAdded(addr)) if self.devices.contains(&addr) => {
                             let ts = now();
-                            match self.handle(addr, ts, &sender).await {
+                            match self.handle(addr, ts, &mut sender).await {
                                 Ok(true) => {
                                     self.history.insert(addr, ts);
                                 }
@@ -212,7 +217,7 @@ impl Collector {
                         }
                         Ok(WatcherEvent::DeviceChanged(addr, DeviceProperty::ServiceData(data))) if self.devices.contains(&addr) => {
                             let ts = now();
-                            if self.read_service_data(addr, ts, data, &sender).await {
+                            if self.read_service_data(addr, ts, data, &mut sender).await {
                                 self.history.insert(addr, ts);
                             }
                         }

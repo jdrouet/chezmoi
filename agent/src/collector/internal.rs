@@ -4,7 +4,9 @@ use chezmoi_entity::metric::Metric;
 use chezmoi_entity::OneOrMany;
 use tokio::sync::mpsc;
 
-use super::prelude::SenderExt;
+use crate::helper::cache::Cache;
+
+use super::helper::CachedSender;
 
 pub const fn default_interval() -> u64 {
     10
@@ -38,6 +40,8 @@ impl Collector {
     #[tracing::instrument(name = "internal", skip_all)]
     pub async fn run(self, sender: mpsc::Sender<OneOrMany<Metric>>) -> anyhow::Result<()> {
         let mut ticker = tokio::time::interval(self.interval);
+        let mut sender = CachedSender::new(Cache::new(1, self.interval.as_secs()), sender);
+
         while !sender.is_closed() {
             ticker.tick().await;
             sender
