@@ -166,6 +166,8 @@ a:visited {
 
     .colspan-2,
     .colspan-3,
+    .colspan-4,
+    .colspan-5,
     .colspan-all {
         grid-column-end: span 2;
     }
@@ -181,6 +183,8 @@ a:visited {
     }
 
     .colspan-3,
+    .colspan-4,
+    .colspan-5,
     .colspan-all {
         grid-column-end: span 3;
     }
@@ -199,8 +203,13 @@ a:visited {
         grid-column-end: span 2;
     }
 
-    .colspan-all {
+    .colspan-4 {
         grid-column-end: span 4;
+    }
+
+    .colspan-5,
+    .colspan-all {
+        grid-column-end: span 5;
     }
 }
 

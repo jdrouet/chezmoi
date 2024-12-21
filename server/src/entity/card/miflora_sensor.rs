@@ -1,17 +1,17 @@
 use std::collections::HashSet;
 
 use chezmoi_entity::metric::{Metric, MetricHeader};
-use chezmoi_ui_static::component::card::atc_sensor;
+use chezmoi_ui_static::component::card::miflora_sensor;
 use chezmoi_ui_static::component::value::TimedValue;
 
 #[derive(Debug, serde::Deserialize)]
 pub struct Config {
     #[serde(flatten)]
-    pub inner: atc_sensor::Definition,
+    pub inner: miflora_sensor::Definition,
 }
 
-impl From<atc_sensor::Definition> for Config {
-    fn from(inner: atc_sensor::Definition) -> Self {
+impl From<miflora_sensor::Definition> for Config {
+    fn from(inner: miflora_sensor::Definition) -> Self {
         Self { inner }
     }
 }
@@ -19,27 +19,19 @@ impl From<atc_sensor::Definition> for Config {
 impl Config {
     pub fn latest_filters<'a>(&'a self, list: &mut HashSet<MetricHeader<'a>>) {
         list.insert(
-            MetricHeader::new("atc-thermometer.temperature")
-                .with_tag("address", self.inner.address.as_str()),
-        );
-        list.insert(
-            MetricHeader::new("atc-thermometer.humidity")
-                .with_tag("address", self.inner.address.as_str()),
-        );
-        list.insert(
-            MetricHeader::new("atc-thermometer.battery")
+            MetricHeader::new("miflora.temperature")
                 .with_tag("address", self.inner.address.as_str()),
         );
     }
 
-    pub fn build<'a>(&'a self, metrics: &[Metric]) -> atc_sensor::AtcSensorCard<'a> {
-        atc_sensor::AtcSensorCard {
+    pub fn build<'a>(&'a self, metrics: &[Metric]) -> miflora_sensor::MifloraSensorCard<'a> {
+        miflora_sensor::MifloraSensorCard {
             definition: &self.inner,
-            values: atc_sensor::Values {
+            values: miflora_sensor::Values {
                 temperature: metrics
                     .iter()
                     .find(|m| {
-                        m.header.name.eq("atc-thermometer.temperature")
+                        m.header.name.eq("miflora.temperature")
                             && m.header
                                 .tags
                                 .as_ref()
@@ -50,24 +42,13 @@ impl Config {
                         value: m.value,
                         timestamp: m.timestamp,
                     }),
-                humidity: metrics
-                    .iter()
-                    .find(|m| {
-                        m.header.name.eq("atc-thermometer.humidity")
-                            && m.header
-                                .tags
-                                .as_ref()
-                                .get("address")
-                                .map_or(false, |v| v.eq(self.inner.address.as_str()))
-                    })
-                    .map(|m| TimedValue {
-                        value: m.value,
-                        timestamp: m.timestamp,
-                    }),
+                brightness: None,
+                conductivity: None,
+                moisture: None,
                 battery: metrics
                     .iter()
                     .find(|m| {
-                        m.header.name.eq("atc-thermometer.battery")
+                        m.header.name.eq("miflora.battery")
                             && m.header
                                 .tags
                                 .as_ref()

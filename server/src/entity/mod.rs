@@ -1,8 +1,7 @@
 use std::collections::HashSet;
-use std::str::FromStr;
 
-use chezmoi_entity::address::Address;
 use chezmoi_entity::metric::{Metric, MetricHeader};
+use chezmoi_ui_static::component::range::Range;
 use chezmoi_ui_static::view::dashboard;
 
 mod card;
@@ -15,8 +14,8 @@ pub struct SectionConfig {
 }
 
 impl SectionConfig {
-    fn latest_filters(&self) -> impl Iterator<Item = MetricHeader<'static>> + '_ {
-        self.cards.iter().flat_map(|c| c.latest_filters())
+    fn latest_filters<'a>(&'a self, list: &mut HashSet<MetricHeader<'a>>) {
+        self.cards.iter().for_each(|c| c.latest_filters(list));
     }
 
     pub fn build<'a>(&'a self, metrics: &[Metric]) -> dashboard::Section<'a> {
@@ -39,70 +38,82 @@ impl Default for DashboardConfig {
             sections: vec![SectionConfig {
                 title: String::from("Thermometer"),
                 cards: vec![
-                    card::CardConfig::AtcSensor(card::atc_sensor::Config {
-                        name: Some("Living room".into()),
-                        address: Address::from_str("A4:C1:38:E1:6F:B2").unwrap(),
-                        temperature: card::Range {
-                            min: Some(19.0),
-                            max: Some(22.0),
-                        },
-                        humidity: card::Range {
-                            min: Some(30.0),
-                            max: Some(60.0),
-                        },
-                        battery: card::Range {
-                            min: Some(10.0),
-                            max: None,
-                        },
-                    }),
-                    card::CardConfig::AtcSensor(card::atc_sensor::Config {
-                        name: Some("Bedroom".into()),
-                        address: Address::from_str("A4:C1:38:45:51:3E").unwrap(),
-                        temperature: card::Range {
-                            min: Some(19.0),
-                            max: Some(22.0),
-                        },
-                        humidity: card::Range {
-                            min: Some(30.0),
-                            max: Some(60.0),
-                        },
-                        battery: card::Range {
-                            min: Some(10.0),
-                            max: None,
-                        },
-                    }),
-                    card::CardConfig::AtcSensor(card::atc_sensor::Config {
-                        name: Some("Office".into()),
-                        address: Address::from_str("A4:C1:38:1C:02:76").unwrap(),
-                        temperature: card::Range {
-                            min: Some(19.0),
-                            max: Some(22.0),
-                        },
-                        humidity: card::Range {
-                            min: Some(30.0),
-                            max: Some(60.0),
-                        },
-                        battery: card::Range {
-                            min: Some(10.0),
-                            max: None,
-                        },
-                    }),
-                    card::CardConfig::AtcSensor(card::atc_sensor::Config {
-                        name: Some("Outside".into()),
-                        address: Address::from_str("A4:C1:38:4E:92:06").unwrap(),
-                        temperature: card::Range {
-                            min: Some(5.0),
-                            max: Some(22.0),
-                        },
-                        humidity: card::Range {
-                            min: Some(30.0),
-                            max: Some(60.0),
-                        },
-                        battery: card::Range {
-                            min: Some(10.0),
-                            max: None,
-                        },
-                    }),
+                    card::CardConfig::AtcSensor(
+                        chezmoi_ui_static::component::card::atc_sensor::Definition {
+                            name: Some("Living room".into()),
+                            address: "A4:C1:38:E1:6F:B2".into(),
+                            temperature: Range {
+                                min: Some(19.0),
+                                max: Some(22.0),
+                            },
+                            humidity: Range {
+                                min: Some(30.0),
+                                max: Some(60.0),
+                            },
+                            battery: Range {
+                                min: Some(10.0),
+                                max: None,
+                            },
+                        }
+                        .into(),
+                    ),
+                    card::CardConfig::AtcSensor(
+                        chezmoi_ui_static::component::card::atc_sensor::Definition {
+                            name: Some("Bedroom".into()),
+                            address: "A4:C1:38:45:51:3E".into(),
+                            temperature: Range {
+                                min: Some(19.0),
+                                max: Some(22.0),
+                            },
+                            humidity: Range {
+                                min: Some(30.0),
+                                max: Some(60.0),
+                            },
+                            battery: Range {
+                                min: Some(10.0),
+                                max: None,
+                            },
+                        }
+                        .into(),
+                    ),
+                    card::CardConfig::AtcSensor(
+                        chezmoi_ui_static::component::card::atc_sensor::Definition {
+                            name: Some("Office".into()),
+                            address: "A4:C1:38:1C:02:76".into(),
+                            temperature: Range {
+                                min: Some(19.0),
+                                max: Some(22.0),
+                            },
+                            humidity: Range {
+                                min: Some(30.0),
+                                max: Some(60.0),
+                            },
+                            battery: Range {
+                                min: Some(10.0),
+                                max: None,
+                            },
+                        }
+                        .into(),
+                    ),
+                    card::CardConfig::AtcSensor(
+                        chezmoi_ui_static::component::card::atc_sensor::Definition {
+                            name: Some("Outside".into()),
+                            address: "A4:C1:38:4E:92:06".into(),
+                            temperature: Range {
+                                min: Some(5.0),
+                                max: Some(22.0),
+                            },
+                            humidity: Range {
+                                min: Some(30.0),
+                                max: Some(60.0),
+                            },
+                            battery: Range {
+                                min: Some(10.0),
+                                max: None,
+                            },
+                        }
+                        .into(),
+                    ),
                 ],
             }],
         }
@@ -110,11 +121,12 @@ impl Default for DashboardConfig {
 }
 
 impl DashboardConfig {
-    pub fn latest_filters(&self) -> HashSet<MetricHeader<'static>> {
+    pub fn latest_filters<'a>(&'a self) -> HashSet<MetricHeader<'a>> {
+        let mut res = HashSet::new();
         self.sections
             .iter()
-            .flat_map(|s| s.latest_filters())
-            .collect()
+            .for_each(|s| s.latest_filters(&mut res));
+        res
     }
 
     pub fn build<'a>(&'a self, metrics: &[Metric]) -> dashboard::DashboardView<'a> {

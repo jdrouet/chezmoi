@@ -3,4 +3,5 @@ pub mod header;
 pub mod page;
 pub mod prelude;
 pub mod range;
+pub mod value;
 pub mod value_cell;

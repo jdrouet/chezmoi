@@ -6,6 +6,13 @@ use crate::component::value::TimedValue;
 use crate::component::value_cell;
 use crate::helper::format::{PERCENTAGE, TEMPERATURE};
 
+// Available values
+// - temperature
+// - brightness
+// - conductivity
+// - moisture
+// - battery
+
 #[derive(Clone, Debug, serde::Deserialize)]
 pub struct Definition {
     #[serde(default)]
@@ -14,28 +21,34 @@ pub struct Definition {
     #[serde(default)]
     pub temperature: Range,
     #[serde(default)]
-    pub humidity: Range,
+    pub brightness: Range,
+    #[serde(default)]
+    pub conductivity: Range,
+    #[serde(default)]
+    pub moisture: Range,
     #[serde(default)]
     pub battery: Range,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Values {
     pub temperature: Option<TimedValue>,
-    pub humidity: Option<TimedValue>,
+    pub brightness: Option<TimedValue>,
+    pub conductivity: Option<TimedValue>,
+    pub moisture: Option<TimedValue>,
     pub battery: Option<TimedValue>,
 }
 
 #[derive(Debug)]
-pub struct AtcSensorCard<'a> {
+pub struct MifloraSensorCard<'a> {
     pub definition: &'a Definition,
     pub values: Values,
 }
 
-impl crate::component::prelude::Component for AtcSensorCard<'_> {
+impl crate::component::prelude::Component for MifloraSensorCard<'_> {
     fn render<'a, W: WriterExt>(&self, buf: Buffer<W, Body<'a>>) -> Buffer<W, Body<'a>> {
         buf.node("div")
-            .attr(("class", "card flex-col colspan-3"))
+            .attr(("class", "card flex-col colspan-4"))
             .content(|buf| {
                 buf.node("div")
                     .attr(("class", "flex-row flex-grow"))
@@ -48,10 +61,24 @@ impl crate::component::prelude::Component for AtcSensorCard<'_> {
                         }
                         .render(buf);
                         let buf = value_cell::ValueCell {
-                            label: "Humidity",
+                            label: "Brightness",
                             formatter: &PERCENTAGE,
-                            definition: &self.definition.humidity,
-                            value: self.values.humidity.as_ref(),
+                            definition: &self.definition.brightness,
+                            value: self.values.brightness.as_ref(),
+                        }
+                        .render(buf);
+                        let buf = value_cell::ValueCell {
+                            label: "Conductivity",
+                            formatter: &PERCENTAGE,
+                            definition: &self.definition.conductivity,
+                            value: self.values.conductivity.as_ref(),
+                        }
+                        .render(buf);
+                        let buf = value_cell::ValueCell {
+                            label: "Moisture",
+                            formatter: &PERCENTAGE,
+                            definition: &self.definition.moisture,
+                            value: self.values.moisture.as_ref(),
                         }
                         .render(buf);
                         let buf = value_cell::ValueCell {

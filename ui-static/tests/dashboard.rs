@@ -1,47 +1,82 @@
-use chezmoi_ui_static::component::card::atc_sensor::AtcSensorCard;
-use chezmoi_ui_static::component::card::Card;
+use chezmoi_ui_static::component::card::{atc_sensor, miflora_sensor, Card};
 use chezmoi_ui_static::component::range::Range;
-use chezmoi_ui_static::component::value_cell;
+use chezmoi_ui_static::component::value::TimedValue;
 use chezmoi_ui_static::view::dashboard;
 
 mod helper;
 
 #[test]
-fn simple() {
+fn atc_sensor() {
+    let definition = atc_sensor::Definition {
+        name: Some("Living room".into()),
+        address: "00:00:00:00:00".into(),
+        temperature: Range {
+            min: Some(19.0),
+            max: Some(22.0),
+        },
+        humidity: Range {
+            min: Some(40.0),
+            max: Some(70.0),
+        },
+        battery: Range {
+            min: Some(10.0),
+            max: None,
+        },
+    };
     let view = dashboard::DashboardView {
         base_url: "",
         sections: vec![dashboard::Section {
             title: "Home",
-            cards: vec![Card::AtcSensor(AtcSensorCard {
-                name: Some("Living room"),
-                address: "00:00:00:00:00".into(),
-                temperature_definition: Range {
-                    min: Some(19.0),
-                    max: Some(22.0),
+            cards: vec![Card::AtcSensor(atc_sensor::AtcSensorCard {
+                definition: &definition,
+                values: atc_sensor::Values {
+                    temperature: Some(TimedValue {
+                        timestamp: 0,
+                        value: 18.5,
+                    }),
+                    humidity: Some(TimedValue {
+                        timestamp: 0,
+                        value: 82.5,
+                    }),
+                    battery: Some(TimedValue {
+                        timestamp: 0,
+                        value: 90.0,
+                    }),
                 },
-                temperature: Some(value_cell::Value {
-                    value: 18.5,
-                    timestamp: 0,
-                }),
-                humidity_definition: Range {
-                    min: Some(40.0),
-                    max: Some(70.0),
-                },
-                humidity: Some(value_cell::Value {
-                    value: 82.5,
-                    timestamp: 0,
-                }),
-                battery_definition: Range {
-                    min: Some(10.0),
-                    max: None,
-                },
-                battery: Some(value_cell::Value {
-                    value: 21.5,
-                    timestamp: 0,
-                }),
             })],
         }],
     };
     let view = view.render();
-    helper::write("dashboard-simple.html", view);
+    helper::write("dashboard-atc-sensor.html", view);
+}
+
+#[test]
+fn miflora_sensor() {
+    let definition = miflora_sensor::Definition {
+        name: None,
+        address: "00:00:00:00:00:00".into(),
+        temperature: Range::default(),
+        brightness: Range::default(),
+        conductivity: Range::default(),
+        moisture: Range::default(),
+        battery: Range::default(),
+    };
+    let view = dashboard::DashboardView {
+        base_url: "",
+        sections: vec![dashboard::Section {
+            title: "Home",
+            cards: vec![Card::MifloraSensor(miflora_sensor::MifloraSensorCard {
+                definition: &definition,
+                values: miflora_sensor::Values {
+                    temperature: None,
+                    brightness: None,
+                    conductivity: None,
+                    moisture: None,
+                    battery: None,
+                },
+            })],
+        }],
+    };
+    let view = view.render();
+    helper::write("dashboard-miflora-sensor.html", view);
 }
