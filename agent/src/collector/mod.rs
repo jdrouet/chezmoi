@@ -9,10 +9,6 @@ pub mod system;
 
 pub mod prelude;
 
-const fn default_false() -> bool {
-    false
-}
-
 #[derive(Debug, serde::Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum Config {
@@ -25,25 +21,6 @@ pub enum Config {
 }
 
 impl Config {
-    pub fn from_env() -> anyhow::Result<Vec<Self>> {
-        let mut result = Vec::new();
-        #[cfg(feature = "collector-atc-sensor")]
-        if crate::from_env_or("AGENT_COLLECTOR_ATC_SENSOR_ENABLED", default_false)? {
-            result.push(Config::AtcSensor(atc_sensor::Config::from_env()?));
-        }
-        if crate::from_env_or("AGENT_COLLECTOR_INTERNAL_ENABLED", default_false)? {
-            result.push(Config::Internal(internal::Config::from_env()?));
-        }
-        #[cfg(feature = "collector-miflora-sensor")]
-        if crate::from_env_or("AGENT_COLLECTOR_MIFLORA_SENSOR_ENABLED", default_false)? {
-            result.push(Config::MifloraSensor(miflora_sensor::Config::from_env()?));
-        }
-        if crate::from_env_or("AGENT_COLLECTOR_SYSTEM_ENABLED", default_false)? {
-            result.push(Config::Internal(internal::Config::from_env()?));
-        }
-        Ok(result)
-    }
-
     pub fn build(&self, ctx: &BuildContext) -> Collector {
         match self {
             #[cfg(feature = "collector-atc-sensor")]

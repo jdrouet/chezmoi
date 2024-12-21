@@ -40,22 +40,6 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_path_or_env() -> anyhow::Result<Self> {
-        if let Ok(path) = std::env::var("CONFIG_PATH") {
-            return Self::from_path(&path);
-        }
-        Self::from_env()
-    }
-
-    pub fn from_env() -> anyhow::Result<Self> {
-        Ok(Self {
-            channel_size: from_env_or("AGENT_CHANNEL_SIZE", default_channel_size)?,
-            watcher: watcher::Config::from_env()?,
-            collectors: collector::Config::from_env()?,
-            exporter: exporter::Config::from_env()?,
-        })
-    }
-
     pub fn from_path<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
         let f = std::fs::OpenOptions::new().read(true).open(path)?;
         serde_json::from_reader(f).map_err(anyhow::Error::from)

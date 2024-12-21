@@ -11,13 +11,6 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_env() -> anyhow::Result<Self> {
-        Ok(Self {
-            #[cfg(feature = "watcher-bluetooth")]
-            bluetooth: bluetooth::Config::from_env()?,
-        })
-    }
-
     #[cfg(feature = "watcher-bluetooth")]
     pub async fn build(&self, config: &super::Config) -> anyhow::Result<(Watcher, Receiver)> {
         #[allow(unused)]

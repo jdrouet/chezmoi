@@ -18,18 +18,6 @@ pub struct Config {
     channel_size: usize,
 }
 
-impl Config {
-    pub fn from_env() -> anyhow::Result<Self> {
-        Ok(Self {
-            adapter: std::env::var("AGENT_WATCHER_BT_ADAPTER").ok(),
-            channel_size: crate::from_env_or(
-                "AGENT_WATCHER_BT_CHANNEL_SIZE",
-                default_channel_size,
-            )?,
-        })
-    }
-}
-
 impl Default for Config {
     fn default() -> Self {
         Self {

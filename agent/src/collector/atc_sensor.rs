@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::str::FromStr;
 use std::time::Duration;
 
 use bluer::{DeviceProperty, Uuid};
@@ -71,22 +70,6 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_env() -> anyhow::Result<Self> {
-        let interval = crate::from_env_or("AGENT_COLLECTOR_ATC_SENSOR_INTERVAL", default_interval)?;
-        let devices = std::env::var("AGENT_COLLECTOR_ATC_SENSOR_DEVICES")
-            .unwrap_or_default()
-            .split(',')
-            .filter_map(|value| match bluer::Address::from_str(value) {
-                Ok(v) => Some(v),
-                Err(err) => {
-                    tracing::warn!(message = "unable to parse devices address, skipping", address = %value, error = %err);
-                    None
-                }
-            })
-            .collect();
-        Ok(Self { interval, devices })
-    }
-
     pub fn build(&self, ctx: &crate::BuildContext) -> Collector {
         Collector {
             adapter: ctx.bluetooth.clone(),

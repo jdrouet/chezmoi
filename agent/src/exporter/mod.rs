@@ -13,13 +13,6 @@ pub enum Config {
 }
 
 impl Config {
-    pub fn from_env() -> anyhow::Result<Self> {
-        match std::env::var("AGENT_EXPORTER_TYPE").as_deref() {
-            Ok("http") => Ok(Self::Http(http::Config::from_env()?)),
-            _ => Ok(Self::Trace(trace::Config {})),
-        }
-    }
-
     pub fn build(&self, receiver: Receiver<OneOrMany<Metric>>) -> Exporter {
         match self {
             Self::Http(inner) => Exporter::Http(inner.build(receiver)),

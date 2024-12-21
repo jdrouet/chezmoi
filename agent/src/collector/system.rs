@@ -23,11 +23,6 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn from_env() -> anyhow::Result<Self> {
-        let interval = crate::from_env_or("AGENT_COLLECTOR_SYSTEM_INTERVAL", default_interval)?;
-        Ok(Self { interval })
-    }
-
     pub fn build(&self, ctx: &crate::BuildContext) -> Collector {
         let refresh_kind =
             sysinfo::RefreshKind::nothing().with_memory(sysinfo::MemoryRefreshKind::everything());
