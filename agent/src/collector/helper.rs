@@ -39,7 +39,7 @@ impl Cache {
     }
 
     fn handle(&mut self, metric: AgentMetric) -> Option<AgentMetric> {
-        let hash = metric.header.into_hash();
+        let hash = metric.header.compute_hash();
         let found = self
             .inner
             .entry(hash)

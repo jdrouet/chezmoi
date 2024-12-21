@@ -34,7 +34,7 @@ impl From<crate::collector::system::AgentMetricHeader> for AgentMetricHeader {
 }
 
 impl AgentMetricHeader {
-    pub fn into_hash(&self) -> u64 {
+    pub fn compute_hash(&self) -> u64 {
         let mut h = std::hash::DefaultHasher::new();
         match self {
             Self::AtcSensor(inner) => inner.hash(&mut h),

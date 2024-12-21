@@ -8,7 +8,7 @@ pub struct Config;
 
 impl Config {
     pub fn build(&self) -> Exporter {
-        Exporter::default()
+        Exporter
     }
 }
 

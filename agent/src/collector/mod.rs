@@ -36,6 +36,7 @@ impl Config {
     }
 }
 
+#[allow(clippy::large_enum_variant)]
 pub enum Collector {
     #[cfg(feature = "collector-atc-sensor")]
     AtcSensor(atc_sensor::Collector),

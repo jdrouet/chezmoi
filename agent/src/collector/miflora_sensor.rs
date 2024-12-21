@@ -122,7 +122,7 @@ impl LocalContext {
             return true;
         };
 
-        return state.should_handle(ttl, now);
+        state.should_handle(ttl, now)
     }
 
     fn on_success(&mut self, addr: bluer::Address, now: u64) {

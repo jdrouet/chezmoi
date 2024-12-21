@@ -278,7 +278,7 @@ mod tests {
 
     #[test]
     fn should_serialize() {
-        let value = serde_json::to_value(&AgentMetric::new(
+        let value = serde_json::to_value(AgentMetric::new(
             1234,
             AgentMetricHeader::new(AgentMetricName::Temperature, bluer::Address::any()),
             12.34,
