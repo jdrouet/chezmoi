@@ -36,7 +36,6 @@ assets = [
 ]
 
 [dependencies]
-chezmoi-cache = { path = "../cache" }
 chezmoi-entity = { path = "../entity", features = ["serde"] }
 chezmoi-storage = { path = "../storage" }
 chezmoi-ui-static = { path = "../ui-static" }

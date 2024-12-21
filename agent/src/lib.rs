@@ -7,6 +7,7 @@ use tokio::sync::mpsc;
 
 pub mod collector;
 pub mod exporter;
+pub mod helper;
 pub mod prelude;
 pub mod watcher;
 
@@ -98,7 +99,6 @@ pub struct Agent {
 impl Agent {
     #[tracing::instrument(name = "run", skip_all)]
     pub async fn run(self) {
-        use crate::exporter::prelude::Exporter;
         use crate::prelude::Worker;
 
         let mut jobs = Vec::new();

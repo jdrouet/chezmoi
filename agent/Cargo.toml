@@ -13,7 +13,6 @@ collector-miflora-sensor = ["bluetooth", "watcher-bluetooth", "dep:bluer-miflora
 watcher-bluetooth = ["bluetooth"]
 
 [dependencies]
-chezmoi-cache = { path = "../cache" }
 chezmoi-entity = { path = "../entity", features = ["serde"] }
 
 anyhow = { workspace = true }
@@ -23,6 +22,7 @@ bluer = { workspace = true, features = [
 ], default-features = false, optional = true }
 bluer-miflora = { version = "*", optional = true }
 futures = { version = "0.3" }
+indexmap = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { version = "1.0", features = ["indexmap"] }
 tokio = { workspace = true, features = [

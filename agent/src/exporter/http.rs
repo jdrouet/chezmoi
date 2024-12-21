@@ -1,36 +1,75 @@
 use chezmoi_entity::metric::Metric;
-use chezmoi_entity::{CowStr, OneOrMany};
+use chezmoi_entity::OneOrMany;
+use tokio::sync::mpsc;
 
-static USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
+static USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
 
-pub struct HttpHandler {
-    address: CowStr<'static>,
-    client: reqwest::Client,
+#[derive(Debug)]
+enum FlushOrigin {
+    Timer,
+    Capacity,
 }
 
-impl HttpHandler {
-    #[inline(always)]
-    pub fn new(address: impl Into<CowStr<'static>>) -> Self {
-        Self {
-            address: address.into(),
+pub const fn default_capacity() -> usize {
+    50
+}
+
+pub const fn default_interval() -> u64 {
+    30
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct Config {
+    address: String,
+    #[serde(default = "default_capacity")]
+    capacity: usize,
+    #[serde(default = "default_interval")]
+    interval: u64,
+}
+
+impl Config {
+    pub fn from_env() -> anyhow::Result<Self> {
+        Ok(Config {
+            address: std::env::var("AGENT_EXPORTER_ADDRESS")
+                .unwrap_or_else(|_| String::from("http://localhost:3000/api/metrics")),
+            capacity: crate::from_env_or("AGENT_EXPORTER_BATCH_CAPACITY", default_capacity)?,
+            interval: crate::from_env_or("AGENT_EXPORTER_BATCH_INTERVAL", default_interval)?,
+        })
+    }
+
+    pub fn build(&self, receiver: mpsc::Receiver<OneOrMany<Metric>>) -> Exporter {
+        Exporter {
+            address: self.address.clone(),
             client: reqwest::Client::builder()
                 .user_agent(USER_AGENT)
                 .build()
                 .unwrap(),
+            receiver,
+
+            capacity: self.capacity,
+            interval: self.interval,
         }
     }
 }
 
-impl super::prelude::Handler for HttpHandler {
-    #[tracing::instrument(name = "http", skip_all)]
-    async fn handle(&mut self, values: OneOrMany<Metric>) {
+pub struct Exporter {
+    address: String,
+    client: reqwest::Client,
+    receiver: mpsc::Receiver<OneOrMany<Metric>>,
+
+    capacity: usize,
+    interval: u64,
+}
+
+impl Exporter {
+    #[tracing::instrument(name = "handle", skip(self, values))]
+    async fn handle(&mut self, origin: FlushOrigin, values: Vec<Metric>) {
         if values.is_empty() {
             return;
         }
-        let values = values.into_vec();
         match self
             .client
-            .post(self.address.as_ref())
+            .post(self.address.as_str())
             .json(&values)
             .send()
             .await
@@ -55,6 +94,37 @@ impl super::prelude::Handler for HttpHandler {
             }
             Err(err) => {
                 tracing::error!(message = "unable contact server", error = %err);
+            }
+        }
+    }
+
+    #[tracing::instrument(name = "http", skip_all)]
+    pub async fn run(mut self) {
+        let mut flush_ticker = tokio::time::interval(std::time::Duration::new(self.interval, 0));
+        let mut buffer: Vec<Metric> = Vec::with_capacity(self.capacity);
+
+        while !self.receiver.is_closed() {
+            tokio::select! {
+                _ = flush_ticker.tick() => {
+                    if !buffer.is_empty() {
+                        let mut new_buffer = Vec::with_capacity(self.capacity);
+                        std::mem::swap(&mut buffer, &mut new_buffer);
+                        self.handle(FlushOrigin::Timer, new_buffer).await;
+                    }
+                },
+                Some(next) = self.receiver.recv() => {
+                    match next {
+                        OneOrMany::One(value) => buffer.push(value),
+                        OneOrMany::Many(values) => buffer.extend(values.into_iter()),
+                    };
+                    if buffer.len() >= self.capacity {
+                        let mut new_buffer = Vec::with_capacity(self.capacity);
+                        std::mem::swap(&mut buffer, &mut new_buffer);
+                        self.handle(FlushOrigin::Capacity, new_buffer).await;
+                        flush_ticker.reset();
+                    }
+                }
+                else => break,
             }
         }
     }

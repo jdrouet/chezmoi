@@ -283,9 +283,9 @@ dependencies = [
  "anyhow",
  "bluer",
  "bluer-miflora",
- "chezmoi-cache",
  "chezmoi-entity",
  "futures",
+ "indexmap",
  "reqwest",
  "serde",
  "serde_json",
@@ -293,14 +293,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
-]
-
-[[package]]
-name = "chezmoi-cache"
-version = "0.1.0"
-dependencies = [
- "chezmoi-entity",
- "indexmap",
 ]
 
 [[package]]
@@ -318,7 +310,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
- "chezmoi-cache",
  "chezmoi-entity",
  "chezmoi-storage",
  "chezmoi-ui-static",
