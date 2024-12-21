@@ -9,7 +9,6 @@ use chezmoi_entity::{now, OneOrMany};
 use tokio::sync::{broadcast, mpsc};
 
 use super::helper::CachedSender;
-use crate::helper::cache::Cache;
 use crate::watcher::bluetooth::WatcherEvent;
 
 pub const DEVICE_BATTERY: &str = "miflora.battery";
@@ -308,10 +307,7 @@ impl Collector {
     pub async fn run(mut self, sender: mpsc::Sender<OneOrMany<Metric>>) -> anyhow::Result<()> {
         tracing::info!(message = "starting", devices = ?self.devices);
         let mut interval = tokio::time::interval(self.interval);
-        let mut sender = CachedSender::new(
-            Cache::new(self.devices.len() * 5, self.interval.as_secs()),
-            sender,
-        );
+        let mut sender = CachedSender::new(self.devices.len() * 5, self.interval.as_secs(), sender);
         let mut ctx = LocalContext::new(self.devices.iter().copied());
         loop {
             tokio::select! {

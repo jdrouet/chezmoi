@@ -4,8 +4,6 @@ use chezmoi_entity::metric::Metric;
 use chezmoi_entity::OneOrMany;
 use tokio::sync::mpsc;
 
-use crate::helper::cache::Cache;
-
 use super::helper::CachedSender;
 
 pub const fn default_interval() -> u64 {
@@ -46,7 +44,7 @@ impl Collector {
     #[tracing::instrument(name = "system", skip_all)]
     pub async fn run(mut self, sender: mpsc::Sender<OneOrMany<Metric>>) -> anyhow::Result<()> {
         let mut ticker = tokio::time::interval(self.interval);
-        let mut sender = CachedSender::new(Cache::new(6, self.interval.as_secs()), sender);
+        let mut sender = CachedSender::new(6, self.interval.as_secs(), sender);
 
         let hostname = sysinfo::System::host_name()
             .or_else(|| std::env::var("HOST").ok())

@@ -5,7 +5,6 @@ use tokio::sync::mpsc;
 
 pub mod collector;
 pub mod exporter;
-pub mod helper;
 pub mod prelude;
 pub mod watcher;
 

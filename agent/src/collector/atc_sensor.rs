@@ -7,7 +7,6 @@ use chezmoi_entity::{now, OneOrMany};
 use tokio::sync::{broadcast, mpsc};
 
 use super::helper::CachedSender;
-use crate::helper::cache::Cache;
 use crate::watcher::bluetooth::WatcherEvent;
 
 pub const DEVICE_TEMPERATURE: &str = "atc-thermometer.temperature";
@@ -191,10 +190,7 @@ impl Collector {
     pub async fn run(mut self, sender: mpsc::Sender<OneOrMany<Metric>>) -> anyhow::Result<()> {
         tracing::info!(message = "starting", devices = ?self.devices);
         let mut interval = tokio::time::interval(self.interval);
-        let mut sender = CachedSender::new(
-            Cache::new(self.devices.len() * 3, self.interval.as_secs()),
-            sender,
-        );
+        let mut sender = CachedSender::new(self.devices.len() * 3, self.interval.as_secs(), sender);
         loop {
             tokio::select! {
                 _ = interval.tick() => {
