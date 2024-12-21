@@ -1,6 +1,7 @@
-use chezmoi_entity::metric::Metric;
 use chezmoi_entity::OneOrMany;
 use tokio::sync::mpsc;
+
+use crate::metric::AgentMetric;
 
 static USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
 
@@ -61,7 +62,7 @@ pub struct Exporter {
 
 impl Exporter {
     #[tracing::instrument(name = "handle", skip(self, values))]
-    async fn handle(&self, origin: FlushOrigin, values: Vec<Metric>) {
+    async fn handle(&self, origin: FlushOrigin, values: Vec<AgentMetric>) {
         if values.is_empty() {
             return;
         }
@@ -97,9 +98,9 @@ impl Exporter {
     }
 
     #[tracing::instrument(name = "http", skip_all)]
-    pub async fn run(self, mut receiver: mpsc::Receiver<OneOrMany<Metric>>) {
+    pub async fn run(self, mut receiver: mpsc::Receiver<OneOrMany<AgentMetric>>) {
         let mut flush_ticker = tokio::time::interval(std::time::Duration::new(self.interval, 0));
-        let mut buffer: Vec<Metric> = Vec::with_capacity(self.capacity);
+        let mut buffer: Vec<AgentMetric> = Vec::with_capacity(self.capacity);
 
         while !receiver.is_closed() {
             tokio::select! {

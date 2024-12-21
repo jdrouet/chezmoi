@@ -25,15 +25,15 @@ impl Config {
                         .map(|addr| bluer::Address::new(addr.0)),
                 );
             }
-            #[cfg(feature = "collector-miflora-sensor")]
-            crate::collector::Config::MifloraSensor(sensor) => {
-                bluetooth_followed.extend(
-                    sensor
-                        .devices
-                        .iter()
-                        .map(|addr| bluer::Address::new(addr.0)),
-                );
-            }
+            // #[cfg(feature = "collector-miflora-sensor")]
+            // crate::collector::Config::MifloraSensor(sensor) => {
+            //     bluetooth_followed.extend(
+            //         sensor
+            //             .devices
+            //             .iter()
+            //             .map(|addr| bluer::Address::new(addr.0)),
+            //     );
+            // }
             _ => {}
         });
         let (bluetooth, bluetooth_receiver) = self.bluetooth.build(bluetooth_followed).await?;

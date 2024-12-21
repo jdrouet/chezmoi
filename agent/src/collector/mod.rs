@@ -1,7 +1,7 @@
-use chezmoi_entity::{metric::Metric, OneOrMany};
+use chezmoi_entity::OneOrMany;
 use tokio::sync::mpsc;
 
-use crate::BuildContext;
+use crate::{metric::AgentMetric, BuildContext};
 
 #[cfg(feature = "collector-atc-sensor")]
 pub mod atc_sensor;
@@ -46,7 +46,7 @@ pub enum Collector {
 }
 
 impl Collector {
-    pub async fn run(self, sender: mpsc::Sender<OneOrMany<Metric>>) -> anyhow::Result<()> {
+    pub async fn run(self, sender: mpsc::Sender<OneOrMany<AgentMetric>>) -> anyhow::Result<()> {
         match self {
             #[cfg(feature = "collector-atc-sensor")]
             Self::AtcSensor(inner) => inner.run(sender).await,

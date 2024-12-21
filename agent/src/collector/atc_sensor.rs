@@ -2,11 +2,11 @@ use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 
 use bluer::{DeviceProperty, Uuid};
-use chezmoi_entity::metric::{Metric, MetricHeader};
 use chezmoi_entity::{now, OneOrMany};
 use tokio::sync::{broadcast, mpsc};
 
 use super::helper::CachedSender;
+use crate::metric::AgentMetric;
 use crate::watcher::bluetooth::WatcherEvent;
 
 pub const DEVICE_TEMPERATURE: &str = "atc-thermometer.temperature";
@@ -81,6 +81,52 @@ impl Config {
     }
 }
 
+#[derive(Clone, Debug, Hash)]
+pub enum AgentMetricName {
+    Temperature,
+    Humidity,
+    Battery,
+}
+
+impl AgentMetricName {
+    const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Temperature => "atc-thermometer.temperature",
+            Self::Humidity => "atc-thermometer.humidity",
+            Self::Battery => "atc-thermometer.battery",
+        }
+    }
+}
+
+impl serde::Serialize for AgentMetricName {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+#[derive(Clone, Debug, Hash, serde::Serialize)]
+pub struct AgentMetricTags {
+    address: bluer::Address,
+}
+
+#[derive(Clone, Debug, Hash, serde::Serialize)]
+pub struct AgentMetricHeader {
+    name: AgentMetricName,
+    tags: AgentMetricTags,
+}
+
+impl AgentMetricHeader {
+    pub const fn new(name: AgentMetricName, address: bluer::Address) -> Self {
+        Self {
+            name,
+            tags: AgentMetricTags { address },
+        }
+    }
+}
+
 pub struct Collector {
     adapter: bluer::Adapter,
     devices: HashSet<bluer::Address>,
@@ -125,24 +171,21 @@ impl Collector {
         if let Some(data) = Payload::read(data) {
             sender
                 .send_many([
-                    Metric {
+                    AgentMetric::new(
                         timestamp,
-                        header: MetricHeader::new(DEVICE_TEMPERATURE)
-                            .with_tag("address", addr.to_string()),
-                        value: data.temperature as f64,
-                    },
-                    Metric {
+                        AgentMetricHeader::new(AgentMetricName::Temperature, addr),
+                        data.temperature as f64,
+                    ),
+                    AgentMetric::new(
                         timestamp,
-                        header: MetricHeader::new(DEVICE_HUMIDITY)
-                            .with_tag("address", addr.to_string()),
-                        value: data.humidity as f64,
-                    },
-                    Metric {
+                        AgentMetricHeader::new(AgentMetricName::Humidity, addr),
+                        data.humidity as f64,
+                    ),
+                    AgentMetric::new(
                         timestamp,
-                        header: MetricHeader::new(DEVICE_BATTERY)
-                            .with_tag("address", addr.to_string()),
-                        value: data.battery as f64,
-                    },
+                        AgentMetricHeader::new(AgentMetricName::Battery, addr),
+                        data.battery as f64,
+                    ),
                 ])
                 .await;
         } else {
@@ -187,7 +230,7 @@ impl Collector {
 
 impl Collector {
     #[tracing::instrument(name = "atc-sensor", skip_all)]
-    pub async fn run(mut self, sender: mpsc::Sender<OneOrMany<Metric>>) -> anyhow::Result<()> {
+    pub async fn run(mut self, sender: mpsc::Sender<OneOrMany<AgentMetric>>) -> anyhow::Result<()> {
         tracing::info!(message = "starting", devices = ?self.devices);
         let mut interval = tokio::time::interval(self.interval);
         let mut sender = CachedSender::new(self.devices.len() * 3, self.interval.as_secs(), sender);
@@ -226,5 +269,31 @@ impl Collector {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_serialize() {
+        let value = serde_json::to_value(&AgentMetric::new(
+            1234,
+            AgentMetricHeader::new(AgentMetricName::Temperature, bluer::Address::any()),
+            12.34,
+        ))
+        .unwrap();
+        assert_eq!(
+            value,
+            serde_json::json!({
+                "timestamp": 1234,
+                "name": "atc-thermometer.temperature",
+                "tags": {
+                    "address": "00:00:00:00:00:00",
+                },
+                "value": 12.34,
+            })
+        );
     }
 }

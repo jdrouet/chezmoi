@@ -1,10 +1,11 @@
 use std::time::Duration;
 
-use chezmoi_entity::metric::Metric;
 use chezmoi_entity::OneOrMany;
 use tokio::sync::mpsc;
 
-use super::helper::CachedSender;
+use crate::metric::AgentMetric;
+
+use super::helper::{CachedSender, Hostname};
 
 pub const fn default_interval() -> u64 {
     10
@@ -34,6 +35,58 @@ impl Config {
     }
 }
 
+#[derive(Clone, Debug, Hash)]
+pub enum AgentMetricName {
+    MemoryTotal,
+    MemoryUsed,
+    MemoryRatio,
+    SwapTotal,
+    SwapUsed,
+    SwapRatio,
+}
+
+impl AgentMetricName {
+    const fn as_str(&self) -> &'static str {
+        match self {
+            Self::MemoryTotal => "system.memory.total",
+            Self::MemoryUsed => "system.memory.used",
+            Self::MemoryRatio => "system.memory.ratio",
+            Self::SwapTotal => "system.swap.total",
+            Self::SwapUsed => "system.swap.used",
+            Self::SwapRatio => "system.swap.ratio",
+        }
+    }
+}
+
+impl serde::Serialize for AgentMetricName {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+#[derive(Clone, Debug, Hash, serde::Serialize)]
+pub struct AgentMetricTags {
+    hostname: Hostname,
+}
+
+#[derive(Clone, Debug, Hash, serde::Serialize)]
+pub struct AgentMetricHeader {
+    name: AgentMetricName,
+    tags: AgentMetricTags,
+}
+
+impl AgentMetricHeader {
+    pub const fn new(name: AgentMetricName, hostname: Hostname) -> Self {
+        Self {
+            name,
+            tags: AgentMetricTags { hostname },
+        }
+    }
+}
+
 pub struct Collector {
     interval: Duration,
     system: sysinfo::System,
@@ -42,27 +95,11 @@ pub struct Collector {
 
 impl Collector {
     #[tracing::instrument(name = "system", skip_all)]
-    pub async fn run(mut self, sender: mpsc::Sender<OneOrMany<Metric>>) -> anyhow::Result<()> {
+    pub async fn run(mut self, sender: mpsc::Sender<OneOrMany<AgentMetric>>) -> anyhow::Result<()> {
         let mut ticker = tokio::time::interval(self.interval);
         let mut sender = CachedSender::new(6, self.interval.as_secs(), sender);
 
-        let hostname = sysinfo::System::host_name()
-            .or_else(|| std::env::var("HOST").ok())
-            .unwrap_or("unknown".into());
-
-        let header_memory_total = chezmoi_entity::metric::MetricHeader::new("system.memory.total")
-            .with_tag("host", hostname.clone());
-        let header_memory_used = chezmoi_entity::metric::MetricHeader::new("system.memory.used")
-            .with_tag("host", hostname.clone());
-        let header_memory_ratio = chezmoi_entity::metric::MetricHeader::new("system.memory.ratio")
-            .with_tag("host", hostname.clone());
-
-        let header_swap_total = chezmoi_entity::metric::MetricHeader::new("system.swap.total")
-            .with_tag("host", hostname.clone());
-        let header_swap_used = chezmoi_entity::metric::MetricHeader::new("system.swap.used")
-            .with_tag("host", hostname.clone());
-        let header_swap_ratio = chezmoi_entity::metric::MetricHeader::new("system.swap.ratio")
-            .with_tag("host", hostname.clone());
+        let hostname = Hostname::default();
 
         while !sender.is_closed() {
             ticker.tick().await;
@@ -76,18 +113,34 @@ impl Collector {
 
             sender
                 .send_many([
-                    Metric::new(timestamp, header_memory_total.clone(), total_memory),
-                    Metric::new(timestamp, header_memory_used.clone(), used_memory),
-                    Metric::new(
+                    AgentMetric::new(
                         timestamp,
-                        header_memory_ratio.clone(),
+                        AgentMetricHeader::new(AgentMetricName::MemoryTotal, hostname.clone()),
+                        total_memory,
+                    ),
+                    AgentMetric::new(
+                        timestamp,
+                        AgentMetricHeader::new(AgentMetricName::MemoryUsed, hostname.clone()),
+                        used_memory,
+                    ),
+                    AgentMetric::new(
+                        timestamp,
+                        AgentMetricHeader::new(AgentMetricName::MemoryRatio, hostname.clone()),
                         used_memory * 100.0 / total_memory,
                     ),
-                    Metric::new(timestamp, header_swap_total.clone(), total_swap),
-                    Metric::new(timestamp, header_swap_used.clone(), used_swap),
-                    Metric::new(
+                    AgentMetric::new(
                         timestamp,
-                        header_swap_ratio.clone(),
+                        AgentMetricHeader::new(AgentMetricName::SwapTotal, hostname.clone()),
+                        total_swap,
+                    ),
+                    AgentMetric::new(
+                        timestamp,
+                        AgentMetricHeader::new(AgentMetricName::SwapUsed, hostname.clone()),
+                        used_swap,
+                    ),
+                    AgentMetric::new(
+                        timestamp,
+                        AgentMetricHeader::new(AgentMetricName::SwapRatio, hostname.clone()),
                         if total_swap == 0.0 {
                             0.0
                         } else {

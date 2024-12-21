@@ -4,18 +4,12 @@ use std::time::Duration;
 
 use anyhow::Context;
 use chezmoi_entity::address::Address;
-use chezmoi_entity::metric::{Metric, MetricHeader};
 use chezmoi_entity::{now, OneOrMany};
 use tokio::sync::{broadcast, mpsc};
 
 use super::helper::CachedSender;
+use crate::metric::AgentMetric;
 use crate::watcher::bluetooth::WatcherEvent;
-
-pub const DEVICE_BATTERY: &str = "miflora.battery";
-pub const DEVICE_TEMPERATURE: &str = "miflora.temperature";
-pub const DEVICE_BRIGHTNESS: &str = "miflora.brightness";
-pub const DEVICE_CONDUCTIVITY: &str = "miflora.conductivity";
-pub const DEVICE_MOISTURE: &str = "miflora.moisture";
 
 /// default interval between historical fetch
 ///
@@ -155,6 +149,62 @@ impl LocalContext {
     }
 }
 
+pub const DEVICE_BATTERY: &str = "miflora.battery";
+pub const DEVICE_TEMPERATURE: &str = "miflora.temperature";
+pub const DEVICE_BRIGHTNESS: &str = "miflora.brightness";
+pub const DEVICE_CONDUCTIVITY: &str = "miflora.conductivity";
+pub const DEVICE_MOISTURE: &str = "miflora.moisture";
+
+#[derive(Clone, Debug, Hash)]
+pub enum AgentMetricName {
+    Temperature,
+    Brightness,
+    Conductivity,
+    Moisture,
+    Battery,
+}
+
+impl AgentMetricName {
+    const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Temperature => "miflora.temperature",
+            Self::Brightness => "miflora.brightness",
+            Self::Conductivity => "miflora.conductivity",
+            Self::Moisture => "miflora.moisture",
+            Self::Battery => "miflora.battery",
+        }
+    }
+}
+
+impl serde::Serialize for AgentMetricName {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+#[derive(Clone, Debug, Hash, serde::Serialize)]
+pub struct AgentMetricTags {
+    address: bluer::Address,
+}
+
+#[derive(Clone, Debug, Hash, serde::Serialize)]
+pub struct AgentMetricHeader {
+    name: AgentMetricName,
+    tags: AgentMetricTags,
+}
+
+impl AgentMetricHeader {
+    pub const fn new(name: AgentMetricName, address: bluer::Address) -> Self {
+        Self {
+            name,
+            tags: AgentMetricTags { address },
+        }
+    }
+}
+
 pub struct Collector {
     adapter: bluer::Adapter,
     devices: HashSet<bluer::Address>,
@@ -216,35 +266,31 @@ impl Collector {
                     .context("reading historical values")?;
 
                 let mut metrics = Vec::with_capacity(history.len() * 4 + 1);
-                metrics.push(Metric::new(
+                metrics.push(AgentMetric::new(
                     timestamp,
-                    MetricHeader::new(DEVICE_BATTERY).with_tag("address", addr.to_string()),
+                    AgentMetricHeader::new(AgentMetricName::Battery, addr),
                     system.battery() as f64,
                 ));
                 metrics.extend(history.iter().flat_map(|m| {
                     [
-                        Metric::new(
+                        AgentMetric::new(
                             m.timestamp(),
-                            MetricHeader::new(DEVICE_TEMPERATURE)
-                                .with_tag("address", addr.to_string()),
+                            AgentMetricHeader::new(AgentMetricName::Temperature, addr),
                             m.temperature() as f64,
                         ),
-                        Metric::new(
+                        AgentMetric::new(
                             m.timestamp(),
-                            MetricHeader::new(DEVICE_BRIGHTNESS)
-                                .with_tag("address", addr.to_string()),
+                            AgentMetricHeader::new(AgentMetricName::Brightness, addr),
                             m.brightness() as f64,
                         ),
-                        Metric::new(
+                        AgentMetric::new(
                             m.timestamp(),
-                            MetricHeader::new(DEVICE_CONDUCTIVITY)
-                                .with_tag("address", addr.to_string()),
+                            AgentMetricHeader::new(AgentMetricName::Conductivity, addr),
                             m.conductivity() as f64,
                         ),
-                        Metric::new(
+                        AgentMetric::new(
                             m.timestamp(),
-                            MetricHeader::new(DEVICE_MOISTURE)
-                                .with_tag("address", addr.to_string()),
+                            AgentMetricHeader::new(AgentMetricName::Moisture, addr),
                             m.moisture() as f64,
                         ),
                     ]
@@ -263,34 +309,30 @@ impl Collector {
                     .await
                     .context("reading realtime values")?;
                 sender
-                    .send_many(vec![
-                        Metric::new(
+                    .send_many([
+                        AgentMetric::new(
                             timestamp,
-                            MetricHeader::new(DEVICE_BATTERY).with_tag("address", addr.to_string()),
+                            AgentMetricHeader::new(AgentMetricName::Battery, addr),
                             system.battery() as f64,
                         ),
-                        Metric::new(
+                        AgentMetric::new(
                             timestamp,
-                            MetricHeader::new(DEVICE_TEMPERATURE)
-                                .with_tag("address", addr.to_string()),
+                            AgentMetricHeader::new(AgentMetricName::Temperature, addr),
                             realtime.temperature() as f64,
                         ),
-                        Metric::new(
+                        AgentMetric::new(
                             timestamp,
-                            MetricHeader::new(DEVICE_BRIGHTNESS)
-                                .with_tag("address", addr.to_string()),
+                            AgentMetricHeader::new(AgentMetricName::Brightness, addr),
                             realtime.brightness() as f64,
                         ),
-                        Metric::new(
+                        AgentMetric::new(
                             timestamp,
-                            MetricHeader::new(DEVICE_CONDUCTIVITY)
-                                .with_tag("address", addr.to_string()),
+                            AgentMetricHeader::new(AgentMetricName::Conductivity, addr),
                             realtime.conductivity() as f64,
                         ),
-                        Metric::new(
+                        AgentMetric::new(
                             timestamp,
-                            MetricHeader::new(DEVICE_MOISTURE)
-                                .with_tag("address", addr.to_string()),
+                            AgentMetricHeader::new(AgentMetricName::Moisture, addr),
                             realtime.moisture() as f64,
                         ),
                     ])
@@ -304,7 +346,7 @@ impl Collector {
 
 impl Collector {
     #[tracing::instrument(name = "miflora-sensor", skip_all)]
-    pub async fn run(mut self, sender: mpsc::Sender<OneOrMany<Metric>>) -> anyhow::Result<()> {
+    pub async fn run(mut self, sender: mpsc::Sender<OneOrMany<AgentMetric>>) -> anyhow::Result<()> {
         tracing::info!(message = "starting", devices = ?self.devices);
         let mut interval = tokio::time::interval(self.interval);
         let mut sender = CachedSender::new(self.devices.len() * 5, self.interval.as_secs(), sender);

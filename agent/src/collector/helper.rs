@@ -1,7 +1,11 @@
-use chezmoi_entity::{metric::Metric, OneOrMany};
+use std::sync::Arc;
+
+use chezmoi_entity::OneOrMany;
 use tokio::sync::mpsc;
 
 use indexmap::IndexMap;
+
+use crate::metric::AgentMetric;
 
 #[derive(Debug)]
 struct CacheEntry {
@@ -34,7 +38,7 @@ impl Cache {
         }
     }
 
-    fn handle(&mut self, metric: Metric) -> Option<Metric> {
+    fn handle(&mut self, metric: AgentMetric) -> Option<AgentMetric> {
         let hash = metric.header.into_hash();
         let found = self
             .inner
@@ -62,26 +66,26 @@ impl Cache {
 
     fn handle_iter<'a>(
         &'a mut self,
-        iter: impl Iterator<Item = Metric> + 'a,
-    ) -> impl Iterator<Item = Metric> + 'a {
+        iter: impl Iterator<Item = AgentMetric> + 'a,
+    ) -> impl Iterator<Item = AgentMetric> + 'a {
         iter.filter_map(|item| self.handle(item))
     }
 }
 
 pub struct CachedSender {
     cache: Cache,
-    sender: mpsc::Sender<OneOrMany<Metric>>,
+    sender: mpsc::Sender<OneOrMany<AgentMetric>>,
 }
 
 impl CachedSender {
-    pub fn new(capacity: usize, ttl: u64, sender: mpsc::Sender<OneOrMany<Metric>>) -> Self {
+    pub fn new(capacity: usize, ttl: u64, sender: mpsc::Sender<OneOrMany<AgentMetric>>) -> Self {
         Self {
             cache: Cache::new(capacity, ttl),
             sender,
         }
     }
 
-    pub async fn send_one(&mut self, item: Metric) {
+    pub async fn send_one(&mut self, item: AgentMetric) {
         if let Some(item) = self.cache.handle(item) {
             if let Err(err) = self.sender.send(OneOrMany::One(item)).await {
                 tracing::error!(message = "unable to send events", error = %err);
@@ -89,7 +93,7 @@ impl CachedSender {
         }
     }
 
-    pub async fn send_many(&mut self, items: impl IntoIterator<Item = Metric>) {
+    pub async fn send_many(&mut self, items: impl IntoIterator<Item = AgentMetric>) {
         let items = self
             .cache
             .handle_iter(items.into_iter())
@@ -104,5 +108,27 @@ impl CachedSender {
     #[inline(always)]
     pub fn is_closed(&self) -> bool {
         self.sender.is_closed()
+    }
+}
+
+#[derive(Clone, Debug, Hash)]
+pub struct Hostname(Arc<str>);
+
+impl Default for Hostname {
+    fn default() -> Self {
+        Self(Arc::from(
+            sysinfo::System::host_name()
+                .or_else(|| std::env::var("HOST").ok())
+                .unwrap_or("unknown".into()),
+        ))
+    }
+}
+
+impl serde::Serialize for Hostname {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.0.as_ref())
     }
 }

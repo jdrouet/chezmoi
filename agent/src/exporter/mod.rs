@@ -1,6 +1,7 @@
-use chezmoi_entity::metric::Metric;
 use chezmoi_entity::OneOrMany;
 use tokio::sync::mpsc::Receiver;
+
+use crate::metric::AgentMetric;
 
 pub mod http;
 pub mod trace;
@@ -27,7 +28,7 @@ pub enum Exporter {
 }
 
 impl Exporter {
-    pub async fn run(self, receiver: Receiver<OneOrMany<Metric>>) {
+    pub async fn run(self, receiver: Receiver<OneOrMany<AgentMetric>>) {
         match self {
             Self::Http(inner) => inner.run(receiver).await,
             Self::Trace(inner) => inner.run(receiver).await,
