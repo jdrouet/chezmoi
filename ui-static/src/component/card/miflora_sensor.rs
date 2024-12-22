@@ -60,6 +60,10 @@ impl crate::component::prelude::Component for MifloraSensorCard<'_> {
                             value: self.values.temperature.as_ref(),
                         }
                         .render(buf);
+                        let buf = buf
+                            .node("div")
+                            .attr(("class", "image text-center align-content-center pad-md"))
+                            .content(|buf| buf.raw("🪴"));
                         let buf = value_cell::ValueCell {
                             label: "Brightness",
                             formatter: &PERCENTAGE,
