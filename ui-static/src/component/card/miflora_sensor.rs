@@ -4,7 +4,7 @@ use another_html_builder::{Body, Buffer};
 use crate::component::range::Range;
 use crate::component::value::TimedValue;
 use crate::component::value_cell;
-use crate::helper::format::{PERCENTAGE, TEMPERATURE};
+use crate::helper::format::{BRIGHTNESS, CONDUCTIVITY, PERCENTAGE, TEMPERATURE};
 
 // Available values
 // - temperature
@@ -66,14 +66,14 @@ impl crate::component::prelude::Component for MifloraSensorCard<'_> {
                             .content(|buf| buf.raw("🪴"));
                         let buf = value_cell::ValueCell {
                             label: "Brightness",
-                            formatter: &PERCENTAGE,
+                            formatter: &BRIGHTNESS,
                             definition: &self.definition.brightness,
                             value: self.values.brightness.as_ref(),
                         }
                         .render(buf);
                         let buf = value_cell::ValueCell {
                             label: "Conductivity",
-                            formatter: &PERCENTAGE,
+                            formatter: &CONDUCTIVITY,
                             definition: &self.definition.conductivity,
                             value: self.values.conductivity.as_ref(),
                         }
