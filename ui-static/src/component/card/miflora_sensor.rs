@@ -48,10 +48,10 @@ pub struct MifloraSensorCard<'a> {
 impl crate::component::prelude::Component for MifloraSensorCard<'_> {
     fn render<'a, W: WriterExt>(&self, buf: Buffer<W, Body<'a>>) -> Buffer<W, Body<'a>> {
         buf.node("div")
-            .attr(("class", "card flex-col colspan-4"))
+            .attr(("class", "miflora-sensor card flex-col colspan-3 rowspan-2"))
             .content(|buf| {
                 buf.node("div")
-                    .attr(("class", "flex-row flex-grow"))
+                    .attr(("class", "content"))
                     .content(|buf| {
                         let buf = value_cell::ValueCell {
                             label: "Temperature",

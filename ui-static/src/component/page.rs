@@ -40,7 +40,16 @@ where
             .close()
             .node("link")
             .attr(("rel", "stylesheet"))
-            .attr(("href", Concat(base_url, "assets/style.css")))
+            .attr(("href", Concat(base_url, "assets/style-global.css")))
+            .close()
+            // TODO dynamically load those styles
+            .node("link")
+            .attr(("rel", "stylesheet"))
+            .attr(("href", Concat(base_url, "assets/style-atc-sensor.css")))
+            .close()
+            .node("link")
+            .attr(("rel", "stylesheet"))
+            .attr(("href", Concat(base_url, "assets/style-miflora-sensor.css")))
             .close()
     })
 }

@@ -11,7 +11,15 @@ mod ui_error;
 pub fn create() -> axum::Router {
     axum::Router::new()
         .route("/", get(ui_dashboard::handle))
-        .route("/assets/style.css", get(ui_asset::style_css))
+        .route("/assets/style-global.css", get(ui_asset::style_global_css))
+        .route(
+            "/assets/style-atc-sensor.css",
+            get(ui_asset::style_atc_sensor_css),
+        )
+        .route(
+            "/assets/style-miflora-sensor.css",
+            get(ui_asset::style_miflora_sensor_css),
+        )
         .route("/api/metrics", post(api_metrics_create::handle))
         .route(
             "/api/metrics/latest",

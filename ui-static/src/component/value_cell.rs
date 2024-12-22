@@ -53,7 +53,7 @@ impl crate::component::prelude::Component for ValueCell<'_> {
         buf.node("div")
             .attr((
                 "class",
-                "flex-grow text-center align-content-center pad-md separated",
+                "value-cell text-center align-content-center pad-md",
             ))
             .content(|buf| {
                 let status = self.status();

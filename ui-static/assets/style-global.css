@@ -159,6 +159,10 @@ a:visited {
     grid-row-end: span 2;
 }
 
+.colspan-1 {
+    grid-column-end: span 1;
+}
+
 @media screen and (min-width: 576px) {
     .dashboard-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -219,4 +223,8 @@ a:visited {
 
 .flex-col > .separated + .separated {
     border-top: 1px solid var(--border-color);
+}
+
+.value-cell {
+    min-height: 100px;
 }
