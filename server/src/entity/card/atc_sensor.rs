@@ -44,7 +44,7 @@ impl Config {
     pub fn latest_filters<'a>(&'a self, list: &mut HashSet<&'a MetricHeader<'a>>) {
         list.insert(&self.headers.temperature);
         list.insert(&self.headers.humidity);
-        list.insert(&self.headers.temperature);
+        list.insert(&self.headers.battery);
     }
 
     pub fn build<'a>(&'a self, metrics: &LatestResult) -> atc_sensor::AtcSensorCard<'a> {
