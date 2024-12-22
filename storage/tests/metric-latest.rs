@@ -20,10 +20,13 @@ async fn should_fetch_single_by_name() {
         .iter(),
     )
     .await;
-    let result =
-        chezmoi_storage::metric::latest(client.as_ref(), &[MetricHeader::new("foo")], (0, 10))
-            .await
-            .unwrap();
+    let result = chezmoi_storage::metric::latest(
+        client.as_ref(),
+        [MetricHeader::new("foo")].iter(),
+        (0, 10),
+    )
+    .await
+    .unwrap();
     assert_eq!(result.len(), 1);
     assert_eq!(result[0].timestamp, 9);
     assert_eq!(result[0].value, 4.0);
@@ -49,7 +52,7 @@ async fn should_fetch_multiple_by_name() {
     .await;
     let result = chezmoi_storage::metric::latest(
         client.as_ref(),
-        &[MetricHeader::new("foo"), MetricHeader::new("bar")],
+        [MetricHeader::new("foo"), MetricHeader::new("bar")].iter(),
         (0, 10),
     )
     .await
@@ -77,7 +80,7 @@ async fn should_fetch_single_with_tags() {
     .await;
     let result = chezmoi_storage::metric::latest(
         client.as_ref(),
-        &[MetricHeader::new("foo").with_tag("host", "a")],
+        [MetricHeader::new("foo").with_tag("host", "a")].iter(),
         (0, 10),
     )
     .await
@@ -107,10 +110,11 @@ async fn should_fetch_multiple_with_tags() {
     .await;
     let result = chezmoi_storage::metric::latest(
         client.as_ref(),
-        &[
+        [
             MetricHeader::new("foo").with_tag("host", "a"),
             MetricHeader::new("bar").with_tag("host", "b"),
-        ],
+        ]
+        .iter(),
         (0, 10),
     )
     .await

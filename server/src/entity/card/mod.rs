@@ -1,7 +1,9 @@
 use std::collections::HashSet;
 
-use chezmoi_entity::metric::{Metric, MetricHeader};
+use chezmoi_entity::metric::MetricHeader;
 use chezmoi_ui_static::component::card::Card;
+
+use crate::helper::LatestResult;
 
 pub mod atc_sensor;
 pub mod miflora_sensor;
@@ -14,14 +16,14 @@ pub enum CardConfig {
 }
 
 impl CardConfig {
-    pub fn latest_filters<'a>(&'a self, list: &mut HashSet<MetricHeader<'a>>) {
+    pub fn latest_filters<'a>(&'a self, list: &mut HashSet<&'a MetricHeader<'a>>) {
         match self {
             Self::AtcSensor(inner) => inner.latest_filters(list),
             Self::MifloraSensor(inner) => inner.latest_filters(list),
         }
     }
 
-    pub fn build<'a>(&'a self, metrics: &[Metric]) -> Card<'a> {
+    pub fn build<'a>(&'a self, metrics: &LatestResult) -> Card<'a> {
         match self {
             Self::AtcSensor(inner) => Card::AtcSensor(inner.build(metrics)),
             Self::MifloraSensor(inner) => Card::MifloraSensor(inner.build(metrics)),

@@ -15,9 +15,12 @@ pub async fn handle_post(
     Extension(client): Extension<chezmoi_storage::client::Client>,
     Json(payload): Json<Payload>,
 ) -> Result<Json<Vec<Metric>>, ApiError> {
+    if payload.headers.is_empty() {
+        return Ok(Json(Vec::new()));
+    }
     let list = chezmoi_storage::metric::latest(
         client.as_ref(),
-        &payload.headers,
+        payload.headers.iter(),
         (payload.from, payload.to),
     )
     .await?;
@@ -28,9 +31,12 @@ pub async fn handle_get(
     Extension(client): Extension<chezmoi_storage::client::Client>,
     QsQuery(payload): QsQuery<Payload>,
 ) -> Result<Json<Vec<Metric>>, ApiError> {
+    if payload.headers.is_empty() {
+        return Ok(Json(Vec::new()));
+    }
     let list = chezmoi_storage::metric::latest(
         client.as_ref(),
-        &payload.headers,
+        payload.headers.iter(),
         (payload.from, payload.to),
     )
     .await?;

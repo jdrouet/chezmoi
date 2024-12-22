@@ -1,4 +1,4 @@
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct TimedValue {
     pub timestamp: u64,
     pub value: f64,

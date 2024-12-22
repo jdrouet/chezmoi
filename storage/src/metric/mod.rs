@@ -39,13 +39,14 @@ where
     Ok(res.rows_affected())
 }
 
-pub async fn latest<'c, E>(
+pub async fn latest<'c, E, H>(
     executor: E,
-    headers: &'c [MetricHeader<'c>],
+    headers: H,
     window: (u64, u64),
 ) -> sqlx::Result<Vec<Metric>>
 where
     E: sqlx::Executor<'c, Database = sqlx::Sqlite>,
+    H: Iterator<Item = &'c MetricHeader<'c>>,
 {
     let mut qb = sqlx::QueryBuilder::new("with metrics_subset as (");
     qb.push("select timestamp, name, tags, value,");
@@ -60,26 +61,21 @@ where
     qb.push(" select timestamp, name, tags, value");
     qb.push(" from metrics_subset");
     qb.push(" where idx = 1");
-    if !headers.is_empty() {
-        qb.push(" and (");
-        for (index, header) in headers.iter().enumerate() {
-            if index > 0 {
-                qb.push(" or");
-            }
-            qb.push(" (")
-                .push("name = ")
-                .push_bind(header.name.as_ref());
-            for (name, value) in header.tags.as_ref().iter() {
-                qb.push(" and")
-                    .push(" json_extract(tags, ")
-                    .push_bind(format!("$.{name}"))
-                    .push(") = ")
-                    .push_bind(value);
-            }
-            qb.push(")");
+    qb.push(" and ( false");
+    for header in headers {
+        qb.push(" or (")
+            .push("name = ")
+            .push_bind(header.name.as_ref());
+        for (name, value) in header.tags.as_ref().iter() {
+            qb.push(" and")
+                .push(" json_extract(tags, ")
+                .push_bind(format!("$.{name}"))
+                .push(") = ")
+                .push_bind(value);
         }
         qb.push(")");
     }
+    qb.push(")");
     qb.push(" order by timestamp desc");
     //
     let query = qb.build_query_as::<'_, SqlxMetric>();

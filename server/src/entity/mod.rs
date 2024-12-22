@@ -1,8 +1,10 @@
 use std::collections::HashSet;
 
-use chezmoi_entity::metric::{Metric, MetricHeader};
+use chezmoi_entity::metric::MetricHeader;
 use chezmoi_ui_static::component::range::Range;
 use chezmoi_ui_static::view::dashboard;
+
+use crate::helper::LatestResult;
 
 mod card;
 
@@ -14,11 +16,11 @@ pub struct SectionConfig {
 }
 
 impl SectionConfig {
-    fn latest_filters<'a>(&'a self, list: &mut HashSet<MetricHeader<'a>>) {
+    fn latest_filters<'a>(&'a self, list: &mut HashSet<&'a MetricHeader<'a>>) {
         self.cards.iter().for_each(|c| c.latest_filters(list));
     }
 
-    pub fn build<'a>(&'a self, metrics: &[Metric]) -> dashboard::Section<'a> {
+    pub fn build<'a>(&'a self, metrics: &LatestResult) -> dashboard::Section<'a> {
         dashboard::Section::new(
             self.title.as_str(),
             self.cards.iter().map(|c| c.build(metrics)).collect(),
@@ -121,7 +123,7 @@ impl Default for DashboardConfig {
 }
 
 impl DashboardConfig {
-    pub fn latest_filters<'a>(&'a self) -> HashSet<MetricHeader<'a>> {
+    pub fn latest_filters<'a>(&'a self) -> HashSet<&'a MetricHeader<'a>> {
         let mut res = HashSet::new();
         self.sections
             .iter()
@@ -129,7 +131,7 @@ impl DashboardConfig {
         res
     }
 
-    pub fn build<'a>(&'a self, metrics: &[Metric]) -> dashboard::DashboardView<'a> {
+    pub fn build<'a>(&'a self, metrics: &LatestResult) -> dashboard::DashboardView<'a> {
         dashboard::DashboardView::new(
             "/",
             self.sections.iter().map(|s| s.build(metrics)).collect(),
