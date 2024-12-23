@@ -86,3 +86,16 @@ where
         .collect::<Vec<_>>();
     Ok(rows)
 }
+
+pub async fn history<'c, E, H>(
+    _executor: E,
+    _headers: H,
+    _partitions: usize,
+    _window: (u64, u64),
+) -> sqlx::Result<Vec<Metric>>
+where
+    E: sqlx::Executor<'c, Database = sqlx::Sqlite>,
+    H: Iterator<Item = &'c MetricHeader<'c>>,
+{
+    Ok(Vec::new())
+}

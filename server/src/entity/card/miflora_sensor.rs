@@ -1,9 +1,7 @@
-use std::collections::HashSet;
-
 use chezmoi_entity::metric::MetricHeader;
 use chezmoi_ui_static::component::card::miflora_sensor;
 
-use crate::helper::LatestResult;
+use crate::helper::{QueryCollector, QueryResult};
 
 #[derive(Debug)]
 pub(crate) struct Headers {
@@ -45,23 +43,23 @@ impl From<miflora_sensor::Definition> for Config {
 }
 
 impl Config {
-    pub fn latest_filters<'a>(&'a self, list: &mut HashSet<&'a MetricHeader<'a>>) {
-        list.insert(&self.headers.temperature);
-        list.insert(&self.headers.brightness);
-        list.insert(&self.headers.conductivity);
-        list.insert(&self.headers.moisture);
-        list.insert(&self.headers.battery);
+    pub fn collect<'a>(&'a self, res: &mut QueryCollector<'a>) {
+        res.latest.insert(&self.headers.temperature);
+        res.latest.insert(&self.headers.brightness);
+        res.latest.insert(&self.headers.conductivity);
+        res.latest.insert(&self.headers.moisture);
+        res.latest.insert(&self.headers.battery);
     }
 
-    pub fn build<'a>(&'a self, metrics: &LatestResult) -> miflora_sensor::MifloraSensorCard<'a> {
+    pub fn build<'a>(&'a self, metrics: &QueryResult) -> miflora_sensor::MifloraSensorCard<'a> {
         miflora_sensor::MifloraSensorCard {
             definition: &self.inner,
             values: miflora_sensor::Values {
-                temperature: metrics.find(&self.headers.temperature),
-                brightness: metrics.find(&self.headers.brightness),
-                conductivity: metrics.find(&self.headers.conductivity),
-                moisture: metrics.find(&self.headers.moisture),
-                battery: metrics.find(&self.headers.battery),
+                temperature: metrics.latest.find(&self.headers.temperature),
+                brightness: metrics.latest.find(&self.headers.brightness),
+                conductivity: metrics.latest.find(&self.headers.conductivity),
+                moisture: metrics.latest.find(&self.headers.moisture),
+                battery: metrics.latest.find(&self.headers.battery),
             },
         }
     }

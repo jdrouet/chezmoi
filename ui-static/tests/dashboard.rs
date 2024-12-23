@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use chezmoi_ui_static::component::card::{atc_sensor, line_chart, miflora_sensor, Card};
 use chezmoi_ui_static::component::range::Range;
 use chezmoi_ui_static::component::value::TimedValue;
@@ -100,19 +98,11 @@ fn line_chart() {
             title: "Home",
             cards: vec![Card::LineChart(line_chart::LineChartCard {
                 definition: &definition,
-                values: line_chart::Values {
-                    metrics: HashMap::from_iter(
-                        [(
-                            "foo".into(),
-                            vec![
-                                TimedValue::new(0, 25.0),
-                                TimedValue::new(1, 23.0),
-                                TimedValue::new(2, 26.0),
-                            ],
-                        )]
-                        .into_iter(),
-                    ),
-                },
+                values: vec![
+                    TimedValue::new(0, 25.0),
+                    TimedValue::new(1, 23.0),
+                    TimedValue::new(2, 26.0),
+                ],
             })],
         }],
     };

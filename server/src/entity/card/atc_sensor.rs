@@ -1,9 +1,7 @@
-use std::collections::HashSet;
-
 use chezmoi_entity::metric::MetricHeader;
 use chezmoi_ui_static::component::card::atc_sensor;
 
-use crate::helper::LatestResult;
+use crate::helper::{QueryCollector, QueryResult};
 
 #[derive(Debug)]
 pub(crate) struct Headers {
@@ -41,19 +39,19 @@ impl From<atc_sensor::Definition> for Config {
 }
 
 impl Config {
-    pub fn latest_filters<'a>(&'a self, list: &mut HashSet<&'a MetricHeader<'a>>) {
-        list.insert(&self.headers.temperature);
-        list.insert(&self.headers.humidity);
-        list.insert(&self.headers.battery);
+    pub fn collect<'a>(&'a self, col: &mut QueryCollector<'a>) {
+        col.latest.insert(&self.headers.temperature);
+        col.latest.insert(&self.headers.humidity);
+        col.latest.insert(&self.headers.battery);
     }
 
-    pub fn build<'a>(&'a self, metrics: &LatestResult) -> atc_sensor::AtcSensorCard<'a> {
+    pub fn build<'a>(&'a self, metrics: &QueryResult) -> atc_sensor::AtcSensorCard<'a> {
         atc_sensor::AtcSensorCard {
             definition: &self.inner,
             values: atc_sensor::Values {
-                temperature: metrics.find(&self.headers.temperature),
-                humidity: metrics.find(&self.headers.humidity),
-                battery: metrics.find(&self.headers.battery),
+                temperature: metrics.latest.find(&self.headers.temperature),
+                humidity: metrics.latest.find(&self.headers.humidity),
+                battery: metrics.latest.find(&self.headers.battery),
             },
         }
     }

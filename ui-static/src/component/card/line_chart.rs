@@ -22,7 +22,7 @@ pub struct Values {
 #[derive(Debug)]
 pub struct LineChartCard<'a> {
     pub definition: &'a Definition,
-    pub values: Values,
+    pub values: Vec<TimedValue>,
 }
 
 impl LineChartCard<'_> {
@@ -60,15 +60,12 @@ impl LineChartCard<'_> {
             //     .draw()
             //     .unwrap();
 
-            for (name, points) in self.values.metrics.iter() {
-                chart
-                    .draw_series(
-                        LineSeries::new(points.iter().map(|p| (p.timestamp, p.value)), &BLUE)
-                            .point_size(1),
-                    )
-                    .unwrap()
-                    .label(name);
-            }
+            chart
+                .draw_series(
+                    LineSeries::new(self.values.iter().map(|p| (p.timestamp, p.value)), &BLUE)
+                        .point_size(1),
+                )
+                .unwrap();
         }
 
         buffer

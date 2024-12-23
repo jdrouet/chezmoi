@@ -1,31 +1,32 @@
-use std::collections::HashSet;
-
-use chezmoi_entity::metric::MetricHeader;
 use chezmoi_ui_static::component::card::Card;
 
-use crate::helper::LatestResult;
+use crate::helper::{QueryCollector, QueryResult};
 
 pub mod atc_sensor;
+pub mod history;
 pub mod miflora_sensor;
 
 #[derive(Debug, serde::Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum CardConfig {
     AtcSensor(atc_sensor::Config),
+    History(history::Config),
     MifloraSensor(miflora_sensor::Config),
 }
 
 impl CardConfig {
-    pub fn latest_filters<'a>(&'a self, list: &mut HashSet<&'a MetricHeader<'a>>) {
+    pub fn collect<'a>(&'a self, collector: &mut QueryCollector<'a>) {
         match self {
-            Self::AtcSensor(inner) => inner.latest_filters(list),
-            Self::MifloraSensor(inner) => inner.latest_filters(list),
+            Self::AtcSensor(inner) => inner.collect(collector),
+            Self::History(inner) => inner.collect(collector),
+            Self::MifloraSensor(inner) => inner.collect(collector),
         }
     }
 
-    pub fn build<'a>(&'a self, metrics: &LatestResult) -> Card<'a> {
+    pub fn build<'a>(&'a self, metrics: &QueryResult) -> Card<'a> {
         match self {
             Self::AtcSensor(inner) => Card::AtcSensor(inner.build(metrics)),
+            Self::History(inner) => Card::LineChart(inner.build(metrics)),
             Self::MifloraSensor(inner) => Card::MifloraSensor(inner.build(metrics)),
         }
     }
