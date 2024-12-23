@@ -89,8 +89,8 @@ fn miflora_sensor() {
 fn line_chart() {
     let definition = line_chart::Definition {
         title: "Hello World".into(),
-        x_range: (0, 60),
-        y_range: (0.0, 100.0),
+        x_range: (0, 60).into(),
+        y_range: (0.0, 100.0).into(),
     };
     let view = dashboard::DashboardView {
         base_url: "",

@@ -21,6 +21,10 @@ css_style!(
     chezmoi_ui_static::asset::STYLE_ATC_SENSOR_CSS
 );
 css_style!(
+    style_line_chart_css,
+    chezmoi_ui_static::asset::STYLE_LINE_CHART_CSS
+);
+css_style!(
     style_miflora_sensor_css,
     chezmoi_ui_static::asset::STYLE_MIFLORA_SENSOR_CSS
 );

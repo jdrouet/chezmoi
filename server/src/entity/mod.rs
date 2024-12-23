@@ -144,6 +144,23 @@ impl Default for DashboardConfig {
                     })
                     .collect::<Vec<_>>(),
                 },
+                SectionConfig {
+                    title: "History".into(),
+                    cards: vec![card::CardConfig::History(card::history::Config {
+                        definition: chezmoi_ui_static::component::card::line_chart::Definition {
+                            title: "Temperature outside".into(),
+                            x_range: Default::default(),
+                            y_range: Range {
+                                min: Some(0.0),
+                                max: None,
+                            },
+                        },
+                        query: chezmoi_entity::metric::MetricHeader::new(
+                            "atc-thermometer.temperature",
+                        )
+                        .with_tag("address", "A4:C1:38:4E:92:06"),
+                    })],
+                },
             ],
         }
     }

@@ -337,6 +337,7 @@ name = "chezmoi-ui-static"
 version = "0.1.0"
 dependencies = [
  "another-html-builder",
+ "chrono",
  "human-number",
  "plotters",
  "serde",

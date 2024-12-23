@@ -20,15 +20,15 @@ pub struct Definition {
     pub name: Option<String>,
     pub address: String,
     #[serde(default)]
-    pub temperature: Range,
+    pub temperature: Range<f64>,
     #[serde(default)]
-    pub brightness: Range,
+    pub brightness: Range<f64>,
     #[serde(default)]
-    pub conductivity: Range,
+    pub conductivity: Range<f64>,
     #[serde(default)]
-    pub moisture: Range,
+    pub moisture: Range<f64>,
     #[serde(default)]
-    pub battery: Range,
+    pub battery: Range<f64>,
 }
 
 #[derive(Clone, Debug)]

@@ -39,6 +39,31 @@ where
     Ok(res.rows_affected())
 }
 
+fn headers_filter<'c, 'm, H>(
+    qb: &'c mut sqlx::QueryBuilder<'c, sqlx::Sqlite>,
+    headers: H,
+) -> &'c mut sqlx::QueryBuilder<'c, sqlx::Sqlite>
+where
+    'm: 'c,
+    H: Iterator<Item = &'m MetricHeader<'m>>,
+{
+    qb.push(" and ( false ");
+    for header in headers {
+        qb.push(" or (")
+            .push("name = ")
+            .push_bind(header.name.as_ref());
+        for (name, value) in header.tags.as_ref().iter() {
+            qb.push(" and")
+                .push(" json_extract(tags, ")
+                .push_bind(format!("$.{name}"))
+                .push(") = ")
+                .push_bind(value);
+        }
+        qb.push(")");
+    }
+    qb.push(")")
+}
+
 pub async fn latest<'c, E, H>(
     executor: E,
     headers: H,
@@ -61,21 +86,7 @@ where
     qb.push(" select timestamp, name, tags, value");
     qb.push(" from metrics_subset");
     qb.push(" where idx = 1");
-    qb.push(" and ( false");
-    for header in headers {
-        qb.push(" or (")
-            .push("name = ")
-            .push_bind(header.name.as_ref());
-        for (name, value) in header.tags.as_ref().iter() {
-            qb.push(" and")
-                .push(" json_extract(tags, ")
-                .push_bind(format!("$.{name}"))
-                .push(") = ")
-                .push_bind(value);
-        }
-        qb.push(")");
-    }
-    qb.push(")");
+    let qb = headers_filter(&mut qb, headers);
     qb.push(" order by timestamp desc");
     //
     let query = qb.build_query_as::<'_, SqlxMetric>();
@@ -88,14 +99,46 @@ where
 }
 
 pub async fn history<'c, E, H>(
-    _executor: E,
-    _headers: H,
-    _partitions: usize,
-    _window: (u64, u64),
+    executor: E,
+    headers: H,
+    partitions: usize,
+    window: (u64, u64),
 ) -> sqlx::Result<Vec<Metric>>
 where
     E: sqlx::Executor<'c, Database = sqlx::Sqlite>,
     H: Iterator<Item = &'c MetricHeader<'c>>,
 {
-    Ok(Vec::new())
+    // metrics_subset
+    let mut qb = sqlx::QueryBuilder::new("with metrics_subset as (");
+    qb.push("select");
+    qb.push(" timestamp,");
+    qb.push(" (timestamp - ")
+        .push_bind(window.0 as i64)
+        .push(") * ")
+        .push_bind(partitions as i64)
+        .push(" / (")
+        .push_bind(window.1 as i64)
+        .push(" - ")
+        .push_bind(window.0 as i64)
+        .push(")")
+        .push(" as division,");
+    qb.push(" name,");
+    qb.push(" tags,");
+    qb.push(" value");
+    qb.push(" from metrics");
+    qb.push(" where timestamp > ").push(window.0);
+    qb.push(" and timestamp <= ").push(window.1);
+    let qb = headers_filter(&mut qb, headers);
+    qb.push(")");
+    // main query
+    qb.push(" select cast(avg(timestamp) as integer), name, tags, avg(value) from metrics_subset");
+    qb.push(" group by division, name, tags");
+    //
+    let query = qb.build_query_as::<'_, SqlxMetric>();
+    let rows = query.fetch_all(executor).await?;
+    let rows = rows
+        .into_iter()
+        .map(|SqlxMetric(inner)| inner)
+        .collect::<Vec<_>>();
+    Ok(rows)
 }

@@ -14,15 +14,22 @@ pub async fn handle(
     Extension(config): Extension<Arc<DashboardConfig>>,
 ) -> Result<Html<String>, UiError> {
     let ts = now();
-    let QueryCollector { latest, history: _ } = config.collect();
+    let from = ts - 60 * 60 * 24;
+    let QueryCollector { latest, history } = config.collect();
     let latests = if latest.is_empty() {
         Vec::new()
     } else {
-        chezmoi_storage::metric::latest(client.as_ref(), latest.into_iter(), (0, ts)).await?
+        chezmoi_storage::metric::latest(client.as_ref(), latest.into_iter(), (from, ts)).await?
+    };
+    let history = if history.is_empty() {
+        Vec::new()
+    } else {
+        chezmoi_storage::metric::history(client.as_ref(), history.into_iter(), 48, (from, ts))
+            .await?
     };
     let res = QueryResult {
         latest: LatestResult::from_iter(latests.into_iter()),
-        history: HistoryResult::from_iter(std::iter::empty()),
+        history: HistoryResult::from_iter(history.into_iter()),
     };
     Ok(Html(config.build(&res).render(&super::UI_CTX)))
 }

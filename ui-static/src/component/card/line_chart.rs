@@ -1,17 +1,25 @@
 use std::collections::HashMap;
-use std::ops::Range;
 
 use another_html_builder::prelude::WriterExt;
 use another_html_builder::{Body, Buffer};
 
+use crate::component::range::Range;
 use crate::component::value::TimedValue;
 use crate::context::Context;
+
+fn format_hourly(ts: &u64) -> String {
+    chrono::DateTime::from_timestamp(*ts as i64, 0)
+        .map(|ts| ts.format("%H:%M").to_string())
+        .unwrap_or_default()
+}
 
 #[derive(Clone, Debug, serde::Deserialize)]
 pub struct Definition {
     pub title: String,
-    pub x_range: (u64, u64),
-    pub y_range: (f64, f64),
+    #[serde(default)]
+    pub x_range: Range<u64>,
+    #[serde(default)]
+    pub y_range: Range<f64>,
 }
 
 #[derive(Debug)]
@@ -26,12 +34,22 @@ pub struct LineChartCard<'a> {
 }
 
 impl LineChartCard<'_> {
-    fn x_range(&self) -> Range<u64> {
-        self.definition.x_range.0..self.definition.x_range.1
+    fn x_range(&self) -> std::ops::Range<u64> {
+        let from = self.definition.x_range.min.unwrap_or(u64::MAX);
+        let to = self.definition.x_range.max.unwrap_or(u64::MIN);
+        let (from, to) = self.values.iter().fold((from, to), |(from, to), item| {
+            (from.min(item.timestamp), to.max(item.timestamp))
+        });
+        from..to
     }
 
-    fn y_range(&self) -> Range<f64> {
-        self.definition.y_range.0..self.definition.y_range.1
+    fn y_range(&self) -> std::ops::Range<f64> {
+        let from = self.definition.y_range.min.unwrap_or(f64::MAX);
+        let to = self.definition.y_range.max.unwrap_or(f64::MIN);
+        let (from, to) = self.values.iter().fold((from, to), |(from, to), item| {
+            (from.min(item.value), to.max(item.value))
+        });
+        from..to
     }
 
     fn into_svg(&self, size: (u32, u32)) -> String {
@@ -42,23 +60,22 @@ impl LineChartCard<'_> {
         {
             let root =
                 plotters::backend::SVGBackend::with_string(&mut buffer, size).into_drawing_area();
-            // root.fill(&WHITE).unwrap();
             let mut chart = ChartBuilder::on(&root)
-                // .margin(10)
-                // .set_label_area_size(LabelAreaPosition::Left, self.margin_left)
-                // .set_label_area_size(LabelAreaPosition::Bottom, self.margin_bottom)
+                .margin(10)
+                .set_label_area_size(LabelAreaPosition::Left, 30)
+                .set_label_area_size(LabelAreaPosition::Bottom, 20)
                 .build_cartesian_2d(self.x_range(), self.y_range())
                 .unwrap();
 
-            // chart
-            //     .configure_mesh()
-            //     .disable_x_mesh()
-            //     .disable_y_mesh()
-            //     .x_labels(30)
-            //     .max_light_lines(4)
-            //     .x_label_formatter(&format_hourly)
-            //     .draw()
-            //     .unwrap();
+            chart
+                .configure_mesh()
+                .disable_x_mesh()
+                .disable_y_mesh()
+                .x_labels(30)
+                .max_light_lines(4)
+                .x_label_formatter(&format_hourly)
+                .draw()
+                .unwrap();
 
             chart
                 .draw_series(

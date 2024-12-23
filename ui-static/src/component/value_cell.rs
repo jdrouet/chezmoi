@@ -35,7 +35,7 @@ impl Status {
 pub struct ValueCell<'a> {
     pub label: &'a str,
     pub formatter: &'a Formatter<'static>,
-    pub definition: &'a Range,
+    pub definition: &'a Range<f64>,
     pub value: Option<&'a TimedValue>,
 }
 

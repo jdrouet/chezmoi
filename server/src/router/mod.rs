@@ -19,6 +19,10 @@ pub fn create() -> axum::Router {
             get(ui_asset::style_atc_sensor_css),
         )
         .route(
+            "/assets/style-line-chart.css",
+            get(ui_asset::style_line_chart_css),
+        )
+        .route(
             "/assets/style-miflora-sensor.css",
             get(ui_asset::style_miflora_sensor_css),
         )

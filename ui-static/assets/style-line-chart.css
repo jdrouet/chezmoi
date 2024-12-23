@@ -14,3 +14,10 @@
     stroke: var(--visited-color);
     stroke-width: 2;
 }
+
+.line-chart svg text {
+    fill: var(--text-color);
+}
+.line-chart svg polyline[stroke="#000000"] {
+    stroke: var(--text-color);
+}

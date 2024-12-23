@@ -13,11 +13,11 @@ pub struct Definition {
     pub name: Option<String>,
     pub address: String,
     #[serde(default)]
-    pub temperature: Range,
+    pub temperature: Range<f64>,
     #[serde(default)]
-    pub humidity: Range,
+    pub humidity: Range<f64>,
     #[serde(default)]
-    pub battery: Range,
+    pub battery: Range<f64>,
 }
 
 #[derive(Debug)]
