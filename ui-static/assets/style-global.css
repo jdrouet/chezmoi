@@ -163,7 +163,19 @@ a:visited {
     grid-column-end: span 1;
 }
 
+.min-md,
+.min-lg {
+    display: none;
+}
+
 @media screen and (min-width: 576px) {
+    .max-sm {
+        display: none;
+    }
+    .min-md {
+        display: initial;
+    }
+
     .dashboard-grid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -178,6 +190,13 @@ a:visited {
 }
 
 @media screen and (min-width: 768px) {
+    .max-md {
+        display: none;
+    }
+    .min-lg {
+        display: initial;
+    }
+
     .dashboard-grid {
         grid-template-columns: repeat(3, 1fr);
     }

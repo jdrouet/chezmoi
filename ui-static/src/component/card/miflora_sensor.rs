@@ -4,6 +4,7 @@ use another_html_builder::{Body, Buffer};
 use crate::component::range::Range;
 use crate::component::value::TimedValue;
 use crate::component::value_cell;
+use crate::context::Context;
 use crate::helper::format::{BRIGHTNESS, CONDUCTIVITY, PERCENTAGE, TEMPERATURE};
 
 // Available values
@@ -46,7 +47,11 @@ pub struct MifloraSensorCard<'a> {
 }
 
 impl crate::component::prelude::Component for MifloraSensorCard<'_> {
-    fn render<'a, W: WriterExt>(&self, buf: Buffer<W, Body<'a>>) -> Buffer<W, Body<'a>> {
+    fn render<'a, W: WriterExt>(
+        &self,
+        buf: Buffer<W, Body<'a>>,
+        ctx: &Context,
+    ) -> Buffer<W, Body<'a>> {
         buf.node("div")
             .attr(("class", "miflora-sensor card flex-col colspan-3 rowspan-2"))
             .content(|buf| {
@@ -59,7 +64,7 @@ impl crate::component::prelude::Component for MifloraSensorCard<'_> {
                             definition: &self.definition.temperature,
                             value: self.values.temperature.as_ref(),
                         }
-                        .render(buf);
+                        .render(buf, ctx);
                         let buf = buf
                             .node("div")
                             .attr(("class", "image text-center align-content-center pad-md"))
@@ -70,28 +75,28 @@ impl crate::component::prelude::Component for MifloraSensorCard<'_> {
                             definition: &self.definition.brightness,
                             value: self.values.brightness.as_ref(),
                         }
-                        .render(buf);
+                        .render(buf, ctx);
                         let buf = value_cell::ValueCell {
                             label: "Conductivity",
                             formatter: &CONDUCTIVITY,
                             definition: &self.definition.conductivity,
                             value: self.values.conductivity.as_ref(),
                         }
-                        .render(buf);
+                        .render(buf, ctx);
                         let buf = value_cell::ValueCell {
                             label: "Moisture",
                             formatter: &PERCENTAGE,
                             definition: &self.definition.moisture,
                             value: self.values.moisture.as_ref(),
                         }
-                        .render(buf);
+                        .render(buf, ctx);
                         let buf = value_cell::ValueCell {
                             label: "Battery",
                             formatter: &PERCENTAGE,
                             definition: &self.definition.battery,
                             value: self.values.battery.as_ref(),
                         }
-                        .render(buf);
+                        .render(buf, ctx);
                         buf
                     })
                     .node("div")

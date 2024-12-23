@@ -8,6 +8,8 @@ mod ui_asset;
 mod ui_dashboard;
 mod ui_error;
 
+const UI_CTX: chezmoi_ui_static::context::Context = chezmoi_ui_static::context::Context::absolute();
+
 pub fn create() -> axum::Router {
     axum::Router::new()
         .route("/", get(ui_dashboard::handle))

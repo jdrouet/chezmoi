@@ -4,6 +4,7 @@ use another_html_builder::{Body, Buffer};
 use crate::component::range::Range;
 use crate::component::value::TimedValue;
 use crate::component::value_cell;
+use crate::context::Context;
 use crate::helper::format::{PERCENTAGE, TEMPERATURE};
 
 #[derive(Clone, Debug, serde::Deserialize)]
@@ -33,7 +34,11 @@ pub struct AtcSensorCard<'a> {
 }
 
 impl crate::component::prelude::Component for AtcSensorCard<'_> {
-    fn render<'a, W: WriterExt>(&self, buf: Buffer<W, Body<'a>>) -> Buffer<W, Body<'a>> {
+    fn render<'a, W: WriterExt>(
+        &self,
+        buf: Buffer<W, Body<'a>>,
+        ctx: &Context,
+    ) -> Buffer<W, Body<'a>> {
         buf.node("div")
             .attr(("class", "atc-sensor card flex-col colspan-3"))
             .content(|buf| {
@@ -46,21 +51,21 @@ impl crate::component::prelude::Component for AtcSensorCard<'_> {
                             definition: &self.definition.temperature,
                             value: self.values.temperature.as_ref(),
                         }
-                        .render(buf);
+                        .render(buf, ctx);
                         let buf = value_cell::ValueCell {
                             label: "Humidity",
                             formatter: &PERCENTAGE,
                             definition: &self.definition.humidity,
                             value: self.values.humidity.as_ref(),
                         }
-                        .render(buf);
+                        .render(buf, ctx);
                         let buf = value_cell::ValueCell {
                             label: "Battery",
                             formatter: &PERCENTAGE,
                             definition: &self.definition.battery,
                             value: self.values.battery.as_ref(),
                         }
-                        .render(buf);
+                        .render(buf, ctx);
                         buf
                     })
                     .node("div")

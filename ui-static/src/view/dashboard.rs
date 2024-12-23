@@ -1,9 +1,11 @@
 use another_html_builder::prelude::WriterExt;
 use another_html_builder::{Body, Buffer};
 
+use super::prelude::View;
 use crate::component::card::Card;
 use crate::component::prelude::Component;
 use crate::component::{header, page};
+use crate::context::Context;
 
 #[derive(Debug)]
 pub struct Section<'a> {
@@ -18,7 +20,7 @@ impl<'a> Section<'a> {
 }
 
 impl Section<'_> {
-    fn render<'a, W>(&self, buf: Buffer<W, Body<'a>>) -> Buffer<W, Body<'a>>
+    fn render<'a, W>(&self, buf: Buffer<W, Body<'a>>, ctx: &Context) -> Buffer<W, Body<'a>>
     where
         W: WriterExt,
     {
@@ -26,7 +28,11 @@ impl Section<'_> {
             .content(|buf| buf.text(self.title))
             .node("section")
             .attr(("class", "dashboard-grid"))
-            .content(|buf| self.cards.iter().fold(buf, |buf, card| card.render(buf)))
+            .content(|buf| {
+                self.cards
+                    .iter()
+                    .fold(buf, |buf, card| card.render(buf, ctx))
+            })
     }
 }
 
@@ -43,7 +49,7 @@ impl<'a> DashboardView<'a> {
 }
 
 impl DashboardView<'_> {
-    fn render_body<'a, W>(&self, buf: Buffer<W, Body<'a>>) -> Buffer<W, Body<'a>>
+    fn render_body<'a, W>(&self, buf: Buffer<W, Body<'a>>, ctx: &Context) -> Buffer<W, Body<'a>>
     where
         W: WriterExt,
     {
@@ -53,15 +59,24 @@ impl DashboardView<'_> {
             .content(|buf| {
                 self.sections
                     .iter()
-                    .fold(buf, |buf, section| section.render(buf))
+                    .fold(buf, |buf, section| section.render(buf, ctx))
             })
     }
-
-    pub fn render(&self) -> String {
+}
+impl View for DashboardView<'_> {
+    fn render(&self, ctx: &Context) -> String {
         page::html(another_html_builder::Buffer::default(), |buf| {
-            page::head(buf, "Dashboard", self.base_url)
-                .node("body")
-                .content(|buf| self.render_body(buf))
+            page::Head::new(
+                "Dashboard",
+                &[
+                    "assets/style-atc-sensor.css",
+                    "assets/style-miflora-sensor.css",
+                    "assets/style-line-chart.css",
+                ],
+            )
+            .render(buf, ctx)
+            .node("body")
+            .content(|buf| self.render_body(buf, ctx))
         })
         .into_inner()
     }

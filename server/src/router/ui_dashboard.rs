@@ -3,6 +3,7 @@ use std::sync::Arc;
 use axum::response::Html;
 use axum::Extension;
 use chezmoi_entity::now;
+use chezmoi_ui_static::view::prelude::View;
 
 use crate::entity::DashboardConfig;
 use crate::helper::LatestResult;
@@ -21,5 +22,5 @@ pub async fn handle(
             .await?
     };
     let latests = LatestResult::from_iter(latests.into_iter());
-    Ok(Html(config.build(&latests).render()))
+    Ok(Html(config.build(&latests).render(&super::UI_CTX)))
 }

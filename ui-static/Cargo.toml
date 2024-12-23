@@ -6,4 +6,9 @@ edition = "2021"
 [dependencies]
 another-html-builder = "0.2"
 human-number = "0.1"
+plotters = { version = "0.3.7", default-features = false, features = [
+    "chrono",
+    "line_series",
+    "svg_backend",
+] }
 serde = { workspace = true, features = ["derive"] }

@@ -1,3 +1,5 @@
+use crate::context::Context;
+
 pub trait View {
-    fn render<P>(&self, props: &P) -> String;
+    fn render(&self, ctx: &Context) -> String;
 }

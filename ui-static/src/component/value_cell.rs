@@ -4,6 +4,7 @@ use human_number::Formatter;
 
 use super::range::Range;
 use super::value::TimedValue;
+use crate::context::Context;
 use crate::helper::classes::Cn;
 
 #[allow(unused)]
@@ -49,7 +50,11 @@ impl ValueCell<'_> {
 }
 
 impl crate::component::prelude::Component for ValueCell<'_> {
-    fn render<'a, W: WriterExt>(&self, buf: Buffer<W, Body<'a>>) -> Buffer<W, Body<'a>> {
+    fn render<'a, W: WriterExt>(
+        &self,
+        buf: Buffer<W, Body<'a>>,
+        _ctx: &Context,
+    ) -> Buffer<W, Body<'a>> {
         buf.node("div")
             .attr((
                 "class",
