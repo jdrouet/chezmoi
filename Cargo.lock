@@ -338,9 +338,11 @@ version = "0.1.0"
 dependencies = [
  "another-html-builder",
  "chrono",
+ "hex",
  "human-number",
  "plotters",
  "serde",
+ "sha2",
 ]
 
 [[package]]

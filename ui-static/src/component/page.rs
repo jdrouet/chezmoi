@@ -60,7 +60,10 @@ impl crate::component::prelude::Component for Head {
                 .close()
                 .node("link")
                 .attr(("rel", "stylesheet"))
-                .attr(("href", Concat(&ctx.base_url, "assets/style-global.css")))
+                .attr((
+                    "href",
+                    Concat(&ctx.base_url, crate::asset::STYLE_GLOBAL_CSS_PATH),
+                ))
                 .close();
             self.styles.iter().fold(buf, |buf, s| {
                 buf.node("link")

@@ -13,19 +13,7 @@ const UI_CTX: chezmoi_ui_static::context::Context = chezmoi_ui_static::context::
 pub fn create() -> axum::Router {
     axum::Router::new()
         .route("/", get(ui_dashboard::handle))
-        .route("/assets/style-global.css", get(ui_asset::style_global_css))
-        .route(
-            "/assets/style-atc-sensor.css",
-            get(ui_asset::style_atc_sensor_css),
-        )
-        .route(
-            "/assets/style-line-chart.css",
-            get(ui_asset::style_line_chart_css),
-        )
-        .route(
-            "/assets/style-miflora-sensor.css",
-            get(ui_asset::style_miflora_sensor_css),
-        )
+        .merge(ui_asset::create())
         .route("/api/metrics", post(api_metrics_create::handle))
         .route(
             "/api/metrics/latest",

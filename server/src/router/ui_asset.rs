@@ -1,5 +1,6 @@
 use axum::http::header::{CACHE_CONTROL, CONTENT_TYPE};
 use axum::response::{AppendHeaders, IntoResponse};
+use axum::routing::get;
 
 macro_rules! css_style {
     ($name:ident, $content:expr) => {
@@ -28,3 +29,26 @@ css_style!(
     style_miflora_sensor_css,
     chezmoi_ui_static::asset::STYLE_MIFLORA_SENSOR_CSS
 );
+
+pub fn create() -> axum::Router {
+    axum::Router::new()
+        .route(
+            &format!("/{}", chezmoi_ui_static::asset::STYLE_GLOBAL_CSS_PATH),
+            get(style_global_css),
+        )
+        .route(
+            &format!("/{}", chezmoi_ui_static::asset::STYLE_ATC_SENSOR_CSS_PATH),
+            get(style_atc_sensor_css),
+        )
+        .route(
+            &format!("/{}", chezmoi_ui_static::asset::STYLE_LINE_CHART_CSS_PATH),
+            get(style_line_chart_css),
+        )
+        .route(
+            &format!(
+                "/{}",
+                chezmoi_ui_static::asset::STYLE_MIFLORA_SENSOR_CSS_PATH
+            ),
+            get(style_miflora_sensor_css),
+        )
+}

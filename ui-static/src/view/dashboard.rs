@@ -69,9 +69,9 @@ impl View for DashboardView<'_> {
             page::Head::new(
                 "Dashboard",
                 &[
-                    "assets/style-atc-sensor.css",
-                    "assets/style-miflora-sensor.css",
-                    "assets/style-line-chart.css",
+                    crate::asset::STYLE_ATC_SENSOR_CSS_PATH,
+                    crate::asset::STYLE_MIFLORA_SENSOR_CSS_PATH,
+                    crate::asset::STYLE_LINE_CHART_CSS_PATH,
                 ],
             )
             .render(buf, ctx)
