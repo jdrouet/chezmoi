@@ -61,6 +61,7 @@ impl Config {
                 moisture: metrics.latest.find(&self.headers.moisture),
                 battery: metrics.latest.find(&self.headers.battery),
             },
+            with_link: true,
         }
     }
 }

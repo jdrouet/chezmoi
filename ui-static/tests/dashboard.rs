@@ -79,6 +79,7 @@ fn miflora_sensor() {
                     moisture: None,
                     battery: None,
                 },
+                with_link: true,
             })],
         }],
     };
