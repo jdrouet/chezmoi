@@ -47,6 +47,7 @@ fn atc_sensor() {
                         value: 90.0,
                     }),
                 },
+                with_link: true,
             })],
         }],
     };

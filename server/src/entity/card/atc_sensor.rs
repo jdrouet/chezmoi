@@ -53,6 +53,7 @@ impl Config {
                 humidity: metrics.latest.find(&self.headers.humidity),
                 battery: metrics.latest.find(&self.headers.battery),
             },
+            with_link: true,
         }
     }
 }

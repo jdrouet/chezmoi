@@ -2,9 +2,15 @@ use another_html_builder::attribute::AttributeValue;
 
 pub struct Concat<A, B>(pub A, pub B);
 
-impl<'a, 'b> From<(&'a str, &'b str)> for Concat<&'a str, &'b str> {
-    fn from((first, second): (&'a str, &'b str)) -> Self {
+impl<A: std::fmt::Display, B: std::fmt::Display> From<(A, B)> for Concat<A, B> {
+    fn from((first, second): (A, B)) -> Self {
         Self(first, second)
+    }
+}
+
+impl<A: std::fmt::Display, B: std::fmt::Display> std::fmt::Display for Concat<A, B> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}{}", self.0, self.1)
     }
 }
 
