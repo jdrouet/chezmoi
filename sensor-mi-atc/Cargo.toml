@@ -1,0 +1,19 @@
+[package]
+name = "chezmoi-sensor-mi-atc"
+version = "0.1.0"
+edition = "2021"
+authors.workspace = true
+license-file.workspace = true
+
+[features]
+default = []
+agent = []
+server = []
+
+[dependencies]
+bluer = { workspace = true, features = [
+    "bluetoothd",
+    "serde",
+], default-features = false, optional = true }
+tracing = { workspace = true }
+tokio = { workspace = true, features = ["sync", "time"] }

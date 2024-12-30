@@ -1,0 +1,14 @@
+[package]
+name = "chezmoi-sensor-prelude"
+version = "0.1.0"
+edition = "2021"
+authors.workspace = true
+license-file.workspace = true
+
+[features]
+default = []
+agent = []
+server = []
+
+[dependencies]
+tracing = { workspace = true }

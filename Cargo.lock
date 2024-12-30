@@ -305,6 +305,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "chezmoi-sensor-mi-atc"
+version = "0.1.0"
+dependencies = [
+ "bluer",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "chezmoi-sensor-prelude"
+version = "0.1.0"
+dependencies = [
+ "tracing",
+]
+
+[[package]]
 name = "chezmoi-server"
 version = "0.1.0"
 dependencies = [
