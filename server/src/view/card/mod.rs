@@ -6,7 +6,7 @@ pub mod atc_sensor;
 pub mod history;
 pub mod miflora_sensor;
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum CardConfig {
     AtcSensor(atc_sensor::Config),

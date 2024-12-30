@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 
+use card::CardConfig;
+use chezmoi_entity::metric::MetricHeader;
+use chezmoi_ui_static::component::card::line_chart;
 use chezmoi_ui_static::component::range::Range;
 use chezmoi_ui_static::view::dashboard;
 
@@ -7,7 +10,7 @@ use crate::helper::{QueryCollector, QueryResult};
 
 pub mod card;
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Deserialize)]
 pub struct SectionConfig {
     pub title: String,
     #[serde(default)]
@@ -27,7 +30,7 @@ impl SectionConfig {
     }
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Deserialize)]
 pub struct DashboardConfig {
     #[serde(default)]
     pub sections: Vec<SectionConfig>,
@@ -163,11 +166,153 @@ impl DashboardConfig {
     }
 }
 
-#[derive(Debug, Default, serde::Deserialize)]
+#[derive(Clone, Debug, Default, serde::Deserialize)]
 pub struct RootConfig {
     pub home: DashboardConfig,
     pub atc_sensor: HashMap<String, DashboardConfig>,
     pub miflora_sensor: HashMap<String, DashboardConfig>,
+}
+
+fn home_dashboard(config: &crate::config::RootConfig) -> DashboardConfig {
+    let mut sections = Vec::with_capacity(2);
+    if !config.atc_sensor.is_empty() {
+        sections.push(SectionConfig {
+            title: "Thermometers".into(),
+            cards: config
+                .atc_sensor
+                .iter()
+                .map(|s| {
+                    CardConfig::AtcSensor(card::atc_sensor::Config {
+                        inner: s.clone(),
+                        headers: card::atc_sensor::Headers::from_address(&s.address),
+                    })
+                })
+                .collect(),
+        });
+    }
+    if !config.miflora_sensor.is_empty() {
+        sections.push(SectionConfig {
+            title: "Plants".into(),
+            cards: config
+                .miflora_sensor
+                .iter()
+                .map(|s| {
+                    CardConfig::MifloraSensor(card::miflora_sensor::Config {
+                        inner: s.clone(),
+                        headers: card::miflora_sensor::Headers::from_address(&s.address),
+                    })
+                })
+                .collect(),
+        });
+    }
+
+    DashboardConfig { sections }
+}
+
+fn atc_sensor_dashboard(
+    def: &chezmoi_ui_static::component::card::atc_sensor::Definition,
+) -> DashboardConfig {
+    DashboardConfig {
+        sections: vec![SectionConfig {
+            title: "History".into(),
+            cards: vec![
+                card::CardConfig::History(card::history::Config {
+                    definition: line_chart::Definition {
+                        title: "Temperature".into(),
+                        y_range: def.temperature.clone(),
+                    },
+                    query: MetricHeader::new("atc-thermometer.temperature")
+                        .with_tag("address", def.address.clone()),
+                }),
+                card::CardConfig::History(card::history::Config {
+                    definition: line_chart::Definition {
+                        title: "Humidity".into(),
+                        y_range: def.humidity.clone(),
+                    },
+                    query: MetricHeader::new("atc-thermometer.humidity")
+                        .with_tag("address", def.address.clone()),
+                }),
+                card::CardConfig::History(card::history::Config {
+                    definition: line_chart::Definition {
+                        title: "Battery".into(),
+                        y_range: def.battery.clone(),
+                    },
+                    query: MetricHeader::new("atc-thermometer.battery")
+                        .with_tag("address", def.address.clone()),
+                }),
+            ],
+        }],
+    }
+}
+
+fn miflora_sensor_dashboard(
+    def: &chezmoi_ui_static::component::card::miflora_sensor::Definition,
+) -> DashboardConfig {
+    DashboardConfig {
+        sections: vec![SectionConfig {
+            title: "History".into(),
+            cards: vec![
+                card::CardConfig::History(card::history::Config {
+                    definition: line_chart::Definition {
+                        title: "Temperature".into(),
+                        y_range: def.temperature.clone(),
+                    },
+                    query: MetricHeader::new("miflora.temperature")
+                        .with_tag("address", def.address.clone()),
+                }),
+                card::CardConfig::History(card::history::Config {
+                    definition: line_chart::Definition {
+                        title: "Brightness".into(),
+                        y_range: def.brightness.clone(),
+                    },
+                    query: MetricHeader::new("miflora.brightness")
+                        .with_tag("address", def.address.clone()),
+                }),
+                card::CardConfig::History(card::history::Config {
+                    definition: line_chart::Definition {
+                        title: "Conductivity".into(),
+                        y_range: def.conductivity.clone(),
+                    },
+                    query: MetricHeader::new("miflora.conductivity")
+                        .with_tag("address", def.address.clone()),
+                }),
+                card::CardConfig::History(card::history::Config {
+                    definition: line_chart::Definition {
+                        title: "Moisture".into(),
+                        y_range: def.moisture.clone(),
+                    },
+                    query: MetricHeader::new("miflora.moisture")
+                        .with_tag("address", def.address.clone()),
+                }),
+                card::CardConfig::History(card::history::Config {
+                    definition: line_chart::Definition {
+                        title: "Bttery".into(),
+                        y_range: def.battery.clone(),
+                    },
+                    query: MetricHeader::new("miflora.battery")
+                        .with_tag("address", def.address.clone()),
+                }),
+            ],
+        }],
+    }
+}
+
+impl From<crate::config::RootConfig> for RootConfig {
+    fn from(value: crate::config::RootConfig) -> Self {
+        Self {
+            home: home_dashboard(&value),
+            atc_sensor: value
+                .atc_sensor
+                .into_iter()
+                .map(|c| (c.address.clone(), atc_sensor_dashboard(&c)))
+                .collect(),
+            miflora_sensor: value
+                .miflora_sensor
+                .into_iter()
+                .map(|c| (c.address.clone(), miflora_sensor_dashboard(&c)))
+                .collect(),
+        }
+    }
 }
 
 #[cfg(test)]

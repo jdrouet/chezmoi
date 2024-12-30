@@ -3,7 +3,7 @@ use chezmoi_ui_static::component::card::miflora_sensor;
 
 use crate::helper::{QueryCollector, QueryResult};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Headers {
     temperature: MetricHeader<'static>,
     brightness: MetricHeader<'static>,
@@ -13,7 +13,7 @@ pub(crate) struct Headers {
 }
 
 impl Headers {
-    fn from_address(addr: &str) -> Self {
+    pub fn from_address(addr: &str) -> Self {
         Self {
             temperature: MetricHeader::new("miflora.temperature")
                 .with_tag("address", addr.to_string()),
@@ -27,7 +27,7 @@ impl Headers {
     }
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Deserialize)]
 #[serde(from = "miflora_sensor::Definition")]
 pub struct Config {
     #[serde(flatten)]

@@ -18,5 +18,5 @@ fn enable_tracing() {
 async fn main() -> anyhow::Result<()> {
     enable_tracing();
 
-    chezmoi_server::Config::from_env()?.build().run().await
+    chezmoi_server::Config::from_env()?.build()?.run().await
 }

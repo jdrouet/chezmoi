@@ -3,7 +3,7 @@ use chezmoi_ui_static::component::card::line_chart;
 
 use crate::helper::{QueryCollector, QueryResult};
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Deserialize)]
 pub struct Config {
     #[serde(flatten)]
     pub definition: line_chart::Definition,

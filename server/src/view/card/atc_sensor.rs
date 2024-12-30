@@ -3,7 +3,7 @@ use chezmoi_ui_static::component::card::atc_sensor;
 
 use crate::helper::{QueryCollector, QueryResult};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct Headers {
     temperature: MetricHeader<'static>,
     humidity: MetricHeader<'static>,
@@ -11,7 +11,7 @@ pub(crate) struct Headers {
 }
 
 impl Headers {
-    fn from_address(addr: &str) -> Self {
+    pub fn from_address(addr: &str) -> Self {
         Self {
             temperature: MetricHeader::new("atc-thermometer.temperature")
                 .with_tag("address", addr.to_string()),
@@ -23,7 +23,7 @@ impl Headers {
     }
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Deserialize)]
 #[serde(from = "atc_sensor::Definition")]
 pub struct Config {
     #[serde(flatten)]
