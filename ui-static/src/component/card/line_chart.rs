@@ -40,12 +40,16 @@ impl LineChartCard<'_> {
     }
 
     fn y_range(&self) -> std::ops::Range<f64> {
-        let from = self.definition.y_range.min.unwrap_or(f64::MAX);
-        let to = self.definition.y_range.max.unwrap_or(f64::MIN);
-        let (from, to) = self.values.iter().fold((from, to), |(from, to), item| {
-            (from.min(item.value), to.max(item.value))
-        });
-        from..to
+        if self.values.is_empty() {
+            0.0..1.0
+        } else {
+            let from = self.definition.y_range.min.unwrap_or(f64::MAX);
+            let to = self.definition.y_range.max.unwrap_or(f64::MIN);
+            let (from, to) = self.values.iter().fold((from, to), |(from, to), item| {
+                (from.min(item.value), to.max(item.value))
+            });
+            from..to
+        }
     }
 
     fn into_svg(&self, size: (u32, u32), timerange: (u64, u64)) -> String {
@@ -56,11 +60,15 @@ impl LineChartCard<'_> {
         {
             let root =
                 plotters::backend::SVGBackend::with_string(&mut buffer, size).into_drawing_area();
+
+            let x_range = self.x_range(timerange);
+            let y_range = self.y_range();
+
             let mut chart = ChartBuilder::on(&root)
                 .margin(10)
                 .set_label_area_size(LabelAreaPosition::Left, 30)
                 .set_label_area_size(LabelAreaPosition::Bottom, 20)
-                .build_cartesian_2d(self.x_range(timerange), self.y_range())
+                .build_cartesian_2d(x_range, y_range)
                 .unwrap();
 
             chart
