@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use chezmoi_ui_static::component::range::Range;
 use chezmoi_ui_static::view::dashboard;
 
@@ -159,6 +161,13 @@ impl DashboardConfig {
     pub fn build<'a>(&'a self, res: &QueryResult) -> dashboard::DashboardView<'a> {
         dashboard::DashboardView::new("/", self.sections.iter().map(|s| s.build(res)).collect())
     }
+}
+
+#[derive(Debug, Default, serde::Deserialize)]
+pub struct RootConfig {
+    pub home: DashboardConfig,
+    pub atc_sensor: HashMap<String, DashboardConfig>,
+    pub miflora_sensor: HashMap<String, DashboardConfig>,
 }
 
 #[cfg(test)]

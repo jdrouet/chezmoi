@@ -2,9 +2,10 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use axum::Extension;
-use entity::DashboardConfig;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
+
+use crate::entity::RootConfig;
 
 mod entity;
 mod helper;
@@ -72,7 +73,7 @@ impl Server {
         let listener = TcpListener::bind(self.address).await?;
         let app = router::create()
             .layer(Extension(storage.clone()))
-            .layer(Extension(Arc::new(DashboardConfig::default())))
+            .layer(Extension(Arc::new(RootConfig::default())))
             .layer(Extension(state::StorageWriter::new(storage)))
             .layer(TraceLayer::new_for_http());
         tracing::info!("listening on {}", self.address);

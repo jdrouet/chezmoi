@@ -17,6 +17,13 @@ impl UiError {
             message: "something went wrong",
         }
     }
+
+    pub fn not_found(message: &'static str) -> Self {
+        Self {
+            code: StatusCode::NOT_FOUND,
+            message,
+        }
+    }
 }
 
 impl From<sqlx::Error> for UiError {

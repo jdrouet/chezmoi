@@ -1,52 +1,25 @@
+use std::sync::Arc;
+
 use axum::extract::Path;
 use axum::response::Html;
 use axum::Extension;
-use chezmoi_entity::metric::MetricHeader;
 use chezmoi_entity::now;
-use chezmoi_ui_static::component::range::Range;
 use chezmoi_ui_static::view::prelude::View;
 
+use crate::entity::RootConfig;
 use crate::helper::{HistoryResult, LatestResult, QueryCollector, QueryResult};
 use crate::router::ui_error::UiError;
 
-fn create_config(addr: &str, from: u64, to: u64) -> crate::entity::DashboardConfig {
-    crate::entity::DashboardConfig {
-        sections: vec![crate::entity::SectionConfig {
-            title: "History".into(),
-            cards: [
-                ("Temperature", "atc-thermometer.temperature", 0.0, 35.0),
-                ("Humidity", "atc-thermometer.humidity", 0.0, 100.0),
-                ("Battery", "atc-thermometer.battery", 0.0, 100.0),
-            ]
-            .into_iter()
-            .map(|(title, name, min, max)| {
-                crate::entity::card::CardConfig::History(crate::entity::card::history::Config {
-                    definition: chezmoi_ui_static::component::card::line_chart::Definition {
-                        title: title.to_string(),
-                        x_range: Range {
-                            min: Some(from),
-                            max: Some(to),
-                        },
-                        y_range: Range {
-                            min: Some(min),
-                            max: Some(max),
-                        },
-                    },
-                    query: MetricHeader::new(name).with_tag("address", addr.to_string()),
-                })
-            })
-            .collect(),
-        }],
-    }
-}
-
 pub async fn handle(
     Extension(client): Extension<chezmoi_storage::client::Client>,
+    Extension(config): Extension<Arc<RootConfig>>,
     Path(addr): Path<String>,
 ) -> Result<Html<String>, UiError> {
     let ts = now();
     let from = ts - 60 * 60 * 24;
-    let config = create_config(&addr, from, ts);
+    let Some(config) = config.atc_sensor.get(&addr) else {
+        return Err(UiError::not_found("Provided ATC sensor address not found"));
+    };
     let QueryCollector { latest, history } = config.collect();
     let latests = if latest.is_empty() {
         Vec::new()
