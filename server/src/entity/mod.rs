@@ -3,13 +3,13 @@ use chezmoi_ui_static::view::dashboard;
 
 use crate::helper::{QueryCollector, QueryResult};
 
-mod card;
+pub mod card;
 
 #[derive(Debug, serde::Deserialize)]
 pub struct SectionConfig {
-    title: String,
+    pub title: String,
     #[serde(default)]
-    cards: Vec<card::CardConfig>,
+    pub cards: Vec<card::CardConfig>,
 }
 
 impl SectionConfig {
@@ -28,7 +28,7 @@ impl SectionConfig {
 #[derive(Debug, serde::Deserialize)]
 pub struct DashboardConfig {
     #[serde(default)]
-    sections: Vec<SectionConfig>,
+    pub sections: Vec<SectionConfig>,
 }
 
 impl Default for DashboardConfig {
