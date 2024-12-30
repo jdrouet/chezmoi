@@ -8,6 +8,7 @@ mod ui_asset;
 mod ui_atc_sensor;
 mod ui_dashboard;
 mod ui_error;
+mod ui_helper;
 mod ui_miflora_sensor;
 
 const UI_CTX: chezmoi_ui_static::context::Context = chezmoi_ui_static::context::Context::absolute();
