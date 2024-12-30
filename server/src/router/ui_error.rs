@@ -35,8 +35,9 @@ impl From<sqlx::Error> for UiError {
 
 impl IntoResponse for UiError {
     fn into_response(self) -> axum::response::Response {
+        let ctx = chezmoi_ui_static::context::Context::absolute((0, 0));
         let view = chezmoi_ui_static::view::error::ErrorView::new(self.message);
-        let view = view.render(&super::UI_CTX);
+        let view = view.render(&ctx);
         (self.code, Html(view)).into_response()
     }
 }

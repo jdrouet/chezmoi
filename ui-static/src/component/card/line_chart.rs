@@ -17,8 +17,6 @@ fn format_hourly(ts: &u64) -> String {
 pub struct Definition {
     pub title: String,
     #[serde(default)]
-    pub x_range: Range<u64>,
-    #[serde(default)]
     pub y_range: Range<f64>,
 }
 
@@ -34,9 +32,7 @@ pub struct LineChartCard<'a> {
 }
 
 impl LineChartCard<'_> {
-    fn x_range(&self) -> std::ops::Range<u64> {
-        let from = self.definition.x_range.min.unwrap_or(u64::MAX);
-        let to = self.definition.x_range.max.unwrap_or(u64::MIN);
+    fn x_range(&self, (from, to): (u64, u64)) -> std::ops::Range<u64> {
         let (from, to) = self.values.iter().fold((from, to), |(from, to), item| {
             (from.min(item.timestamp), to.max(item.timestamp))
         });
@@ -52,7 +48,7 @@ impl LineChartCard<'_> {
         from..to
     }
 
-    fn into_svg(&self, size: (u32, u32)) -> String {
+    fn into_svg(&self, size: (u32, u32), timerange: (u64, u64)) -> String {
         use plotters::prelude::*;
 
         // TODO find a way to access the buffer content
@@ -64,7 +60,7 @@ impl LineChartCard<'_> {
                 .margin(10)
                 .set_label_area_size(LabelAreaPosition::Left, 30)
                 .set_label_area_size(LabelAreaPosition::Bottom, 20)
-                .build_cartesian_2d(self.x_range(), self.y_range())
+                .build_cartesian_2d(self.x_range(timerange), self.y_range())
                 .unwrap();
 
             chart
@@ -93,20 +89,20 @@ impl crate::component::prelude::Component for LineChartCard<'_> {
     fn render<'a, W: WriterExt>(
         &self,
         buf: Buffer<W, Body<'a>>,
-        _ctx: &Context,
+        ctx: &Context,
     ) -> Buffer<W, Body<'a>> {
         buf.node("div")
             .attr(("class", "line-chart card flex-col colspan-4"))
             .content(|buf| {
                 buf.node("div")
                     .attr(("class", "flex-grow max-sm"))
-                    .content(|buf| buf.raw(self.into_svg((600, 400))))
+                    .content(|buf| buf.raw(self.into_svg((600, 400), ctx.timerange)))
                     .node("div")
                     .attr(("class", "flex-grow min-md max-md"))
-                    .content(|buf| buf.raw(self.into_svg((800, 400))))
+                    .content(|buf| buf.raw(self.into_svg((800, 400), ctx.timerange)))
                     .node("div")
                     .attr(("class", "flex-grow min-lg"))
-                    .content(|buf| buf.raw(self.into_svg((1200, 400))))
+                    .content(|buf| buf.raw(self.into_svg((1200, 400), ctx.timerange)))
                     .node("div")
                     .attr(("class", "card-title border-top"))
                     .content(|buf| buf.text(&self.definition.title))

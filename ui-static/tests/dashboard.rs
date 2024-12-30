@@ -7,7 +7,7 @@ use chezmoi_ui_static::view::prelude::View;
 
 mod helper;
 
-const CTX: Context = Context::relative();
+const CTX: Context = Context::relative((0, 1));
 
 #[test]
 fn atc_sensor() {
@@ -91,7 +91,6 @@ fn miflora_sensor() {
 fn line_chart() {
     let definition = line_chart::Definition {
         title: "Hello World".into(),
-        x_range: (0, 60).into(),
         y_range: (0.0, 100.0).into(),
     };
     let view = dashboard::DashboardView {

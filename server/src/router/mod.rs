@@ -11,7 +11,7 @@ mod ui_error;
 mod ui_helper;
 mod ui_miflora_sensor;
 
-const UI_CTX: chezmoi_ui_static::context::Context = chezmoi_ui_static::context::Context::absolute();
+// const UI_CTX: chezmoi_ui_static::context::Context = chezmoi_ui_static::context::Context::absolute();
 
 pub fn create() -> axum::Router {
     axum::Router::new()

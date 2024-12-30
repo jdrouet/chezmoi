@@ -16,6 +16,7 @@ pub async fn handle(
     Query(params): Query<SharedParams>,
 ) -> Result<Html<String>, UiError> {
     let timerange = params.timerange.as_secs();
+    let ctx = chezmoi_ui_static::context::Context::absolute(timerange);
     let QueryCollector { latest, history } = config.home.collect();
     let latests = if latest.is_empty() {
         Vec::new()
@@ -37,5 +38,5 @@ pub async fn handle(
         latest: LatestResult::from_iter(latests.into_iter()),
         history: HistoryResult::from_iter(history.into_iter()),
     };
-    Ok(Html(config.home.build(&res).render(&super::UI_CTX)))
+    Ok(Html(config.home.build(&res).render(&ctx)))
 }
