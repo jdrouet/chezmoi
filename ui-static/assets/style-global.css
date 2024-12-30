@@ -102,6 +102,9 @@ a:visited {
 .space-between {
     justify-content: space-between;
 }
+.text-center {
+    text-align: center;
+}
 .text-danger {
     color: #dc2626;
 }
@@ -149,7 +152,9 @@ a.card {
     transition-duration: 150ms;
 }
 a.card:hover {
-    box-shadow: 0 4px 6px -1px var(--shadow-color),0 2px 4px -2px var(--shadow-color);
+    box-shadow:
+        0 4px 6px -1px var(--shadow-color),
+        0 2px 4px -2px var(--shadow-color);
 }
 
 .dashboard-grid {

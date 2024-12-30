@@ -1,7 +1,7 @@
 use axum::http::StatusCode;
-use axum::response::IntoResponse;
-use axum::Json;
+use axum::response::{Html, IntoResponse};
 use chezmoi_storage::sqlx;
+use chezmoi_ui_static::view::prelude::View;
 
 #[derive(Debug, serde::Serialize)]
 pub(super) struct UiError {
@@ -35,6 +35,8 @@ impl From<sqlx::Error> for UiError {
 
 impl IntoResponse for UiError {
     fn into_response(self) -> axum::response::Response {
-        (self.code, Json(self)).into_response()
+        let view = chezmoi_ui_static::view::error::ErrorView::new(self.message);
+        let view = view.render(&super::UI_CTX);
+        (self.code, Html(view)).into_response()
     }
 }
