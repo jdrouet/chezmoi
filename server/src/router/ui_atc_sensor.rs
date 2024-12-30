@@ -6,9 +6,9 @@ use axum::Extension;
 use chezmoi_ui_static::view::prelude::View;
 
 use super::ui_helper::SharedParams;
-use crate::entity::RootConfig;
 use crate::helper::{HistoryResult, LatestResult, QueryCollector, QueryResult};
 use crate::router::ui_error::UiError;
+use crate::view::RootConfig;
 
 pub async fn handle(
     Extension(client): Extension<chezmoi_storage::client::Client>,

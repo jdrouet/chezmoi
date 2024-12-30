@@ -5,12 +5,12 @@ use axum::Extension;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 
-use crate::entity::RootConfig;
+use crate::view::RootConfig;
 
-mod entity;
 mod helper;
 mod router;
 mod state;
+mod view;
 
 fn from_env_or<T, F>(name: &str, default_value: F) -> anyhow::Result<T>
 where
