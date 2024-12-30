@@ -8,6 +8,7 @@ mod ui_asset;
 mod ui_atc_sensor;
 mod ui_dashboard;
 mod ui_error;
+mod ui_miflora_sensor;
 
 const UI_CTX: chezmoi_ui_static::context::Context = chezmoi_ui_static::context::Context::absolute();
 
@@ -15,6 +16,7 @@ pub fn create() -> axum::Router {
     axum::Router::new()
         .route("/", get(ui_dashboard::handle))
         .route("/atc-sensor/:address", get(ui_atc_sensor::handle))
+        .route("/miflora-sensor/:address", get(ui_miflora_sensor::handle))
         .merge(ui_asset::create())
         .route("/api/metrics", post(api_metrics_create::handle))
         .route(
