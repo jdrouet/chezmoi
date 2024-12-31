@@ -162,7 +162,7 @@ impl DashboardConfig {
     }
 
     pub fn build<'a>(&'a self, res: &QueryResult) -> dashboard::DashboardView<'a> {
-        dashboard::DashboardView::new("/", self.sections.iter().map(|s| s.build(res)).collect())
+        dashboard::DashboardView::new(self.sections.iter().map(|s| s.build(res)).collect())
     }
 }
 

@@ -38,13 +38,12 @@ impl Section<'_> {
 
 #[derive(Debug, Default)]
 pub struct DashboardView<'a> {
-    pub base_url: &'a str,
     pub sections: Vec<Section<'a>>,
 }
 
 impl<'a> DashboardView<'a> {
-    pub fn new(base_url: &'static str, sections: Vec<Section<'a>>) -> Self {
-        Self { base_url, sections }
+    pub fn new(sections: Vec<Section<'a>>) -> Self {
+        Self { sections }
     }
 }
 

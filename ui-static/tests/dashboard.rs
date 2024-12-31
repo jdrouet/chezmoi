@@ -28,7 +28,6 @@ fn atc_sensor() {
         },
     };
     let view = dashboard::DashboardView {
-        base_url: "",
         sections: vec![dashboard::Section {
             title: "Home",
             cards: vec![Card::AtcSensor(atc_sensor::AtcSensorCard {
@@ -67,7 +66,6 @@ fn miflora_sensor() {
         battery: Range::default(),
     };
     let view = dashboard::DashboardView {
-        base_url: "",
         sections: vec![dashboard::Section {
             title: "Home",
             cards: vec![Card::MifloraSensor(miflora_sensor::MifloraSensorCard {
@@ -94,7 +92,6 @@ fn line_chart() {
         y_range: (0.0, 100.0).into(),
     };
     let view = dashboard::DashboardView {
-        base_url: "",
         sections: vec![dashboard::Section {
             title: "Home",
             cards: vec![Card::LineChart(line_chart::LineChartCard {
