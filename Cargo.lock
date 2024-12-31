@@ -282,7 +282,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bluer",
- "bluer-miflora",
  "chezmoi-entity",
  "chezmoi-sensor-prelude",
  "chezmoi-sensor-system",
@@ -293,7 +292,6 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "sysinfo",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -325,11 +323,9 @@ name = "chezmoi-sensor-system"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bluer",
  "chezmoi-entity",
  "chezmoi-sensor-prelude",
  "serde",
- "serde_json",
  "sysinfo",
  "tokio",
  "tracing",
@@ -344,8 +340,6 @@ dependencies = [
  "chezmoi-entity",
  "chezmoi-sensor-prelude",
  "serde",
- "serde_json",
- "sysinfo",
  "tokio",
  "tracing",
 ]
@@ -360,7 +354,6 @@ dependencies = [
  "chezmoi-entity",
  "chezmoi-sensor-prelude",
  "serde",
- "serde_json",
  "tokio",
  "tracing",
 ]

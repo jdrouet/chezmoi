@@ -7,22 +7,14 @@ license-file.workspace = true
 
 [features]
 default = ["agent"]
-agent = ["dep:anyhow", "dep:bluer", "dep:serde", "dep:serde_json", "dep:sysinfo", "dep:tokio"]
+agent = ["dep:anyhow", "dep:serde", "dep:sysinfo", "dep:tokio"]
 
 [dependencies]
 chezmoi-entity = { path = "../entity", features = ["serde"] }
 chezmoi-sensor-prelude = { path = "../sensor-prelude" }
 
 anyhow = { workspace = true, optional = true }
-bluer = { workspace = true, features = [
-    "bluetoothd",
-    "serde",
-], default-features = false, optional = true }
 serde = { workspace = true, features = ["derive"], optional = true }
-serde_json = { version = "1.0", features = ["indexmap"], optional = true }
 sysinfo = { version = "0.33", optional = true }
-tokio = { workspace = true, features = [
-    "sync",
-    "time",
-], optional = true }
+tokio = { workspace = true, features = ["sync", "time"], optional = true }
 tracing = { workspace = true }

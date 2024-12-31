@@ -5,8 +5,6 @@ edition = "2021"
 authors.workspace = true
 license-file.workspace = true
 
-[features]
-
 [dependencies]
 chezmoi-entity = { path = "../entity", features = ["serde"] }
 chezmoi-sensor-prelude = { path = "../sensor-prelude", features = ["agent"] }
@@ -23,18 +21,11 @@ bluer = { workspace = true, features = [
     "bluetoothd",
     "serde",
 ], default-features = false }
-bluer-miflora = { version = "*", optional = true }
 futures = { version = "0.3" }
 indexmap = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { version = "1.0", features = ["indexmap"] }
-tokio = { workspace = true, features = [
-    "macros",
-    "rt-multi-thread",
-    "sync",
-    "time",
-] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "sync"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 reqwest = { version = "0.12", default-features = false, features = ["json"] }
-sysinfo = "0.33.0"
