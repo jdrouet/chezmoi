@@ -52,7 +52,7 @@ impl LineChartCard<'_> {
         }
     }
 
-    fn into_svg(&self, size: (u32, u32), timerange: (u64, u64)) -> String {
+    fn render_svg(&self, size: (u32, u32), timerange: (u64, u64)) -> String {
         use plotters::prelude::*;
 
         // TODO find a way to access the buffer content
@@ -104,13 +104,13 @@ impl crate::component::prelude::Component for LineChartCard<'_> {
             .content(|buf| {
                 buf.node("div")
                     .attr(("class", "flex-grow max-sm"))
-                    .content(|buf| buf.raw(self.into_svg((600, 400), ctx.timerange)))
+                    .content(|buf| buf.raw(self.render_svg((600, 400), ctx.timerange)))
                     .node("div")
                     .attr(("class", "flex-grow min-md max-md"))
-                    .content(|buf| buf.raw(self.into_svg((800, 400), ctx.timerange)))
+                    .content(|buf| buf.raw(self.render_svg((800, 400), ctx.timerange)))
                     .node("div")
                     .attr(("class", "flex-grow min-lg"))
-                    .content(|buf| buf.raw(self.into_svg((1200, 400), ctx.timerange)))
+                    .content(|buf| buf.raw(self.render_svg((1200, 400), ctx.timerange)))
                     .node("div")
                     .attr(("class", "card-title border-top"))
                     .content(|buf| buf.text(&self.definition.title))

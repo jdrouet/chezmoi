@@ -16,7 +16,7 @@ pub struct Metric<H = MetricHeader<'static>> {
 
 impl AsRef<MetricHeader<'static>> for MetricHeader<'static> {
     fn as_ref(&self) -> &MetricHeader<'static> {
-        &self
+        self
     }
 }
 

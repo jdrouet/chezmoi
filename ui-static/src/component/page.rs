@@ -62,13 +62,13 @@ impl crate::component::prelude::Component for Head {
                 .attr(("rel", "stylesheet"))
                 .attr((
                     "href",
-                    Concat(&ctx.base_url, crate::asset::STYLE_GLOBAL_CSS_PATH),
+                    Concat(ctx.base_url, crate::asset::STYLE_GLOBAL_CSS_PATH),
                 ))
                 .close();
             self.styles.iter().fold(buf, |buf, s| {
                 buf.node("link")
                     .attr(("rel", "stylesheet"))
-                    .attr(("href", Concat(&ctx.base_url, s)))
+                    .attr(("href", Concat(ctx.base_url, s)))
                     .close()
             })
         })
@@ -94,18 +94,18 @@ where
             .close()
             .node("link")
             .attr(("rel", "stylesheet"))
-            .attr(("href", Concat(&ctx.base_url, "assets/style-global.css")))
+            .attr(("href", Concat(ctx.base_url, "assets/style-global.css")))
             .close()
             // TODO dynamically load those styles
             .node("link")
             .attr(("rel", "stylesheet"))
-            .attr(("href", Concat(&ctx.base_url, "assets/style-atc-sensor.css")))
+            .attr(("href", Concat(ctx.base_url, "assets/style-atc-sensor.css")))
             .close()
             .node("link")
             .attr(("rel", "stylesheet"))
             .attr((
                 "href",
-                Concat(&ctx.base_url, "assets/style-miflora-sensor.css"),
+                Concat(ctx.base_url, "assets/style-miflora-sensor.css"),
             ))
             .close()
     })
