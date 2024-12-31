@@ -1,7 +1,6 @@
 use chezmoi_entity::OneOrMany;
+use chezmoi_sensor_prelude::agent::AgentMetric;
 use tokio::sync::mpsc;
-
-use crate::metric::AgentMetric;
 
 static USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
 

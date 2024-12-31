@@ -6,11 +6,6 @@ authors.workspace = true
 license-file.workspace = true
 
 [features]
-default = ["collector-atc-sensor", "collector-miflora-sensor"]
-bluetooth = ["dep:bluer"]
-collector-atc-sensor = ["bluetooth", "watcher-bluetooth"]
-collector-miflora-sensor = ["bluetooth", "watcher-bluetooth", "dep:bluer-miflora"]
-watcher-bluetooth = ["bluetooth"]
 
 [dependencies]
 chezmoi-entity = { path = "../entity", features = ["serde"] }
@@ -21,7 +16,7 @@ anyhow = { workspace = true }
 bluer = { workspace = true, features = [
     "bluetoothd",
     "serde",
-], default-features = false, optional = true }
+], default-features = false }
 bluer-miflora = { version = "*", optional = true }
 futures = { version = "0.3" }
 indexmap = { workspace = true }

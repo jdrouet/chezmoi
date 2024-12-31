@@ -1,7 +1,6 @@
 use chezmoi_entity::OneOrMany;
+use chezmoi_sensor_prelude::agent::AgentMetric;
 use tokio::sync::mpsc::Receiver;
-
-use crate::metric::AgentMetric;
 
 pub mod http;
 pub mod trace;

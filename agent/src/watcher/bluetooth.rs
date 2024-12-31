@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 
 use anyhow::Context;
-use bluer::{Adapter, AdapterEvent, Address, DeviceEvent, DeviceProperty, DiscoveryFilter};
+use bluer::{Adapter, AdapterEvent, Address, DeviceEvent, DiscoveryFilter};
+use chezmoi_sensor_prelude::agent::BluetoothEvent;
 use futures::stream::SelectAll;
 use futures::{pin_mut, Stream, StreamExt};
 use tokio::sync::broadcast;
@@ -31,7 +32,7 @@ impl Config {
     pub async fn build(
         &self,
         follow: HashSet<bluer::Address>,
-    ) -> anyhow::Result<(Watcher, broadcast::Receiver<WatcherEvent>)> {
+    ) -> anyhow::Result<(Watcher, broadcast::Receiver<BluetoothEvent>)> {
         let (sender, receiver) = broadcast::channel(self.channel_size);
 
         let session = bluer::Session::new().await?;
@@ -55,7 +56,7 @@ impl Config {
 pub struct Watcher {
     pub adapter: Adapter,
     follow: HashSet<Address>,
-    sender: broadcast::Sender<WatcherEvent>,
+    sender: broadcast::Sender<BluetoothEvent>,
 }
 
 impl Watcher {
@@ -71,7 +72,7 @@ impl Watcher {
                     match device_event {
                         AdapterEvent::DeviceAdded(addr) => {
                             tracing::trace!(message = "device added", address = %addr);
-                            if let Err(err) = self.sender.send(WatcherEvent::DeviceAdded(addr)) {
+                            if let Err(err) = self.sender.send(BluetoothEvent::DeviceAdded(addr)) {
                                 tracing::error!(message = "unable to forward added device", address = %addr, error = %err);
                             }
                             if self.follow.contains(&addr) {
@@ -83,7 +84,7 @@ impl Watcher {
                         }
                         AdapterEvent::DeviceRemoved(addr) => {
                             tracing::trace!(message = "device removed", address = %addr);
-                            if let Err(err) = self.sender.send(WatcherEvent::DeviceRemoved(addr)) {
+                            if let Err(err) = self.sender.send(BluetoothEvent::DeviceRemoved(addr)) {
                                 tracing::error!(message = "unable to forward removed device", address = %addr, error = %err);
                             }
                         }
@@ -92,7 +93,7 @@ impl Watcher {
                 }
                 Some((addr, DeviceEvent::PropertyChanged(property))) = all_change_events.next() => {
                     tracing::trace!(message = "device changed", address = %addr);
-                    if let Err(err) = self.sender.send(WatcherEvent::DeviceChanged(addr, property)) {
+                    if let Err(err) = self.sender.send(BluetoothEvent::DeviceChanged(addr, property)) {
                         tracing::error!(message = "unable to forward changed device", address = %addr, error = %err);
                     }
                 }
@@ -143,22 +144,5 @@ impl crate::prelude::Worker for Watcher {
     async fn run(self) -> anyhow::Result<()> {
         tracing::info!(message = "watching for events", devices = ?self.follow);
         self.execute().await
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum WatcherEvent {
-    DeviceAdded(Address),
-    DeviceRemoved(Address),
-    DeviceChanged(Address, DeviceProperty),
-}
-
-impl WatcherEvent {
-    pub fn address(&self) -> Address {
-        match self {
-            Self::DeviceAdded(addr) | Self::DeviceChanged(addr, _) | Self::DeviceRemoved(addr) => {
-                *addr
-            }
-        }
     }
 }

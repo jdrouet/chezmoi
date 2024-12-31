@@ -1,11 +1,13 @@
+use std::collections::HashSet;
 use std::path::Path;
 use std::str::FromStr;
 
+use chezmoi_sensor_prelude::agent::{BluetoothBuildContext, BuildContext};
 use tokio::sync::mpsc;
 
-pub mod collector;
+// pub mod collector;
 pub mod exporter;
-mod metric;
+// mod metric;
 pub mod prelude;
 pub mod sensor;
 pub mod watcher;
@@ -34,7 +36,7 @@ pub struct Config {
     #[serde(default)]
     watcher: watcher::Config,
     #[serde(default)]
-    collectors: Vec<collector::Config>,
+    collectors: Vec<sensor::Config>,
     exporter: exporter::Config,
 }
 
@@ -44,16 +46,31 @@ impl Config {
         serde_json::from_reader(f).map_err(anyhow::Error::from)
     }
 
+    fn bluetooth_addresses(&self) -> HashSet<bluer::Address> {
+        let mut set = HashSet::new();
+        self.collectors
+            .iter()
+            .for_each(|c| c.bluetooth_addresses(&mut set));
+        set
+    }
+
     pub async fn build(&self) -> anyhow::Result<Agent> {
-        let (watcher, wreceiver) = self.watcher.build(self).await?;
+        use chezmoi_sensor_prelude::agent::prelude::Config;
+
+        let (watcher, wreceiver) = self.watcher.build(self.bluetooth_addresses()).await?;
 
         let ctx = BuildContext {
-            #[cfg(feature = "watcher-bluetooth")]
-            bluetooth: watcher.bluetooth.adapter.clone(),
-            watcher: wreceiver,
+            bluetooth: BluetoothBuildContext {
+                adapter: watcher.bluetooth.adapter.clone(),
+                receiver: wreceiver.bluetooth,
+            },
+            hostname: std::env::var("HOSTNAME").unwrap_or_else(|_| String::from("unknown")),
         };
 
-        let collectors = self.collectors.iter().map(|c| c.build(&ctx)).collect();
+        let mut collectors = Vec::with_capacity(self.collectors.len());
+        for c in self.collectors.iter() {
+            collectors.push(c.build(&ctx).await?);
+        }
 
         Ok(Agent {
             channel_size: self.channel_size,
@@ -64,23 +81,18 @@ impl Config {
     }
 }
 
-pub struct BuildContext {
-    #[cfg(feature = "watcher-bluetooth")]
-    bluetooth: bluer::Adapter,
-    #[allow(unused)]
-    watcher: watcher::Receiver,
-}
-
 pub struct Agent {
     channel_size: usize,
     watcher: watcher::Watcher,
-    collectors: Vec<collector::Collector>,
+    collectors: Vec<sensor::Sensor>,
     exporter: exporter::Exporter,
 }
 
 impl Agent {
     #[tracing::instrument(name = "run", skip_all)]
     pub async fn run(self) {
+        use chezmoi_sensor_prelude::agent::prelude::Sensor;
+
         let (sender, receiver) = mpsc::channel(self.channel_size);
 
         let mut jobs = Vec::new();

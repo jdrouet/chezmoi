@@ -1,7 +1,6 @@
 use chezmoi_entity::OneOrMany;
+use chezmoi_sensor_prelude::agent::AgentMetric;
 use tokio::sync::mpsc;
-
-use crate::metric::AgentMetric;
 
 #[derive(Debug, Default, serde::Deserialize)]
 pub struct Config;

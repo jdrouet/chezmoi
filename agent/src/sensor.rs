@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use chezmoi_sensor_prelude::agent::prelude::SensorSender;
 use chezmoi_sensor_prelude::agent::BuildContext;
 
@@ -15,6 +17,10 @@ impl chezmoi_sensor_prelude::agent::prelude::Config for Config {
             Self::System(inner) => inner.build(ctx).await.map(Sensor::System),
         }
     }
+}
+
+impl Config {
+    pub fn bluetooth_addresses(&self, _list: &HashSet<bluer::Address>) {}
 }
 
 pub enum Sensor {
