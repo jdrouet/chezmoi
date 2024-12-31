@@ -13,6 +13,7 @@ agent = [
     "dep:bluer-miflora",
     "dep:serde",
     "dep:tokio",
+    "chezmoi-sensor-prelude/agent",
 ]
 
 [dependencies]

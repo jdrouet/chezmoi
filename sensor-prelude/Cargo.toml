@@ -6,7 +6,7 @@ authors.workspace = true
 license-file.workspace = true
 
 [features]
-default = ["agent"]
+default = []
 agent = ["dep:anyhow", "dep:bluer", "dep:indexmap", "dep:tokio"]
 
 [dependencies]
@@ -18,8 +18,5 @@ bluer = { workspace = true, features = [
     "serde",
 ], default-features = false, optional = true }
 indexmap = { workspace = true, optional = true }
-tokio = { workspace = true, features = [
-    "sync",
-    "time",
-], optional = true }
+tokio = { workspace = true, features = ["sync", "time"], optional = true }
 tracing = { workspace = true }

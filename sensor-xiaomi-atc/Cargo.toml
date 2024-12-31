@@ -7,7 +7,13 @@ license-file.workspace = true
 
 [features]
 default = ["agent"]
-agent = ["dep:anyhow", "dep:bluer", "dep:serde", "dep:tokio"]
+agent = [
+    "dep:anyhow",
+    "dep:bluer",
+    "dep:serde",
+    "dep:tokio",
+    "chezmoi-sensor-prelude/agent",
+]
 
 [dependencies]
 chezmoi-entity = { path = "../entity", features = ["serde"] }
