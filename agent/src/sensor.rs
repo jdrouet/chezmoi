@@ -8,6 +8,7 @@ use chezmoi_sensor_prelude::agent::BuildContext;
 pub enum Config {
     System(chezmoi_sensor_system::agent::Config),
     XiaomiAtc(chezmoi_sensor_xiaomi_atc::agent::Config),
+    XiaomiMiflora(chezmoi_sensor_xiaomi_miflora::agent::Config),
 }
 
 impl chezmoi_sensor_prelude::agent::prelude::Config for Config {
@@ -17,6 +18,7 @@ impl chezmoi_sensor_prelude::agent::prelude::Config for Config {
         match self {
             Self::System(inner) => inner.build(ctx).await.map(Sensor::System),
             Self::XiaomiAtc(inner) => inner.build(ctx).await.map(Sensor::XiaomiAtc),
+            Self::XiaomiMiflora(inner) => inner.build(ctx).await.map(Sensor::XiaomiMiflora),
         }
     }
 }
@@ -27,6 +29,9 @@ impl Config {
             Self::XiaomiAtc(inner) => {
                 list.extend(inner.devices.iter().copied());
             }
+            Self::XiaomiMiflora(inner) => {
+                list.extend(inner.devices.iter().copied());
+            }
             _ => {}
         }
     }
@@ -35,6 +40,7 @@ impl Config {
 pub enum Sensor {
     System(chezmoi_sensor_system::agent::Sensor),
     XiaomiAtc(chezmoi_sensor_xiaomi_atc::agent::Sensor),
+    XiaomiMiflora(chezmoi_sensor_xiaomi_miflora::agent::Sensor),
 }
 
 impl chezmoi_sensor_prelude::agent::prelude::Sensor for Sensor {
@@ -42,6 +48,7 @@ impl chezmoi_sensor_prelude::agent::prelude::Sensor for Sensor {
         match self {
             Self::System(inner) => inner.run(sender).await,
             Self::XiaomiAtc(inner) => inner.run(sender).await,
+            Self::XiaomiMiflora(inner) => inner.run(sender).await,
         }
     }
 }

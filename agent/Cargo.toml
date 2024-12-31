@@ -14,6 +14,9 @@ chezmoi-sensor-system = { path = "../sensor-system", features = ["agent"] }
 chezmoi-sensor-xiaomi-atc = { path = "../sensor-xiaomi-atc", features = [
     "agent",
 ] }
+chezmoi-sensor-xiaomi-miflora = { path = "../sensor-xiaomi-miflora", features = [
+    "agent",
+] }
 
 anyhow = { workspace = true }
 bluer = { workspace = true, features = [

@@ -287,6 +287,7 @@ dependencies = [
  "chezmoi-sensor-prelude",
  "chezmoi-sensor-system",
  "chezmoi-sensor-xiaomi-atc",
+ "chezmoi-sensor-xiaomi-miflora",
  "futures",
  "indexmap",
  "reqwest",
@@ -345,6 +346,21 @@ dependencies = [
  "serde",
  "serde_json",
  "sysinfo",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "chezmoi-sensor-xiaomi-miflora"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bluer",
+ "bluer-miflora",
+ "chezmoi-entity",
+ "chezmoi-sensor-prelude",
+ "serde",
+ "serde_json",
  "tokio",
  "tracing",
 ]
