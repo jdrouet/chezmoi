@@ -14,12 +14,16 @@ const ASSETS: [(&str, &str); 4] = [
 fn write_assets() {
     let original = format!("{}/assets", env!("CARGO_MANIFEST_DIR"));
     let link = PathBuf::from(format!("{DIR}/assets"));
-    if !link.exists() {
-        std::fs::create_dir(&link).unwrap();
+    if let Err(err) = std::fs::create_dir(&link) {
+        eprintln!("couldn't create directory {link:?}: {err:?}");
     }
 
     for (src, dest) in ASSETS {
-        std::fs::copy(format!("{original}/{src}"), format!("{DIR}/{dest}")).unwrap();
+        let from = format!("{original}/{src}");
+        let to = format!("{DIR}/{dest}");
+        if let Err(err) = std::fs::copy(&from, &to) {
+            eprintln!("couldn't copy {from:?} to {to:?}: {err:?}");
+        }
     }
 }
 

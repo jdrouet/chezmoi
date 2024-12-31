@@ -55,7 +55,7 @@ impl DashboardView<'_> {
     {
         let buf = header::render(buf);
         buf.node("main")
-            .attr(("class", "container pad-md"))
+            .attr(("class", "container pad-md flex-grow scroll-y"))
             .content(|buf| {
                 self.sections
                     .iter()
