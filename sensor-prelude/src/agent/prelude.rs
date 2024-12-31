@@ -16,6 +16,6 @@ pub trait Config {
 
 pub type SensorSender = Sender<OneOrMany<AgentMetric>>;
 
-pub trait Sensor {
+pub trait Sensor: Sized {
     fn run(self, sender: SensorSender) -> impl Future<Output = anyhow::Result<()>> + Send;
 }

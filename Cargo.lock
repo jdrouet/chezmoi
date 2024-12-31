@@ -284,6 +284,8 @@ dependencies = [
  "bluer",
  "bluer-miflora",
  "chezmoi-entity",
+ "chezmoi-sensor-prelude",
+ "chezmoi-sensor-system",
  "futures",
  "indexmap",
  "reqwest",

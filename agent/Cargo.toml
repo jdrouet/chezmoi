@@ -14,6 +14,8 @@ watcher-bluetooth = ["bluetooth"]
 
 [dependencies]
 chezmoi-entity = { path = "../entity", features = ["serde"] }
+chezmoi-sensor-prelude = { path = "../sensor-prelude", features = ["agent"] }
+chezmoi-sensor-system = { path = "../sensor-system", features = ["agent"] }
 
 anyhow = { workspace = true }
 bluer = { workspace = true, features = [

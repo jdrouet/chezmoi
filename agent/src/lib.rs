@@ -7,6 +7,7 @@ pub mod collector;
 pub mod exporter;
 mod metric;
 pub mod prelude;
+pub mod sensor;
 pub mod watcher;
 
 fn from_env_or<T, F>(name: &str, default_value: F) -> anyhow::Result<T>
