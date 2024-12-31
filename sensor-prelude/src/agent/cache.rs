@@ -1,10 +1,8 @@
-use std::sync::Arc;
-
 use chezmoi_entity::OneOrMany;
 use indexmap::IndexMap;
 use tokio::sync::mpsc;
 
-use crate::metric::AgentMetric;
+use crate::agent::AgentMetric;
 
 #[derive(Debug)]
 struct CacheEntry {
@@ -38,7 +36,7 @@ impl Cache {
     }
 
     fn handle(&mut self, metric: AgentMetric) -> Option<AgentMetric> {
-        let hash = metric.header.compute_hash();
+        let hash = metric.header.as_ref().into_hash();
         let found = self
             .inner
             .entry(hash)
@@ -107,27 +105,5 @@ impl CachedSender {
     #[inline(always)]
     pub fn is_closed(&self) -> bool {
         self.sender.is_closed()
-    }
-}
-
-#[derive(Clone, Debug, Hash)]
-pub struct Hostname(Arc<str>);
-
-impl Default for Hostname {
-    fn default() -> Self {
-        Self(Arc::from(
-            sysinfo::System::host_name()
-                .or_else(|| std::env::var("HOST").ok())
-                .unwrap_or("unknown".into()),
-        ))
-    }
-}
-
-impl serde::Serialize for Hostname {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_str(self.0.as_ref())
     }
 }

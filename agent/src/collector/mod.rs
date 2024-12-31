@@ -1,7 +1,8 @@
 use chezmoi_entity::OneOrMany;
 use tokio::sync::mpsc;
 
-use crate::{metric::AgentMetric, BuildContext};
+use crate::metric::AgentMetric;
+use crate::BuildContext;
 
 #[cfg(feature = "collector-atc-sensor")]
 pub mod atc_sensor;

@@ -3,9 +3,8 @@ use std::time::Duration;
 use chezmoi_entity::OneOrMany;
 use tokio::sync::mpsc;
 
-use crate::metric::AgentMetric;
-
 use super::helper::{CachedSender, Hostname};
+use crate::metric::AgentMetric;
 
 pub const fn default_interval() -> u64 {
     10

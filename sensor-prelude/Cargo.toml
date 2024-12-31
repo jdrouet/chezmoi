@@ -1,0 +1,25 @@
+[package]
+name = "chezmoi-sensor-prelude"
+version = "0.1.0"
+edition = "2021"
+authors.workspace = true
+license-file.workspace = true
+
+[features]
+default = ["agent"]
+agent = ["dep:anyhow", "dep:bluer", "dep:indexmap", "dep:tokio"]
+
+[dependencies]
+chezmoi-entity = { path = "../entity", features = ["serde"] }
+
+anyhow = { workspace = true, optional = true }
+bluer = { workspace = true, features = [
+    "bluetoothd",
+    "serde",
+], default-features = false, optional = true }
+indexmap = { workspace = true, optional = true }
+tokio = { workspace = true, features = [
+    "sync",
+    "time",
+], optional = true }
+tracing = { workspace = true }

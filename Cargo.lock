@@ -305,6 +305,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "chezmoi-sensor-prelude"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bluer",
+ "chezmoi-entity",
+ "indexmap",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "chezmoi-sensor-system"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bluer",
+ "chezmoi-entity",
+ "chezmoi-sensor-prelude",
+ "serde",
+ "serde_json",
+ "sysinfo",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "chezmoi-server"
 version = "0.1.0"
 dependencies = [

@@ -7,16 +7,22 @@ use crate::CowStr;
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Metric {
+pub struct Metric<H = MetricHeader<'static>> {
     pub timestamp: u64,
     #[cfg_attr(feature = "serde", serde(flatten))]
-    pub header: MetricHeader<'static>,
+    pub header: H,
     pub value: f64,
 }
 
-impl Metric {
+impl AsRef<MetricHeader<'static>> for MetricHeader<'static> {
+    fn as_ref(&self) -> &MetricHeader<'static> {
+        &self
+    }
+}
+
+impl<H: AsRef<MetricHeader<'static>>> Metric<H> {
     #[inline(always)]
-    pub const fn new(timestamp: u64, header: MetricHeader<'static>, value: f64) -> Self {
+    pub const fn new(timestamp: u64, header: H, value: f64) -> Self {
         Self {
             timestamp,
             header,
