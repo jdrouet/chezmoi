@@ -11,6 +11,9 @@ license-file.workspace = true
 chezmoi-entity = { path = "../entity", features = ["serde"] }
 chezmoi-sensor-prelude = { path = "../sensor-prelude", features = ["agent"] }
 chezmoi-sensor-system = { path = "../sensor-system", features = ["agent"] }
+chezmoi-sensor-xiaomi-atc = { path = "../sensor-xiaomi-atc", features = [
+    "agent",
+] }
 
 anyhow = { workspace = true }
 bluer = { workspace = true, features = [
