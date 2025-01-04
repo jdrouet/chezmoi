@@ -335,10 +335,12 @@ dependencies = [
 name = "chezmoi-sensor-xiaomi-atc"
 version = "0.1.0"
 dependencies = [
+ "another-html-builder",
  "anyhow",
  "bluer",
  "chezmoi-entity",
  "chezmoi-sensor-prelude",
+ "chezmoi-web-prelude",
  "serde",
  "tokio",
  "tracing",
@@ -348,11 +350,13 @@ dependencies = [
 name = "chezmoi-sensor-xiaomi-miflora"
 version = "0.1.0"
 dependencies = [
+ "another-html-builder",
  "anyhow",
  "bluer",
  "bluer-miflora",
  "chezmoi-entity",
  "chezmoi-sensor-prelude",
+ "chezmoi-web-prelude",
  "serde",
  "tokio",
  "tracing",
@@ -405,6 +409,8 @@ version = "0.1.0"
 dependencies = [
  "another-html-builder",
  "hex",
+ "human-number",
+ "serde",
  "sha2",
 ]
 

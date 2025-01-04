@@ -6,7 +6,9 @@ authors.workspace = true
 license-file.workspace = true
 
 [dependencies]
-another-html-builder = "0.2"
+another-html-builder = { version = "0.2" }
+human-number = "0.1"
+serde = { workspace = true, features = ["derive"] }
 
 [build-dependencies]
 hex = { version = "0.4" }

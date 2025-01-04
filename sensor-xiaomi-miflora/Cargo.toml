@@ -6,7 +6,7 @@ authors.workspace = true
 license-file.workspace = true
 
 [features]
-default = ["agent"]
+default = ["agent", "web"]
 agent = [
     "dep:anyhow",
     "dep:bluer",
@@ -15,11 +15,14 @@ agent = [
     "dep:tokio",
     "chezmoi-sensor-prelude/agent",
 ]
+web = ["dep:another-html-builder", "dep:chezmoi-web-prelude"]
 
 [dependencies]
 chezmoi-entity = { path = "../entity", features = ["serde"] }
 chezmoi-sensor-prelude = { path = "../sensor-prelude" }
+chezmoi-web-prelude = { path = "../web-prelude", optional = true }
 
+another-html-builder = { version = "0.2", optional = true }
 anyhow = { workspace = true, optional = true }
 bluer = { workspace = true, features = [
     "bluetoothd",
