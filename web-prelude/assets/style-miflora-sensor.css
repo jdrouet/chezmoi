@@ -1,0 +1,8 @@
+.miflora-sensor .content {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.miflora-sensor .image {
+    font-size: 4rem;
+}
