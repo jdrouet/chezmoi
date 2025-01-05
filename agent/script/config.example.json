@@ -1,6 +1,6 @@
 {
-  "channel-size": 200,
-  "collectors": [
+  "channel_size": 200,
+  "sensors": [
     {
       "type": "atc-sensor",
       "devices": [

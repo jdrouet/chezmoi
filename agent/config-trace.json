@@ -1,6 +1,6 @@
 {
     "channel_size": 200,
-    "collectors": [
+    "sensors": [
         {
             "type": "internal",
             "interval": 5

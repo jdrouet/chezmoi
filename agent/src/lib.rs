@@ -34,7 +34,7 @@ pub struct Config {
     #[serde(default)]
     watcher: watcher::Config,
     #[serde(default)]
-    collectors: Vec<sensor::Config>,
+    sensors: Vec<sensor::Config>,
     exporter: exporter::Config,
 }
 
@@ -46,7 +46,7 @@ impl Config {
 
     fn bluetooth_addresses(&self) -> HashSet<bluer::Address> {
         let mut set = HashSet::new();
-        self.collectors
+        self.sensors
             .iter()
             .for_each(|c| c.bluetooth_addresses(&mut set));
         set
@@ -65,15 +65,15 @@ impl Config {
             hostname: std::env::var("HOSTNAME").unwrap_or_else(|_| String::from("unknown")),
         };
 
-        let mut collectors = Vec::with_capacity(self.collectors.len());
-        for c in self.collectors.iter() {
-            collectors.push(c.build(&ctx).await?);
+        let mut sensors = Vec::with_capacity(self.sensors.len());
+        for c in self.sensors.iter() {
+            sensors.push(c.build(&ctx).await?);
         }
 
         Ok(Agent {
             channel_size: self.channel_size,
             watcher,
-            collectors,
+            sensors,
             exporter: self.exporter.build(),
         })
     }
@@ -82,7 +82,7 @@ impl Config {
 pub struct Agent {
     channel_size: usize,
     watcher: watcher::Watcher,
-    collectors: Vec<sensor::Sensor>,
+    sensors: Vec<sensor::Sensor>,
     exporter: exporter::Exporter,
 }
 
@@ -96,7 +96,7 @@ impl Agent {
         let mut jobs = Vec::new();
         self.watcher.start(&mut jobs);
 
-        jobs.extend(self.collectors.into_iter().map(|c| {
+        jobs.extend(self.sensors.into_iter().map(|c| {
             let local_sender = sender.clone();
             tokio::spawn(async move { c.run(local_sender).await })
         }));

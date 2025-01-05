@@ -21,9 +21,9 @@ fn hash_file(fname: &str) -> String {
 
 fn hash_name(fname: &str) -> String {
     if let Some((before, after)) = fname.split_once(".") {
-        format!("assets/{before}-{}.{after}", hash_file(fname))
+        format!("/assets/{before}-{}.{after}", hash_file(fname))
     } else {
-        fname.to_string()
+        format!("/assets/{fname}")
     }
 }
 

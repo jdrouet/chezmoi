@@ -7,7 +7,9 @@ license-file.workspace = true
 
 [dependencies]
 chezmoi-entity = { path = "../entity", features = ["serde"] }
-chezmoi-sensor-prelude = { path = "../sensor-prelude", default-features = false, features = ["agent"] }
+chezmoi-sensor-prelude = { path = "../sensor-prelude", default-features = false, features = [
+    "agent",
+] }
 chezmoi-sensor-system = { path = "../sensor-system", features = ["agent"] }
 chezmoi-sensor-xiaomi-atc = { path = "../sensor-xiaomi-atc", default-features = false, features = [
     "agent",
@@ -23,7 +25,7 @@ bluer = { workspace = true, features = [
 ], default-features = false }
 futures = { version = "0.3" }
 indexmap = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
+serde = { workspace = true, features = ["derive", "rc"] }
 serde_json = { version = "1.0", features = ["indexmap"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "sync"] }
 tracing = { workspace = true }

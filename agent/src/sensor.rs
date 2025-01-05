@@ -4,7 +4,7 @@ use chezmoi_sensor_prelude::agent::prelude::SensorSender;
 use chezmoi_sensor_prelude::agent::BuildContext;
 
 #[derive(Debug, serde::Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum Config {
     System(chezmoi_sensor_system::agent::Config),
     XiaomiAtc(chezmoi_sensor_xiaomi_atc::agent::Config),

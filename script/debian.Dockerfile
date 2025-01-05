@@ -8,13 +8,17 @@ WORKDIR /code
 COPY Cargo.lock Cargo.toml LICENSE /code/
 COPY agent /code/agent
 COPY entity /code/entity
+COPY sensor-prelude /code/sensor-prelude
+COPY sensor-system /code/sensor-system
+COPY sensor-xiaomi-atc /code/sensor-xiaomi-atc
+COPY sensor-xiaomi-miflora /code/sensor-xiaomi-miflora
 COPY server /code/server
 COPY storage /code/storage
-COPY ui-static /code/ui-static
+COPY web-prelude /code/web-prelude
 COPY LICENSE /code/agent/
 COPY LICENSE /code/server/
 
-RUN cargo build --release --features collector-atc-sensor \
+RUN cargo build --release \
     && cargo deb -p chezmoi-agent \
     && cargo deb -p chezmoi-server
 

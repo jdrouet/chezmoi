@@ -2,7 +2,7 @@
 # Maintainer: Jeremie Drouet <jeremie.drouet@gmail.com>
 pkgname=chezmoi-agent
 pkgver=0.1.0
-pkgrel=12
+pkgrel=16
 pkgdesc="Agent for gathering metrics and sending them to the Chezmoi server"
 url="https://github.com/jdrouet/chezmoi"
 arch="all"
@@ -19,8 +19,7 @@ prepare() {
 build() {
     cargo build \
         --frozen --release \
-        --package chezmoi-agent \
-        --features collector-atc-sensor,collector-miflora-sensor
+        --package chezmoi-agent
 }
 
 check() {
@@ -30,6 +29,6 @@ check() {
 package() {
     install -Dm 755 "target/release/$pkgname" -t "$pkgdir/usr/bin"
     install -Dm 755 agent/script/openrc/chezmoi-agent -t "$pkgdir/etc/init.d"
-    install -Dm 755 agent/script/config.json -t "$pkgdir/etc/chezmoi-agent"
+    install -Dm 755 agent/script/config.example.json -t "$pkgdir/etc/chezmoi-agent"
     install -Dm 644 readme.md -t "$pkgdir/usr/share/doc/$pkgname"
 }
