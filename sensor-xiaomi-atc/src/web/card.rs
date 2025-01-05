@@ -1,34 +1,21 @@
+use crate::web::Definition;
 use another_html_builder::prelude::WriterExt;
 use another_html_builder::{Body, Buffer};
 use chezmoi_web_prelude::component::card_title;
 use chezmoi_web_prelude::component::value_cell;
 use chezmoi_web_prelude::helper::concat::Concat;
 use chezmoi_web_prelude::helper::format;
-use chezmoi_web_prelude::helper::range::Range;
 use chezmoi_web_prelude::helper::value::TimedValue;
 use chezmoi_web_prelude::prelude::RenderComponent;
 
-#[derive(Clone, Debug, serde::Deserialize)]
-pub struct Definition {
-    #[serde(default)]
-    pub name: Option<String>,
-    pub address: String,
-    #[serde(default)]
-    pub temperature: Range<f64>,
-    #[serde(default)]
-    pub humidity: Range<f64>,
-    #[serde(default)]
-    pub battery: Range<f64>,
-}
-
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Values {
     pub temperature: Option<TimedValue>,
     pub humidity: Option<TimedValue>,
     pub battery: Option<TimedValue>,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Component<'a> {
     pub definition: &'a Definition,
     pub values: Values,
@@ -71,7 +58,7 @@ impl chezmoi_web_prelude::prelude::Component for Component<'_> {
         let buf = if self.with_link {
             buf.node("a").attr((
                 "href",
-                Concat("/atc-sensor/", self.definition.address.as_str()),
+                Concat("/xiaomi-atc/", self.definition.address.as_str()),
             ))
         } else {
             buf.node("div")

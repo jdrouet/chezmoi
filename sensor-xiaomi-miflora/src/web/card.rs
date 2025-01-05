@@ -1,29 +1,12 @@
+use crate::web::Definition;
 use another_html_builder::prelude::WriterExt;
 use another_html_builder::{Body, Buffer};
 use chezmoi_web_prelude::component::card_title;
 use chezmoi_web_prelude::component::value_cell;
 use chezmoi_web_prelude::helper::concat::Concat;
 use chezmoi_web_prelude::helper::format;
-use chezmoi_web_prelude::helper::range::Range;
 use chezmoi_web_prelude::helper::value::TimedValue;
 use chezmoi_web_prelude::prelude::RenderComponent;
-
-#[derive(Clone, Debug, serde::Deserialize)]
-pub struct Definition {
-    #[serde(default)]
-    pub name: Option<String>,
-    pub address: String,
-    #[serde(default)]
-    pub temperature: Range<f64>,
-    #[serde(default)]
-    pub brightness: Range<f64>,
-    #[serde(default)]
-    pub conductivity: Range<f64>,
-    #[serde(default)]
-    pub moisture: Range<f64>,
-    #[serde(default)]
-    pub battery: Range<f64>,
-}
 
 #[derive(Clone, Debug)]
 pub struct Values {
@@ -92,7 +75,7 @@ impl chezmoi_web_prelude::prelude::Component for Component<'_> {
         let buf = if self.with_link {
             buf.node("a").attr((
                 "href",
-                Concat("/miflora-sensor/", self.definition.address.as_str()),
+                Concat("/xiaomi-miflora/", self.definition.address.as_str()),
             ))
         } else {
             buf.node("div")

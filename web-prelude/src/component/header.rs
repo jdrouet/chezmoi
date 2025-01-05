@@ -9,6 +9,12 @@ pub struct Component<'a> {
     title: &'a str,
 }
 
+impl<'a> Component<'a> {
+    pub const fn new(title: &'a str) -> Self {
+        Self { title }
+    }
+}
+
 impl<'a> crate::prelude::Buildable<Properties<'a>> for Component<'a> {
     fn build(props: &Properties<'a>) -> Self {
         Self { title: props.title }

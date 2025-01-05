@@ -3,7 +3,6 @@ use std::sync::Arc;
 use axum::extract::{Path, Query};
 use axum::response::Html;
 use axum::Extension;
-use chezmoi_ui_static::view::prelude::View;
 
 use super::ui_helper::SharedParams;
 use crate::helper::{HistoryResult, LatestResult, QueryCollector, QueryResult};
@@ -16,13 +15,10 @@ pub async fn handle(
     Query(params): Query<SharedParams>,
     Path(addr): Path<String>,
 ) -> Result<Html<String>, UiError> {
-    let Some(config) = config.miflora_sensor.get(&addr) else {
-        return Err(UiError::not_found(
-            "Provided miflora sensor address not found",
-        ));
+    let Some(config) = config.xiaomi_atc.get(&addr) else {
+        return Err(UiError::not_found("Provided ATC sensor address not found"));
     };
     let timerange = params.timerange.as_secs();
-    let ctx = chezmoi_ui_static::context::Context::absolute(timerange);
     let QueryCollector { latest, history } = config.collect();
     let latests = if latest.is_empty() {
         Vec::new()
@@ -41,8 +37,9 @@ pub async fn handle(
         .await?
     };
     let res = QueryResult {
+        timerange,
         latest: LatestResult::from_iter(latests.into_iter()),
         history: HistoryResult::from_iter(history.into_iter()),
     };
-    Ok(Html(config.build(&res).render(&ctx)))
+    Ok(Html(config.build(res).render()))
 }

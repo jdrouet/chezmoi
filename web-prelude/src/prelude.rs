@@ -5,7 +5,7 @@ pub trait Buildable<Props> {
     fn build(props: &Props) -> Self;
 }
 
-pub trait Component {
+pub trait Component: Sized {
     fn render<'a, W: WriterExt>(&self, buf: Buffer<W, Body<'a>>) -> Buffer<W, Body<'a>>;
 }
 

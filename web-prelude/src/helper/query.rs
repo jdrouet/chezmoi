@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
+use crate::helper::value::TimedValue;
 use chezmoi_entity::metric::{Metric, MetricHeader, MetricTags};
 use chezmoi_entity::CowStr;
-use chezmoi_web_prelude::helper::value::TimedValue;
 
 #[derive(Debug, Default)]
 pub struct QueryCollector<'a> {
@@ -11,7 +11,6 @@ pub struct QueryCollector<'a> {
 }
 
 pub struct QueryResult {
-    pub timerange: (u64, u64),
     pub history: HistoryResult,
     pub latest: LatestResult,
 }

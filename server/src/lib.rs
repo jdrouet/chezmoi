@@ -59,7 +59,7 @@ impl Config {
             .context("reading root config")?;
         Ok(Server {
             address: std::net::SocketAddr::from((self.host, self.port)),
-            root_config: crate::view::RootConfig::from(config),
+            root_config: crate::view::RootConfig::new(config.clone()),
         })
     }
 }

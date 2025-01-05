@@ -37,9 +37,12 @@ assets = [
 
 [dependencies]
 chezmoi-entity = { path = "../entity", features = ["serde"] }
+chezmoi-sensor-xiaomi-atc = { path = "../sensor-xiaomi-atc", default-features = false, features = ["web"] }
+chezmoi-sensor-xiaomi-miflora = { path = "../sensor-xiaomi-miflora", default-features = false, features = ["web"] }
 chezmoi-storage = { path = "../storage" }
-chezmoi-ui-static = { path = "../ui-static" }
+chezmoi-web-prelude = { path = "../web-prelude" }
 
+another-html-builder = "0.2"
 anyhow = { workspace = true }
 axum = { version = "0.7" }
 serde = { workspace = true, features = ["derive"] }

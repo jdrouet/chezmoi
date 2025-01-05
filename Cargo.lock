@@ -366,11 +366,14 @@ dependencies = [
 name = "chezmoi-server"
 version = "0.1.0"
 dependencies = [
+ "another-html-builder",
  "anyhow",
  "axum",
  "chezmoi-entity",
+ "chezmoi-sensor-xiaomi-atc",
+ "chezmoi-sensor-xiaomi-miflora",
  "chezmoi-storage",
- "chezmoi-ui-static",
+ "chezmoi-web-prelude",
  "serde",
  "serde_json",
  "serde_qs",
@@ -408,8 +411,11 @@ name = "chezmoi-web-prelude"
 version = "0.1.0"
 dependencies = [
  "another-html-builder",
+ "chezmoi-entity",
+ "chrono",
  "hex",
  "human-number",
+ "plotters",
  "serde",
  "sha2",
 ]
