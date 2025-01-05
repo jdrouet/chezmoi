@@ -1,8 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::helper::value::TimedValue;
 use chezmoi_entity::metric::{Metric, MetricHeader, MetricTags};
 use chezmoi_entity::CowStr;
+
+use crate::helper::value::TimedValue;
 
 #[derive(Debug, Default)]
 pub struct QueryCollector<'a> {

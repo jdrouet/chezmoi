@@ -3,10 +3,8 @@ use std::sync::Arc;
 
 use another_html_builder::prelude::WriterExt;
 use another_html_builder::{Body, Buffer};
-use chezmoi_web_prelude::{
-    component::{head, header, html},
-    prelude::RenderComponent,
-};
+use chezmoi_web_prelude::component::{head, header, html};
+use chezmoi_web_prelude::prelude::RenderComponent;
 
 use crate::helper::{QueryCollector, QueryResult};
 

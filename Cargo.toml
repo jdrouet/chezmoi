@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["agent", "entity", "sensor-prelude", "sensor-system", "sensor-xiaomi-atc", "sensor-xiaomi-miflora", "server", "storage", "ui-static", "web-prelude"]
+members = ["agent", "entity", "sensor-prelude", "sensor-system", "sensor-xiaomi-atc", "sensor-xiaomi-miflora", "server", "storage", "web-prelude"]
 
 [workspace.package]
 authors = ["Jeremie Drouet <jeremie.drouet@gmail.com>"]

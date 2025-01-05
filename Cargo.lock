@@ -394,19 +394,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "chezmoi-ui-static"
-version = "0.1.0"
-dependencies = [
- "another-html-builder",
- "chrono",
- "hex",
- "human-number",
- "plotters",
- "serde",
- "sha2",
-]
-
-[[package]]
 name = "chezmoi-web-prelude"
 version = "0.1.0"
 dependencies = [

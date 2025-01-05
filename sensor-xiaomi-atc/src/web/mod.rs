@@ -1,6 +1,7 @@
 use chezmoi_entity::metric::MetricHeader;
 use chezmoi_web_prelude::helper::range::Range;
 
+pub mod board;
 pub mod card;
 
 #[derive(Clone, Debug, serde::Deserialize)]

@@ -5,9 +5,7 @@ use std::str::FromStr;
 use chezmoi_sensor_prelude::agent::{BluetoothBuildContext, BuildContext};
 use tokio::sync::mpsc;
 
-// pub mod collector;
 pub mod exporter;
-// mod metric;
 pub mod prelude;
 pub mod sensor;
 pub mod watcher;

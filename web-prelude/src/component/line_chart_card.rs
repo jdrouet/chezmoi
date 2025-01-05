@@ -18,13 +18,14 @@ pub struct Definition {
 }
 
 #[derive(Debug)]
-pub struct LineChartCard<'a> {
-    pub definition: &'a Definition,
+pub struct Component<'a> {
+    pub title: &'a str,
     pub timerange: (u64, u64),
-    pub values: Vec<TimedValue>,
+    pub values: &'a [TimedValue],
+    pub y_range: Range<f64>,
 }
 
-impl LineChartCard<'_> {
+impl Component<'_> {
     fn x_range(&self) -> std::ops::Range<u64> {
         let (from, to) = self.values.iter().fold(self.timerange, |(from, to), item| {
             (from.min(item.timestamp), to.max(item.timestamp))
@@ -36,8 +37,8 @@ impl LineChartCard<'_> {
         if self.values.is_empty() {
             0.0..1.0
         } else {
-            let from = self.definition.y_range.min.unwrap_or(f64::MAX);
-            let to = self.definition.y_range.max.unwrap_or(f64::MIN);
+            let from = self.y_range.min.unwrap_or(f64::MAX);
+            let to = self.y_range.max.unwrap_or(f64::MIN);
             let (from, to) = self.values.iter().fold((from, to), |(from, to), item| {
                 (from.min(item.value), to.max(item.value))
             });
@@ -86,7 +87,7 @@ impl LineChartCard<'_> {
     }
 }
 
-impl crate::prelude::Component for LineChartCard<'_> {
+impl crate::prelude::Component for Component<'_> {
     fn render<'a, W: WriterExt>(&self, buf: Buffer<W, Body<'a>>) -> Buffer<W, Body<'a>> {
         buf.node("div")
             .attr(("class", "line-chart card flex-col colspan-4"))
@@ -102,7 +103,7 @@ impl crate::prelude::Component for LineChartCard<'_> {
                     .content(|buf| buf.raw(self.render_svg((1200, 400))))
                     .node("div")
                     .attr(("class", "card-title border-top"))
-                    .content(|buf| buf.text(&self.definition.title))
+                    .content(|buf| buf.text(&self.title))
             })
     }
 }

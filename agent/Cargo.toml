@@ -7,12 +7,12 @@ license-file.workspace = true
 
 [dependencies]
 chezmoi-entity = { path = "../entity", features = ["serde"] }
-chezmoi-sensor-prelude = { path = "../sensor-prelude", features = ["agent"] }
+chezmoi-sensor-prelude = { path = "../sensor-prelude", default-features = false, features = ["agent"] }
 chezmoi-sensor-system = { path = "../sensor-system", features = ["agent"] }
-chezmoi-sensor-xiaomi-atc = { path = "../sensor-xiaomi-atc", features = [
+chezmoi-sensor-xiaomi-atc = { path = "../sensor-xiaomi-atc", default-features = false, features = [
     "agent",
 ] }
-chezmoi-sensor-xiaomi-miflora = { path = "../sensor-xiaomi-miflora", features = [
+chezmoi-sensor-xiaomi-miflora = { path = "../sensor-xiaomi-miflora", default-features = false, features = [
     "agent",
 ] }
 

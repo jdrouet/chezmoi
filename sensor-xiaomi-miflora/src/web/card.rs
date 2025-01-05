@@ -1,12 +1,12 @@
-use crate::web::Definition;
 use another_html_builder::prelude::WriterExt;
 use another_html_builder::{Body, Buffer};
-use chezmoi_web_prelude::component::card_title;
-use chezmoi_web_prelude::component::value_cell;
+use chezmoi_web_prelude::component::{card_title, value_cell};
 use chezmoi_web_prelude::helper::concat::Concat;
 use chezmoi_web_prelude::helper::format;
 use chezmoi_web_prelude::helper::value::TimedValue;
 use chezmoi_web_prelude::prelude::RenderComponent;
+
+use crate::web::Definition;
 
 #[derive(Clone, Debug)]
 pub struct Values {

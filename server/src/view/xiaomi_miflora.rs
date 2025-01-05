@@ -1,11 +1,7 @@
 use std::collections::HashSet;
 
-use another_html_builder::prelude::WriterExt;
-use another_html_builder::{Body, Buffer};
-use chezmoi_web_prelude::{
-    component::{head, header, html},
-    prelude::RenderComponent,
-};
+use another_html_builder::Buffer;
+use chezmoi_web_prelude::prelude::RenderComponent;
 
 use crate::helper::{QueryCollector, QueryResult};
 
@@ -28,18 +24,6 @@ impl Config {
     }
 }
 
-fn section<'a, W, F>(buf: Buffer<W, Body<'a>>, title: &str, children: F) -> Buffer<W, Body<'a>>
-where
-    F: FnOnce(Buffer<W, Body>) -> Buffer<W, Body>,
-    W: WriterExt,
-{
-    buf.node("h4")
-        .content(|buf| buf.text(title))
-        .node("section")
-        .attr(("class", "dashboard-grid"))
-        .content(children)
-}
-
 pub struct Component<'a> {
     config: &'a chezmoi_sensor_xiaomi_miflora::web::Config,
     values: QueryResult,
@@ -47,15 +31,37 @@ pub struct Component<'a> {
 
 impl<'a> Component<'a> {
     pub fn render(&self) -> String {
-        html::html(Default::default(), |buf| {
-            buf.render_component(head::Component::new("Plant", &[]))
-                .node("body")
-                .content(|buf| {
-                    buf.render_component(header::Component::new("Plant"))
-                        .node("main")
-                        .attr(("class", "container pad-md flex-grow scroll-y"))
-                        .content(|buf| buf)
-                })
+        let buf = Buffer::default();
+        buf.render_component(chezmoi_sensor_xiaomi_miflora::web::board::Component {
+            definition: &self.config.definition,
+            timerange: self.values.timerange,
+            values: chezmoi_sensor_xiaomi_miflora::web::board::Values {
+                temperature: self
+                    .values
+                    .history
+                    .find(&self.config.headers.temperature)
+                    .unwrap_or_default(),
+                brightness: self
+                    .values
+                    .history
+                    .find(&self.config.headers.brightness)
+                    .unwrap_or_default(),
+                conductivity: self
+                    .values
+                    .history
+                    .find(&self.config.headers.conductivity)
+                    .unwrap_or_default(),
+                moisture: self
+                    .values
+                    .history
+                    .find(&self.config.headers.moisture)
+                    .unwrap_or_default(),
+                battery: self
+                    .values
+                    .history
+                    .find(&self.config.headers.battery)
+                    .unwrap_or_default(),
+            },
         })
         .into_inner()
     }
