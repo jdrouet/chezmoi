@@ -36,22 +36,19 @@ css_style!(
 pub fn create() -> axum::Router {
     axum::Router::new()
         .route(
-            &format!("/{}", chezmoi_web_prelude::asset::STYLE_GLOBAL_CSS_PATH),
+            chezmoi_web_prelude::asset::STYLE_GLOBAL_CSS_PATH,
             get(style_global_css),
         )
         .route(
-            &format!("/{}", chezmoi_web_prelude::asset::STYLE_ATC_SENSOR_CSS_PATH),
+            chezmoi_web_prelude::asset::STYLE_ATC_SENSOR_CSS_PATH,
             get(style_atc_sensor_css),
         )
         .route(
-            &format!("/{}", chezmoi_web_prelude::asset::STYLE_LINE_CHART_CSS_PATH),
+            chezmoi_web_prelude::asset::STYLE_LINE_CHART_CSS_PATH,
             get(style_line_chart_css),
         )
         .route(
-            &format!(
-                "/{}",
-                chezmoi_web_prelude::asset::STYLE_MIFLORA_SENSOR_CSS_PATH
-            ),
+            chezmoi_web_prelude::asset::STYLE_MIFLORA_SENSOR_CSS_PATH,
             get(style_miflora_sensor_css),
         )
 }
